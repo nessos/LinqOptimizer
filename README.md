@@ -8,8 +8,8 @@ An automatic query optimizer for LINQ to Objects and PLINQ.
 
 var query = (from num in nums.AsQueryExpr()
              where num % 2 == 0
-             select num * num).Sum()
+             select num * num).Sum();
 
-Console.WriteLine("Result: {0}", query.Run())
+Console.WriteLine("Result: {0}", query.Run());
 
 ```
