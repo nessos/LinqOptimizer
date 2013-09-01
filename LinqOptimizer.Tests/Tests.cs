@@ -13,7 +13,7 @@ namespace LinqOptimizer.Tests
         private int[] nums = new[] { 1, 2, 3 , 4, 5 };
  
         [Test]
-        public void TestSelect()
+        public void SelectTest()
         {
             var result = from num in nums.AsQueryExpr()
                          select num * 2;
@@ -22,7 +22,7 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
-        public void TestWhere()
+        public void WhereTest()
         {
             var result = from num in nums.AsQueryExpr()
                          where num % 2 == 0
