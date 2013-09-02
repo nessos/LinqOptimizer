@@ -42,7 +42,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="LinqOptimizer.Core.fs" />
+    <Compile Include="QueryExpr.fs" />
+	<Compile Include="ExpressionHelpers.fs" />
+    <Compile Include="Compiler.fs" />
+	<Compile Include="ExtensionMethods.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

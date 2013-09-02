@@ -30,5 +30,23 @@ namespace LinqOptimizer.Tests
 
             Assert.AreEqual(new[] { 2, 4 }, result.Run());
         }
+
+        [Test]
+        public void SumTest()
+        {
+            var result = (from num in nums.AsQueryExpr()
+                         select num * 2).Sum();
+
+            Assert.AreEqual(30, result.Run());
+        }
+
+        [Test]
+        public void AggregateTest()
+        {
+            var result = (from num in nums.AsQueryExpr()
+                          select num * 2).Aggregate(0, (acc, value) => acc + value);
+
+            Assert.AreEqual(30, result.Run());
+        }
     }
 }

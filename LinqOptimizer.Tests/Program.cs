@@ -37,7 +37,7 @@ namespace LinqOptimizer.Tests
             var watch = new Stopwatch();
             watch.Start();
             action();
-            Console.WriteLine(watch.Elapsed);
+            Console.WriteLine(watch.ElapsedTicks);
         }
     }
 }
