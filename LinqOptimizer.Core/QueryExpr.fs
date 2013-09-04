@@ -13,8 +13,8 @@
     // Main Query representation
     and QueryExpr = 
         | Source of IEnumerable * Type
-        | Transform of LambdaExpression * QueryExpr 
-        | Filter of LambdaExpression * QueryExpr 
+        | Transform of LambdaExpression * QueryExpr * Type
+        | Filter of LambdaExpression * QueryExpr * Type
         | Aggregate of (obj *  Type) * LambdaExpression * QueryExpr
         | Sum of QueryExpr * Type
            

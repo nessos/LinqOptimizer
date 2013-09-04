@@ -19,11 +19,11 @@ namespace LinqOptimizer.Core
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Select<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, f : Expression<Func<'T, 'R>>) =
-            new QueryExpr<IEnumerable<'R>>(Transform (f, queryExpr.QueryExpr))
+            new QueryExpr<IEnumerable<'R>>(Transform (f, queryExpr.QueryExpr, typeof<'R>))
             
         [<System.Runtime.CompilerServices.Extension>]
         static member Where<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, f : Expression<Func<'T, bool>>) =
-            new QueryExpr<IEnumerable<'T>>(Filter (f, queryExpr.QueryExpr))
+            new QueryExpr<IEnumerable<'T>>(Filter (f, queryExpr.QueryExpr, typeof<'T>))
 
 
         [<System.Runtime.CompilerServices.Extension>]

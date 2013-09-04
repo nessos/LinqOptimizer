@@ -20,16 +20,19 @@ namespace LinqOptimizer.Core
         let label (name : string) = Expression.Label(name) 
         let constant (value : obj) = Expression.Constant(value)
          
+        let ``new`` (t : Type) = Expression.New(t)
         let call (methodInfo : MethodInfo) (instance : Expression) 
                     (args : seq<Expression>) =
             Expression.Call(instance, methodInfo, args)
              
         let ``if`` boolExpr thenExpr elseExpr = 
-            Expression.IfThenElse(boolExpr, thenExpr, elseExpr) 
+            Expression.IfThenElse(boolExpr, thenExpr, elseExpr) :> Expression
         let loop bodyExpr breakLabel continueLabel = 
             Expression.Loop(bodyExpr, breakLabel, continueLabel)
         let ``break`` (label : LabelTarget) = 
             Expression.Break(label)
+        let ``continue`` (label : LabelTarget) = 
+            Expression.Continue(label)
         
 
         let equal leftExpr rightExpr = Expression.Equal(leftExpr, rightExpr)
