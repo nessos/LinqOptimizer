@@ -18,18 +18,9 @@ namespace LinqOptimizer.Tests
             Measure(() => Console.WriteLine(f.Invoke()));
 
             Measure(() => Console.WriteLine(nums.Select(num => num * 2).Sum()));
-
-            Measure(() => {
-                double sum = 0;
-                for (int i = 0; i < nums.Length; i++)
-                {
-                    sum += nums[i] * 2;
-                }
-                Console.WriteLine(sum);
-            });
             
             //LinqTests tests = new LinqTests();
-            //tests.TestSelect();
+            //tests.PipelineTest();
         }
 
         static void Measure(Action action)
@@ -37,7 +28,7 @@ namespace LinqOptimizer.Tests
             var watch = new Stopwatch();
             watch.Start();
             action();
-            Console.WriteLine(watch.ElapsedTicks);
+            Console.WriteLine(watch.Elapsed);
         }
     }
 }

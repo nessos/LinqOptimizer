@@ -32,6 +32,18 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
+        public void PipelinedTest()
+        {
+            var result = nums.AsQueryExpr()
+                         .Where(num => num % 2 == 0)
+                         .Select(num => num * 2)
+                         .Select(num => num.ToString())
+                         .Select(num => num + "!");
+
+            Assert.AreEqual(new[] { "4!", "8!" }, result.Run());
+        }
+
+        [Test]
         public void SumTest()
         {
             var result = (from num in nums.AsQueryExpr()
