@@ -22,10 +22,10 @@
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) : Expression =
                 let current = List.head context.VarExprs
                 match queryExpr with
-                | Source (:? Array as array, t) ->
+                | Source expr ->
                         let indexVarExpr = var "___index___" typeof<int>
-                        let arrayVarExpr = var "___array___" (array.GetType())
-                        let arrayAssignExpr = assign arrayVarExpr (constant array)
+                        let arrayVarExpr = var "___array___" expr.Type
+                        let arrayAssignExpr = assign arrayVarExpr expr
                         let indexAssignExpr = assign indexVarExpr (constant -1) 
                         let lengthExpr = arrayLength arrayVarExpr 
                         let getItemExpr = arrayIndex arrayVarExpr indexVarExpr
@@ -41,6 +41,13 @@
                 | Filter (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = ``if`` bodyExpr empty (``continue`` context.ContinueLabel) :: assign current paramExpr :: context.Exprs
                     compile' queryExpr' { context with VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
+                | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr', t) ->
+                    let context' = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
+                                        InitExpr = empty; AccExpr = context.AccExpr; ReturnExpr = empty; 
+                                        VarExprs = [lookup "___final___" context.VarExprs]; Exprs = [] }
+
+                    let expr = compile' nestedQueryExpr context'
+                    compile' queryExpr' { context with AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
                 | _ -> failwithf "Invalid state %A" queryExpr 
 
 

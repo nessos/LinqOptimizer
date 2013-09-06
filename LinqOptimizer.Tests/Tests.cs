@@ -32,7 +32,7 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
-        public void PipelinedTest()
+        public void PipelineTest()
         {
             var result = nums.AsQueryExpr()
                          .Where(num => num % 2 == 0)
@@ -59,6 +59,30 @@ namespace LinqOptimizer.Tests
                           select num * 2).Aggregate(0, (acc, value) => acc + value);
 
             Assert.AreEqual(30, result.Run());
+        }
+
+
+        [Test]
+        public void SelectManyTest()
+        {
+            var result = nums.AsQueryExpr()
+                         .SelectMany(num => nums.Select(_num => num * _num))
+                         .Sum();
+
+            Assert.AreEqual(225, result.Run());
+        }
+
+        [Test]
+        public void SelectManyPipelineTest()
+        {
+
+            var result =  nums.AsQueryExpr()
+                            .Where(num => num % 2 == 0)
+                            .SelectMany(num => nums.Select(_num => num * _num))
+                            .Select(num => num + 1)
+                            .Sum();
+
+            Assert.AreEqual(100, result.Run());
         }
     }
 }

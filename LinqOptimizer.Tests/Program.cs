@@ -13,14 +13,14 @@ namespace LinqOptimizer.Tests
         
         public static void Main(string[] args)
         {
-            var nums = Enumerable.Range(1, 100000000).Select(x => (double)x).ToArray();
-            Func<double> f = nums.AsQueryExpr().Select(num => num * 2).Sum().Compile();
-            Measure(() => Console.WriteLine(f.Invoke()));
+            //var nums = Enumerable.Range(1, 100000000).Select(x => (double)x).ToArray();
+            //Func<double> f = nums.AsQueryExpr().Select(num => num * 2).Sum().Compile();
+            //Measure(() => Console.WriteLine(f.Invoke()));
 
-            Measure(() => Console.WriteLine(nums.Select(num => num * 2).Sum()));
-            
-            //LinqTests tests = new LinqTests();
-            //tests.PipelineTest();
+            //Measure(() => Console.WriteLine(nums.Select(num => num * 2).Sum()));
+
+            LinqTests tests = new LinqTests();
+            tests.SelectManyPipelineTest();
         }
 
         static void Measure(Action action)

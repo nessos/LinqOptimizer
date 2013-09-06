@@ -49,3 +49,10 @@ namespace LinqOptimizer.Core
                 Some (Seq.toList lambdaExpr.Parameters, lambdaExpr.Body)
             else None
 
+        let (|MethodCall|_|) (expr : Expression) =
+            if (expr.NodeType = ExpressionType.Call && (expr :? MethodCallExpression)) 
+                then 
+                    let methodCallExpr = expr :?> MethodCallExpression
+                    Some (methodCallExpr.Object, methodCallExpr.Method.Name, Seq.toList methodCallExpr.Arguments)
+                else None
+
