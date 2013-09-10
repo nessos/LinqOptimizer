@@ -44,10 +44,18 @@
                 | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr', t) ->
                     let context' = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
                                         InitExpr = empty; AccExpr = context.AccExpr; ReturnExpr = empty; 
-                                        VarExprs = [lookup "___final___" context.VarExprs]; Exprs = [] }
+                                        VarExprs = [current]; Exprs = context.Exprs }
 
                     let expr = compile' nestedQueryExpr context'
                     compile' queryExpr' { context with AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
+
+                | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr', t) ->
+                    let context' = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
+                                        InitExpr = empty; AccExpr = context.AccExpr; ReturnExpr = empty; 
+                                        VarExprs = [valueExpr]; Exprs = assign colExpr paramExpr :: assign current bodyExpr :: context.Exprs }
+
+                    let expr = compile' nestedQueryExpr context'
+                    compile' queryExpr' { context with AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
                 | _ -> failwithf "Invalid state %A" queryExpr 
 
 
@@ -82,4 +90,16 @@
                 let expr = compile' queryExpr context
                 expr
             | _ -> failwithf "Invalid state %A" queryExpr 
+
+
+
+        let rec toQueryExpr (expr : Expression) : QueryExpr =
+                match expr with
+                | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_], bodyExpr) as f']) -> 
+                    Transform (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+                | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
+                    Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+                | MethodCall (_, MethodName "SelectMany" m, [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
+                    NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+                | _ -> Source expr
 

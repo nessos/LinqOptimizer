@@ -16,6 +16,7 @@
         | Transform of LambdaExpression * QueryExpr * Type
         | Filter of LambdaExpression * QueryExpr * Type
         | NestedQuery of (ParameterExpression * QueryExpr) * QueryExpr * Type
+        | NestedQueryTransform of (ParameterExpression * QueryExpr) * LambdaExpression * QueryExpr * Type
         | Aggregate of (obj *  Type) * LambdaExpression * QueryExpr
         | Sum of QueryExpr * Type
            

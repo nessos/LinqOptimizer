@@ -28,17 +28,17 @@ namespace LinqOptimizer.Core
             ExtensionMethods.Compile(queryExpr).Invoke()
 
         [<System.Runtime.CompilerServices.Extension>]
-        static member Select<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, f : Expression<Func<'T, 'R>>) =
-            new QueryExpr<IEnumerable<'R>>(Transform (f, queryExpr.QueryExpr, typeof<'R>))
+        static member Select<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, 'R>>) =
+            new QueryExpr<IEnumerable<'R>>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
             
         [<System.Runtime.CompilerServices.Extension>]
-        static member Where<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, f : Expression<Func<'T, bool>>) =
-            new QueryExpr<IEnumerable<'T>>(Filter (f, queryExpr.QueryExpr, typeof<'T>))
+        static member Where<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, bool>>) =
+            new QueryExpr<IEnumerable<'T>>(Filter (predicate, queryExpr.QueryExpr, typeof<'T>))
 
 
         [<System.Runtime.CompilerServices.Extension>]
-        static member Aggregate(queryExpr : QueryExpr<IEnumerable<'T>>, seed : 'Acc, f : Expression<Func<'Acc, 'T, 'Acc>>) =
-            new QueryExpr<'Acc>(Aggregate ((seed :> _, typeof<'Acc>), f, queryExpr.QueryExpr))
+        static member Aggregate(queryExpr : QueryExpr<IEnumerable<'T>>, seed : 'Acc, func : Expression<Func<'Acc, 'T, 'Acc>>) =
+            new QueryExpr<'Acc>(Aggregate ((seed :> _, typeof<'Acc>), func, queryExpr.QueryExpr))
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Sum(queryExpr : QueryExpr<IEnumerable<double>>) =
@@ -49,28 +49,26 @@ namespace LinqOptimizer.Core
             new QueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
 
 
-        [<System.Runtime.CompilerServices.Extension>]
-        static member SelectMany<'T, 'Col, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, f : Expression<Func<'T, IEnumerable<'Col>>>, g : Expression<Func<'T, 'Col, 'R>>) : QueryExpr<IEnumerable<'R>> =
-            raise <| new NotImplementedException()
 
         [<System.Runtime.CompilerServices.Extension>]
-        static member SelectMany<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, f : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr<IEnumerable<'R>> =
-
-            let rec toQueryExpr (expr : Expression) : QueryExpr =
-                match expr with
-                | MethodCall (_, "Select", [expr'; Lambda ([_], bodyExpr) as f']) -> 
-                    Transform (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
-                | MethodCall (_, "Where", [expr'; Lambda ([paramExpr], _) as f']) -> 
-                    Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
-                | MethodCall (_, "SelectMany", [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
-                    NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', bodyExpr.Type.GetGenericArguments().[0])
-                | _ -> Source expr
-
+        static member SelectMany<'T, 'Col, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, 
+                                                collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
+                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr<IEnumerable<'R>> =
             let queryExpr' = 
-                match f with
+                match collectionSelector with
                 | Lambda ([paramExpr], bodyExpr) ->
-                    NestedQuery ((paramExpr, toQueryExpr bodyExpr), queryExpr.QueryExpr, typeof<'R>)
-                | _ -> failwithf "Invalid state %A" f
+                    NestedQueryTransform ((paramExpr, Compiler.toQueryExpr bodyExpr), resultSelector, queryExpr.QueryExpr, typeof<'R>)
+                | _ -> failwithf "Invalid state %A" collectionSelector
+
+            new QueryExpr<IEnumerable<'R>>(queryExpr')
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member SelectMany<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr<IEnumerable<'R>> =
+            let queryExpr' = 
+                match selector with
+                | Lambda ([paramExpr], bodyExpr) ->
+                    NestedQuery ((paramExpr, Compiler.toQueryExpr bodyExpr), queryExpr.QueryExpr, typeof<'R>)
+                | _ -> failwithf "Invalid state %A" selector
 
             new QueryExpr<IEnumerable<'R>>(queryExpr')
 

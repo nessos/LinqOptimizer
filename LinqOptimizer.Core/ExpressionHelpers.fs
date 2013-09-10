@@ -53,6 +53,11 @@ namespace LinqOptimizer.Core
             if (expr.NodeType = ExpressionType.Call && (expr :? MethodCallExpression)) 
                 then 
                     let methodCallExpr = expr :?> MethodCallExpression
-                    Some (methodCallExpr.Object, methodCallExpr.Method.Name, Seq.toList methodCallExpr.Arguments)
+                    Some (methodCallExpr.Object, methodCallExpr.Method, Seq.toList methodCallExpr.Arguments)
                 else None
+
+        let (|MethodName|_|) (methodName : string) (methodInfo : MethodInfo) = 
+            if methodInfo.Name = methodName then
+                Some methodInfo
+            else None
 

@@ -73,13 +73,33 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
+        public void SelectManyComprehensionTest()
+        {
+            var result = (from num in nums.AsQueryExpr()
+                          from _num in nums
+                          select num * _num).Sum();
+
+            Assert.AreEqual(225, result.Run());
+        }
+
+        [Test]
+        public void SelectManyNestedTest()
+        {
+            var result = nums.AsQueryExpr()
+                         .SelectMany(num => nums.SelectMany(_num => new[] { num * _num }))
+                         .Sum();
+
+            Assert.AreEqual(225, result.Run());
+        }
+
+        [Test]
         public void SelectManyPipelineTest()
         {
 
             var result =  nums.AsQueryExpr()
                             .Where(num => num % 2 == 0)
                             .SelectMany(num => nums.Select(_num => num * _num))
-                            .Select(num => num + 1)
+                            .Select(x => x + 1)
                             .Sum();
 
             Assert.AreEqual(100, result.Run());
