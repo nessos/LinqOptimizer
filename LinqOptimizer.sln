@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Web
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Tests", "LinqOptimizer.Tests\LinqOptimizer.Tests.csproj", "{1E812A89-C8F1-463E-8E1E-765389A0A4BC}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Core", "LinqOptimizer.Core\LinqOptimizer.Core.fsproj", "{6FEA9D47-1291-40CE-9716-619BCC2F485A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D7517A7D-5F55-451D-AB66-815F5674894E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

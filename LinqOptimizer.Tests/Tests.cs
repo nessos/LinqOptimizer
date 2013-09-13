@@ -104,5 +104,28 @@ namespace LinqOptimizer.Tests
 
             Assert.AreEqual(100, result.Run());
         }
+
+        [Test]
+        public void EnumerableSourceTest()
+        { 
+            IEnumerable<int> _nums = nums.Select(x => x);
+
+            var result = from _num in _nums.AsQueryExpr()
+                         select _num * 2;
+
+            Assert.AreEqual(new[] { 2, 4, 6, 8, 10 }, result.Run());
+        }
+
+        [Test]
+        public void ListSourceTest()
+        {
+            List<int> _nums = nums.ToList();
+
+            var result = from _num in _nums.AsQueryExpr()
+                         select _num * 2;
+
+            Assert.AreEqual(new[] { 2, 4, 6, 8, 10 }, result.Run());
+        }
+
     }
 }

@@ -15,7 +15,7 @@ namespace LinqOptimizer.Core
      
         [<System.Runtime.CompilerServices.Extension>]
         static member AsQueryExpr(enumerable : IEnumerable<'T>) = 
-            new QueryExpr<IEnumerable<'T>>(Source (constant enumerable))
+            new QueryExpr<IEnumerable<'T>>(Source (constant enumerable, typeof<'T>))
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Compile<'T>(queryExpr : QueryExpr<'T>) : Func<'T> =

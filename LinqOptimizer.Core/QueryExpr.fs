@@ -12,7 +12,7 @@
         member self.QueryExpr = queryExpr 
     // Main Query representation
     and QueryExpr = 
-        | Source of Expression 
+        | Source of Expression * Type
         | Transform of LambdaExpression * QueryExpr * Type
         | Filter of LambdaExpression * QueryExpr * Type
         | NestedQuery of (ParameterExpression * QueryExpr) * QueryExpr * Type

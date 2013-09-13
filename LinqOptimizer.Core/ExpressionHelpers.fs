@@ -10,7 +10,9 @@ namespace LinqOptimizer.Core
         let empty = Expression.Empty()
         let ``default`` t = Expression.Default(t)
         let block (varExprs : seq<ParameterExpression>) (exprs : seq<Expression>) = 
-            Expression.Block(varExprs, exprs) 
+            Expression.Block(varExprs, exprs)
+        let tryfinally bodyExpr finallyExpr = 
+            Expression.TryFinally(bodyExpr, finallyExpr)
         let assign leftExpr rightExpr = 
             Expression.Assign(leftExpr, rightExpr) :> Expression
         let addAssign leftExpr rightExpr = 
@@ -56,8 +58,7 @@ namespace LinqOptimizer.Core
                     Some (methodCallExpr.Object, methodCallExpr.Method, Seq.toList methodCallExpr.Arguments)
                 else None
 
-        let (|MethodName|_|) (methodName : string) (methodInfo : MethodInfo) = 
-            if methodInfo.Name = methodName then
-                Some methodInfo
-            else None
+        let (|ExprType|) (expr : Expression) = ExprType expr.Type
+
+        
 

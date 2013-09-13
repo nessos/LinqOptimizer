@@ -43,9 +43,10 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="QueryExpr.fs" />
-	<Compile Include="ExpressionHelpers.fs" />
+    <Compile Include="ExpressionHelpers.fs" />
+    <Compile Include="ReflectionHelpers.fs" />
     <Compile Include="Compiler.fs" />
-	<Compile Include="ExtensionMethods.fs" />
+    <Compile Include="ExtensionMethods.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
