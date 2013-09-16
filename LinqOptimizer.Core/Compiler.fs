@@ -103,9 +103,9 @@
                                 VarExprs = [varExpr; accVarExpr]; Exprs = [] }
                 let expr = compile' queryExpr' context
                 expr
-            | Transform (_, _, t) | Filter (_, _, t) ->
-                let listType = listTypeDef.MakeGenericType [| t |]
-                let finalVarExpr = var "___final___" t
+            | queryExpr' ->
+                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let finalVarExpr = var "___final___" queryExpr'.Type
                 let accVarExpr = var "___acc___" listType
                 let initExpr = assign accVarExpr (``new`` listType)
                 let accExpr =  call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
