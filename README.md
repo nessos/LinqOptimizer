@@ -1,7 +1,8 @@
 LinqOptimizer
 =============
 An automatic query optimizer for LINQ to Objects and PLINQ. 
-LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code, offering speedups of up to 15x.
+LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
+The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.
 
 Optimizations
 -----------------------
