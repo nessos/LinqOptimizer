@@ -7,9 +7,9 @@ var query = (from num in nums.AsQueryExpr()
              where num % 2 == 0
              select num * num).Sum();
 
-Console.WriteLine("Result: {0}", query.Run());
+Console.WriteLine("Result: {0}",query.Run());
 // Compiled query
-int ___num___ = 0;
+int ___sum___ = 0;
 for (int ___index___ = 0; ___index___ < nums.Length; ___index___++)
 {
    int num = nums[___index___];
