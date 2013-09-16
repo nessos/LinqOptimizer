@@ -2,6 +2,12 @@ LinqOptimizer
 =============
 An automatic query optimizer for LINQ to Objects and PLINQ. LinqOptimizer compiles declarative LINQ queries into fast imperative code.
 
+Optimizations
+-----------------------
+* Lambda inlining
+* Loop fusion
+* Nested loop generation
+
 ```csharp
 var query = (from num in nums.AsQueryExpr()
              where num % 2 == 0
