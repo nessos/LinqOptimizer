@@ -38,6 +38,10 @@ namespace LinqOptimizer.Core
         
 
         let equal leftExpr rightExpr = Expression.Equal(leftExpr, rightExpr)
+        let greaterThan leftExpr rightExpr = Expression.GreaterThan(leftExpr, rightExpr)
+        let greaterThanOrEqual leftExpr rightExpr = Expression.GreaterThanOrEqual(leftExpr, rightExpr)
+        let lessThan leftExpr rightExpr = Expression.LessThan(leftExpr, rightExpr)
+        let lessThanOrEqual leftExpr rightExpr = Expression.LessThanOrEqual(leftExpr, rightExpr)
         let notEqual leftExpr rightExpr = Expression.NotEqual(leftExpr, rightExpr)
 
         let arrayIndex (arrayExpr : Expression) (indexExpr : Expression) = 
