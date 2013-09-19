@@ -11,13 +11,13 @@
     module internal Compiler =
         let listTypeDef = typedefof<List<_>>
 
-        let breakLabel n = label "break"
-        let continueLabel n = label "continue"
+        let breakLabel () = label "break"
+        let continueLabel () = label "continue"
         let lookup name (varExprs : ParameterExpression list) =
             varExprs |> List.find (fun varExpr -> varExpr.Name = name)  
 
         type QueryContext = { BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
-                                InitExpr : Expression; AccExpr : Expression; ReturnExpr : Expression; 
+                                InitExprs : Expression list; AccExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
 
         let compile (queryExpr : QueryExpr) : Expression = 
@@ -35,7 +35,7 @@
                         let checkBoundExpr = equal indexVarExpr lengthExpr 
                         let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
-                        block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [context.InitExpr; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] :> _
+                        block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] :> _
                 | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
                         let indexVarExpr = var "___index___" typeof<int>
                         let listVarExpr = var "___list___" expr.Type
@@ -47,7 +47,7 @@
                         let checkBoundExpr = equal indexVarExpr lengthExpr 
                         let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
-                        block (listVarExpr :: indexVarExpr :: context.VarExprs) [context.InitExpr; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] :> _
+                        block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] :> _
                 | Source (expr, t) -> // general case for IEnumerable
                         let enumeratorType = typedefof<IEnumerator<_>>.MakeGenericType [| t |]
                         let disposableVarExpr = var "___disposable___" typeof<IDisposable>
@@ -59,24 +59,32 @@
                         let checkBoundExpr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumeratorVarExpr []) (constant false)
                         let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
-                        block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [context.InitExpr; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] :> _
+                        block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] :> _
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = assign current bodyExpr :: context.Exprs
                     compile' queryExpr' { context with VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
                 | Filter (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = ``if`` bodyExpr empty (``continue`` context.ContinueLabel) :: assign current paramExpr :: context.Exprs
                     compile' queryExpr' { context with VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
+                | Take (countExpr, queryExpr', _) ->
+                    let countVarExpr = var "___count___" typeof<int> //special "local" variable for Take
+                    let exprs' = addAssign countVarExpr (constant 1) :: ``if`` (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
+                    compile' queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = context.VarExprs @ [countVarExpr]; Exprs = exprs' }
+                | Skip (countExpr, queryExpr', _) ->
+                    let countVarExpr = var "___count___" typeof<int> //special "local" variable for Skip
+                    let exprs' = addAssign countVarExpr (constant 1) :: ``if`` (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
+                    compile' queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = context.VarExprs @ [countVarExpr]; Exprs = exprs' }
                 | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr', t) ->
-                    let context' = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
-                                        InitExpr = empty; AccExpr = context.AccExpr; ReturnExpr = empty; 
+                    let context' = { BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [empty]; AccExpr = context.AccExpr; ReturnExpr = empty; 
                                         VarExprs = [current]; Exprs = context.Exprs }
 
                     let expr = compile' nestedQueryExpr context'
                     compile' queryExpr' { context with AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
 
                 | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr', t) ->
-                    let context' = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
-                                        InitExpr = empty; AccExpr = context.AccExpr; ReturnExpr = empty; 
+                    let context' = { BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [empty]; AccExpr = context.AccExpr; ReturnExpr = empty; 
                                         VarExprs = [valueExpr]; Exprs = assign colExpr paramExpr :: assign current bodyExpr :: context.Exprs }
 
                     let expr = compile' nestedQueryExpr context'
@@ -90,16 +98,16 @@
                 let accVarExpr = var "___acc___" t
                 let initExpr = assign accVarExpr (``default`` t)
                 let accExpr = addAssign accVarExpr finalVarExpr
-                let context = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
-                                InitExpr = initExpr; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                let context = { BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 let expr = compile' queryExpr' context
                 expr
             | Aggregate ((seed, t), Lambda ([accVarExpr; varExpr], bodyExpr), queryExpr') ->
                 let initExpr = assign accVarExpr (constant seed)
                 let accExpr = assign accVarExpr bodyExpr
-                let context = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
-                                InitExpr = initExpr; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                let context = { BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
                                 VarExprs = [varExpr; accVarExpr]; Exprs = [] }
                 let expr = compile' queryExpr' context
                 expr
@@ -109,8 +117,8 @@
                 let accVarExpr = var "___acc___" listType
                 let initExpr = assign accVarExpr (``new`` listType)
                 let accExpr =  call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context = { BreakLabel = breakLabel 0; ContinueLabel = continueLabel 0; 
-                                InitExpr = initExpr; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                let context = { BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 let expr = compile' queryExpr context
                 expr
@@ -124,6 +132,12 @@
                 Transform (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
             | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
                 Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+            | MethodCall (_, MethodName "Take" _, [expr'; countExpr]) -> 
+                let queryExpr = toQueryExpr expr'
+                Take (countExpr, queryExpr, queryExpr.Type)
+            | MethodCall (_, MethodName "Skip" _, [expr'; countExpr]) -> 
+                let queryExpr = toQueryExpr expr'
+                Skip (countExpr, queryExpr, queryExpr.Type)
             | MethodCall (_, MethodName "SelectMany" m, [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
                 NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
             | _ -> 

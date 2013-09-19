@@ -127,5 +127,37 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(new[] { 2, 4, 6, 8, 10 }, result.Run());
         }
 
+        [Test]
+        public void TakeNTest()
+        {
+            var result = nums.AsQueryExpr().Take(2);
+
+            Assert.AreEqual(new[] { 1, 2 }, result.Run());
+        }
+
+        [Test]
+        public void SkipNTest()
+        {
+            var result = nums.AsQueryExpr().Skip(2);
+
+            Assert.AreEqual(new[] { 3, 4, 5 }, result.Run());
+        }
+
+        [Test]
+        public void TakeAndSkipNTest()
+        {
+            var result = nums.AsQueryExpr().Skip(2).Take(2);
+
+            Assert.AreEqual(new[] { 3, 4 }, result.Run());
+        }
+
+        [Test]
+        public void NestedTakeAndSkipNTest()
+        {
+            var result = nums.AsQueryExpr().Take(2).SelectMany(_ => nums.Skip(2).Take(2));
+
+            var temp = result.Run();
+            Assert.AreEqual(new[] { 3, 4, 3, 4 }, temp);
+        }
     }
 }

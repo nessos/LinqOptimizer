@@ -48,8 +48,6 @@ namespace LinqOptimizer.Core
         static member Sum(queryExpr : QueryExpr<IEnumerable<int>>) =
             new QueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
 
-
-
         [<System.Runtime.CompilerServices.Extension>]
         static member SelectMany<'T, 'Col, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, 
                                                 collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
@@ -71,5 +69,15 @@ namespace LinqOptimizer.Core
                 | _ -> failwithf "Invalid state %A" selector
 
             new QueryExpr<IEnumerable<'R>>(queryExpr')
+
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Take<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, n : int) : QueryExpr<IEnumerable<'T>> =
+            new QueryExpr<IEnumerable<'T>>(Take (constant n, queryExpr.QueryExpr, typeof<'T>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Skip<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, n : int) : QueryExpr<IEnumerable<'T>> =
+            new QueryExpr<IEnumerable<'T>>(Skip (constant n, queryExpr.QueryExpr, typeof<'T>))
+
 
 

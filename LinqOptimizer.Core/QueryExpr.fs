@@ -18,7 +18,10 @@
         | NestedQuery of (ParameterExpression * QueryExpr) * QueryExpr * Type
         | NestedQueryTransform of (ParameterExpression * QueryExpr) * LambdaExpression * QueryExpr * Type
         | Aggregate of (obj *  Type) * LambdaExpression * QueryExpr
-        | Sum of QueryExpr * Type with
+        | Sum of QueryExpr * Type 
+        | Take of Expression * QueryExpr * Type
+        | Skip of Expression * QueryExpr * Type
+        with
 
         member self.Type = 
             match self with
@@ -29,6 +32,8 @@
             | NestedQueryTransform (_, _, _, t) -> t
             | Aggregate ((_, t), _, _) -> t
             | Sum (_, t) -> t
+            | Take (_, _, t) -> t
+            | Skip (_, _, t) -> t
            
      
 
