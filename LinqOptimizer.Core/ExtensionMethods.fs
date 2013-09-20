@@ -22,18 +22,36 @@ namespace LinqOptimizer.Core
             let expr = Compiler.compile queryExpr.QueryExpr
             let func = Expression.Lambda<Func<'T>>(expr).Compile()
             func
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Compile(queryExpr : QueryExprVoid) : Action =
+            let expr = Compiler.compile queryExpr.QueryExpr
+            let action = Expression.Lambda<Action>(expr).Compile()
+            action
             
         [<System.Runtime.CompilerServices.Extension>]
         static member Run<'T>(queryExpr : QueryExpr<'T>) : 'T =
             ExtensionMethods.Compile(queryExpr).Invoke()
 
         [<System.Runtime.CompilerServices.Extension>]
+        static member Run(queryExpr : QueryExprVoid) : unit =
+            ExtensionMethods.Compile(queryExpr).Invoke()
+
+        [<System.Runtime.CompilerServices.Extension>]
         static member Select<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, 'R>>) =
             new QueryExpr<IEnumerable<'R>>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Select<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, int, 'R>>) =
+            new QueryExpr<IEnumerable<'R>>(TransformIndexed (selector, queryExpr.QueryExpr, typeof<'R>))
             
         [<System.Runtime.CompilerServices.Extension>]
         static member Where<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, bool>>) =
             new QueryExpr<IEnumerable<'T>>(Filter (predicate, queryExpr.QueryExpr, typeof<'T>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Where<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, int, bool>>) =
+            new QueryExpr<IEnumerable<'T>>(FilterIndexed (predicate, queryExpr.QueryExpr, typeof<'T>))
 
 
         [<System.Runtime.CompilerServices.Extension>]
@@ -78,6 +96,10 @@ namespace LinqOptimizer.Core
         [<System.Runtime.CompilerServices.Extension>]
         static member Skip<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, n : int) : QueryExpr<IEnumerable<'T>> =
             new QueryExpr<IEnumerable<'T>>(Skip (constant n, queryExpr.QueryExpr, typeof<'T>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member ForEach<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, action : Expression<Action<'T>>) : QueryExprVoid =
+            new QueryExprVoid(ForEach (action, queryExpr.QueryExpr))
 
 
 

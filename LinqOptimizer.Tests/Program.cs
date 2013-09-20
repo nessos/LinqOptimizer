@@ -23,7 +23,7 @@ namespace LinqOptimizer.Tests
 
 
             LinqTests tests = new LinqTests();
-            tests.SelectManyTest();
+            tests.ForEachTest();
         }
 
         static void Measure(Action action)

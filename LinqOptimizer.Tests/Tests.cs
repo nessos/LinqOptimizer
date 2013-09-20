@@ -22,6 +22,14 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
+        public void SelectIndexedTest()
+        {
+            var result = nums.AsQueryExpr().Select((num, index) => index);
+
+            Assert.AreEqual(new[] { 0, 1, 2, 3, 4}, result.Run());
+        }
+
+        [Test]
         public void WhereTest()
         {
             var result = from num in nums.AsQueryExpr()
@@ -29,6 +37,14 @@ namespace LinqOptimizer.Tests
                          select num;
 
             Assert.AreEqual(new[] { 2, 4 }, result.Run());
+        }
+
+        [Test]
+        public void WhereIndexedTest()
+        {
+            var result = nums.AsQueryExpr().Where((num, index) => index % 2 == 0);
+
+            Assert.AreEqual(new[] { 1, 3, 5 }, result.Run());
         }
 
         [Test]
@@ -156,8 +172,16 @@ namespace LinqOptimizer.Tests
         {
             var result = nums.AsQueryExpr().Take(2).SelectMany(_ => nums.Skip(2).Take(2));
 
-            var temp = result.Run();
-            Assert.AreEqual(new[] { 3, 4, 3, 4 }, temp);
+            Assert.AreEqual(new[] { 3, 4, 3, 4 }, result.Run());
+        }
+
+        [Test]
+        public void ForEachTest()
+        {
+            var result = new List<int>();
+            nums.AsQueryExpr().ForEach(num => result.Add(num)).Run();
+            
+            Assert.AreEqual(nums, result);
         }
     }
 }

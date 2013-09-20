@@ -62,9 +62,15 @@
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
                     compile' queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
+                | TransformIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr', _) ->
+                    let exprs' = addAssign indexExpr (constant 1) :: assign context.CurrentVarExpr bodyExpr :: context.Exprs
+                    compile' queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = paramExpr :: indexExpr :: context.VarExprs; Exprs = exprs' }
                 | Filter (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = ``if`` bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                     compile' queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
+                | FilterIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr', _) ->
+                    let exprs' = addAssign indexExpr (constant 1) :: ``if`` bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                    compile' queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = indexExpr :: paramExpr :: context.VarExprs; Exprs = exprs' }
                 | Take (countExpr, queryExpr', _) ->
                     let countVarExpr = var "___takeCount___" typeof<int> //special "local" variable for Take
                     let exprs' = addAssign countVarExpr (constant 1) :: ``if`` (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
@@ -107,6 +113,12 @@
                 let context = { CurrentVarExpr = varExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
                                 VarExprs = [varExpr; accVarExpr]; Exprs = [] }
+                let expr = compile' queryExpr' context
+                expr
+            | ForEach (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                let context = { CurrentVarExpr = paramExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [assign paramExpr (``default`` paramExpr.Type)]; AccExpr = bodyExpr; ReturnExpr = empty; 
+                                VarExprs = [paramExpr]; Exprs = [] }
                 let expr = compile' queryExpr' context
                 expr
             | queryExpr' ->
