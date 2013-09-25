@@ -10,7 +10,7 @@ namespace LinqOptimizer.Tests
 {
     class Program
     {
-        
+
         public static void Main(string[] args)
         {
             //var nums = Enumerable.Range(1, 100000).ToArray();
@@ -21,9 +21,8 @@ namespace LinqOptimizer.Tests
 
             //Measure(() => Console.WriteLine(nums.SelectMany(num => _nums.Select(_num => num * _num)).Select(num => (double)num).Sum()));
 
-
             LinqTests tests = new LinqTests();
-            tests.ForEachTest();
+            tests.OrderByTest();
         }
 
         static void Measure(Action action)

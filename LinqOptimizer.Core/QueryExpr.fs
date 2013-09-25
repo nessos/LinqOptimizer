@@ -14,6 +14,7 @@
     and QueryExprVoid(queryExpr : QueryExpr) =
         member self.QueryExpr = queryExpr 
     // Main Query representation
+    and Order = Ascending | Descending
     and QueryExpr = 
         | Source of Expression * Type
         | Transform of LambdaExpression * QueryExpr * Type
@@ -27,6 +28,8 @@
         | Take of Expression * QueryExpr * Type
         | Skip of Expression * QueryExpr * Type
         | ForEach of LambdaExpression * QueryExpr 
+        | GroupBy of LambdaExpression * QueryExpr * Type
+        | OrderBy of LambdaExpression * Order * QueryExpr * Type
         with
 
         member self.Type = 
@@ -43,6 +46,8 @@
             | Take (_, _, t) -> t
             | Skip (_, _, t) -> t
             | ForEach (_, _) -> typeof<Void>
+            | GroupBy (_, _, t) -> t
+            | OrderBy (_, _, _, t) -> t
            
      
 

@@ -53,7 +53,6 @@ namespace LinqOptimizer.Core
         static member Where<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, int, bool>>) =
             new QueryExpr<IEnumerable<'T>>(FilterIndexed (predicate, queryExpr.QueryExpr, typeof<'T>))
 
-
         [<System.Runtime.CompilerServices.Extension>]
         static member Aggregate(queryExpr : QueryExpr<IEnumerable<'T>>, seed : 'Acc, func : Expression<Func<'Acc, 'T, 'Acc>>) =
             new QueryExpr<'Acc>(Aggregate ((seed :> _, typeof<'Acc>), func, queryExpr.QueryExpr))
@@ -101,5 +100,19 @@ namespace LinqOptimizer.Core
         static member ForEach<'T>(queryExpr : QueryExpr<IEnumerable<'T>>, action : Expression<Action<'T>>) : QueryExprVoid =
             new QueryExprVoid(ForEach (action, queryExpr.QueryExpr))
 
+        [<System.Runtime.CompilerServices.Extension>]
+        static member GroupBy<'T, 'Key>(queryExpr : QueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>)
+                                : QueryExpr<IEnumerable<IGrouping<'Key, 'T>>> = 
+            new QueryExpr<IEnumerable<IGrouping<'Key, 'T>>>(GroupBy (keySelector, queryExpr.QueryExpr, typeof<IGrouping<'Key, 'T>>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member OrderBy<'T, 'Key>(queryExpr : QueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>)
+                                : QueryExpr<IEnumerable<'T>> = 
+            new QueryExpr<IEnumerable<'T>>(OrderBy (keySelector, Order.Ascending, queryExpr.QueryExpr, typeof<'T>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member OrderByDescending<'T, 'Key>(queryExpr : QueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>)
+                                : QueryExpr<IEnumerable<'T>> = 
+            new QueryExpr<IEnumerable<'T>>(OrderBy (keySelector, Order.Descending, queryExpr.QueryExpr, typeof<'T>))
 
 

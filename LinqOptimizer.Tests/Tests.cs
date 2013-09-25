@@ -183,5 +183,31 @@ namespace LinqOptimizer.Tests
             
             Assert.AreEqual(nums, result);
         }
+
+        [Test]
+        public void GroupByTest()
+        {
+            var result = (from num in new[] { 1, 1, 2, 2 }.AsQueryExpr()
+                          group num by num into g
+                          select g.Count()).Sum();
+
+            Assert.AreEqual(4, result.Run());
+        }
+
+        [Test]
+        public void OrderByTest()
+        {
+            var result = from num in nums.Reverse().AsQueryExpr()
+                         orderby num
+                         select num;
+
+            Assert.AreEqual(nums, result.Run());
+
+            var _result = from num in nums.AsQueryExpr()
+                          orderby num descending 
+                          select num;
+
+            Assert.AreEqual(nums.Reverse(), _result.Run());
+        }
     }
 }

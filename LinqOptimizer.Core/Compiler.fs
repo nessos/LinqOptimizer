@@ -34,7 +34,7 @@
                         let checkBoundExpr = equal indexVarExpr lengthExpr 
                         let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
-                        block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] :> _
+                        block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
                 | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
                         let indexVarExpr = var "___index___" typeof<int>
                         let listVarExpr = var "___list___" expr.Type
@@ -46,19 +46,20 @@
                         let checkBoundExpr = equal indexVarExpr lengthExpr 
                         let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
-                        block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] :> _
+                        block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
                 | Source (expr, t) -> // general case for IEnumerable
+                        let enumerableType = typedefof<IEnumerable<_>>.MakeGenericType [| t |]
                         let enumeratorType = typedefof<IEnumerator<_>>.MakeGenericType [| t |]
                         let disposableVarExpr = var "___disposable___" typeof<IDisposable>
                         let enumeratorVarExpr = var "___enumerator___" enumeratorType
-                        let enumeratorAssignExpr = assign enumeratorVarExpr (call (expr.Type.GetMethod("GetEnumerator")) expr [])
+                        let enumeratorAssignExpr = assign enumeratorVarExpr (call (enumerableType.GetMethod("GetEnumerator")) expr [])
                         let disposableAssignExpr = assign disposableVarExpr enumeratorVarExpr 
                         let getItemExpr = call (enumeratorType.GetMethod("get_Current")) enumeratorVarExpr []
                         let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
                         let checkBoundExpr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumeratorVarExpr []) (constant false)
                         let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
-                        block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] :> _
+                        block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
                     compile' queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
@@ -93,6 +94,36 @@
 
                     let expr = compile' nestedQueryExpr context'
                     compile' queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
+                | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
+                    let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                    let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
+                    let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                    let context' = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = empty; 
+                                        VarExprs = [finalVarExpr]; Exprs = [] }
+                    let expr = compile' queryExpr' context'
+                    let groupByMethodInfo = typeof<Enumerable>.GetMethods()
+                                                |> Array.find (fun methodInfo -> methodInfo.Name = "GroupBy" && methodInfo.GetParameters().Length = 2) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                    let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
+                    let groupByCallExpr = call groupByMethodInfo null [accVarExpr; lambdaExpr]
+                    let expr' = compile' (Source (groupByCallExpr, groupingType)) context
+                    block [accVarExpr] [expr; expr']
+                | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
+                    let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                    let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
+                    let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                    let context' = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = empty; 
+                                        VarExprs = [finalVarExpr]; Exprs = [] }
+                    let expr = compile' queryExpr' context'
+                    let methodName = match order with Ascending -> "OrderBy" | Descending -> "OrderByDescending"
+                    let orderByMethodInfo = typeof<Enumerable>.GetMethods()
+                                                |> Array.find (fun methodInfo -> methodInfo.Name = methodName && methodInfo.GetParameters().Length = 2) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                    let orderByCallExpr = call orderByMethodInfo null [accVarExpr; lambdaExpr]
+                    let expr' = compile' (Source (orderByCallExpr, t)) context
+                    block [accVarExpr] [expr; expr']
                 | _ -> failwithf "Invalid state %A" queryExpr 
 
 
@@ -123,10 +154,8 @@
                 expr
             | queryExpr' ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let finalVarExpr = var "___final___" queryExpr'.Type
-                let accVarExpr = var "___acc___" listType
-                let initExpr = assign accVarExpr (``new`` listType)
-                let accExpr =  call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
+                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
                 let context = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
@@ -137,11 +166,16 @@
 
 
         let rec toQueryExpr (expr : Expression) : QueryExpr =
+            // TODO: expr type checks
             match expr with
             | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_], bodyExpr) as f']) -> 
                 Transform (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+            | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_; _], bodyExpr) as f']) -> 
+                TransformIndexed (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
             | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
                 Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+            | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr; indexExpr], _) as f']) -> 
+                FilterIndexed (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
             | MethodCall (_, MethodName "Take" _, [expr'; countExpr]) -> 
                 let queryExpr = toQueryExpr expr'
                 Take (countExpr, queryExpr, queryExpr.Type)
@@ -150,6 +184,10 @@
                 Skip (countExpr, queryExpr, queryExpr.Type)
             | MethodCall (_, MethodName "SelectMany" m, [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
                 NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+            | MethodCall (_, MethodName "GroupBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
+                GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+            | MethodCall (_, MethodName "OrderBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
+                OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
             | _ -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())

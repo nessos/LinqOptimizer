@@ -10,7 +10,7 @@ namespace LinqOptimizer.Core
         let empty = Expression.Empty()
         let ``default`` t = Expression.Default(t)
         let block (varExprs : seq<ParameterExpression>) (exprs : seq<Expression>) = 
-            Expression.Block(varExprs, exprs)
+            Expression.Block(varExprs, exprs) :> Expression
         let tryfinally bodyExpr finallyExpr = 
             Expression.TryFinally(bodyExpr, finallyExpr)
         let assign leftExpr rightExpr = 
