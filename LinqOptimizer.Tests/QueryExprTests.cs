@@ -8,7 +8,7 @@ using LinqOptimizer.Core;
 namespace LinqOptimizer.Tests
 {
     [TestFixture]
-    class LinqTests
+    class QueryExprTests
     {
         private int[] nums = new[] { 1, 2, 3 , 4, 5 };
  

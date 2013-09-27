@@ -10,8 +10,12 @@
     // Typed Wrapper for QueryExpr 
     type QueryExpr<'T>(queryExpr : QueryExpr) =
         member self.QueryExpr = queryExpr 
+    and ParallelQueryExpr<'T>(queryExpr : QueryExpr) =
+        member self.QueryExpr = queryExpr 
     // C# friendly QueryExpr<unit>
     and QueryExprVoid(queryExpr : QueryExpr) =
+        member self.QueryExpr = queryExpr 
+    and ParallelQueryExprVoid(queryExpr : QueryExpr) =
         member self.QueryExpr = queryExpr 
     // Main Query representation
     and Order = Ascending | Descending

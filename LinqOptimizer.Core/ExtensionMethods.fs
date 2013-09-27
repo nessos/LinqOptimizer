@@ -12,7 +12,9 @@ namespace LinqOptimizer.Core
     [<AutoOpen>]
     [<System.Runtime.CompilerServices.Extension>]
     type ExtensionMethods =
-     
+
+        // SequentialQuery ExtensionMethods
+
         [<System.Runtime.CompilerServices.Extension>]
         static member AsQueryExpr(enumerable : IEnumerable<'T>) = 
             new QueryExpr<IEnumerable<'T>>(Source (constant enumerable, typeof<'T>))
@@ -116,3 +118,20 @@ namespace LinqOptimizer.Core
             new QueryExpr<IEnumerable<'T>>(OrderBy (keySelector, Order.Descending, queryExpr.QueryExpr, typeof<'T>))
 
 
+        // ParallelQuery ExtensionMethods
+        [<System.Runtime.CompilerServices.Extension>]
+        static member AsQueryExpr(parallelQuery : ParallelQuery<'T>) = 
+            new ParallelQueryExpr<ParallelQuery<'T>>(Source (constant parallelQuery, typeof<'T>))
+
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Select<'T, 'R>(queryExpr : ParallelQueryExpr<ParallelQuery<'T>>, selector : Expression<Func<'T, 'R>>) =
+            new ParallelQueryExpr<IEnumerable<'R>>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Compile<'T>(queryExpr : ParallelQueryExpr<'T>) : Func<'T> =
+            raise <| new NotImplementedException()
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Run<'T>(queryExpr : ParallelQueryExpr<'T>) : 'T =
+            ExtensionMethods.Compile(queryExpr).Invoke()

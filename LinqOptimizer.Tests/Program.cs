@@ -13,16 +13,19 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-            //var nums = Enumerable.Range(1, 100000).ToArray();
-            //var _nums = Enumerable.Range(1, 10000).ToArray();
+            Random r = new Random();
+            var nums = Enumerable.Range(1, 100000000).Select(num => r.Next(1000)).ToArray();
+            
 
-            //Func<double> f = nums.AsQueryExpr().SelectMany(num => _nums.Select(_num => num * _num)).Select(num => (double) num).Sum().Compile();
-            //Measure(() => Console.WriteLine(f.Invoke()));
+            Func<int> f = nums.AsQueryExpr().GroupBy(num => num).Select(g => g.Count()).Sum().Compile();
+            Measure(() => Console.WriteLine(f.Invoke()));
 
-            //Measure(() => Console.WriteLine(nums.SelectMany(num => _nums.Select(_num => num * _num)).Select(num => (double)num).Sum()));
+            Measure(() => Console.WriteLine(nums.AsParallel().GroupBy(num => num)
+                                                .Select(g => g.Count())
+                                                .Sum()));
 
-            LinqTests tests = new LinqTests();
-            tests.OrderByTest();
+            //var tests = new QueryExprTests();
+            //tests.OrderByTest();
         }
 
         static void Measure(Action action)
