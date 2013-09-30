@@ -21,13 +21,13 @@ namespace LinqOptimizer.Core
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Compile<'T>(queryExpr : QueryExpr<'T>) : Func<'T> =
-            let expr = Compiler.compile queryExpr.QueryExpr
+            let expr = Compiler.compileToSequential queryExpr.QueryExpr
             let func = Expression.Lambda<Func<'T>>(expr).Compile()
             func
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Compile(queryExpr : QueryExprVoid) : Action =
-            let expr = Compiler.compile queryExpr.QueryExpr
+            let expr = Compiler.compileToSequential queryExpr.QueryExpr
             let action = Expression.Lambda<Action>(expr).Compile()
             action
             
@@ -123,11 +123,6 @@ namespace LinqOptimizer.Core
         static member AsQueryExpr(parallelQuery : ParallelQuery<'T>) = 
             new ParallelQueryExpr<ParallelQuery<'T>>(Source (constant parallelQuery, typeof<'T>))
 
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Select<'T, 'R>(queryExpr : ParallelQueryExpr<ParallelQuery<'T>>, selector : Expression<Func<'T, 'R>>) =
-            new ParallelQueryExpr<IEnumerable<'R>>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
-
         [<System.Runtime.CompilerServices.Extension>]
         static member Compile<'T>(queryExpr : ParallelQueryExpr<'T>) : Func<'T> =
             raise <| new NotImplementedException()
@@ -135,3 +130,12 @@ namespace LinqOptimizer.Core
         [<System.Runtime.CompilerServices.Extension>]
         static member Run<'T>(queryExpr : ParallelQueryExpr<'T>) : 'T =
             ExtensionMethods.Compile(queryExpr).Invoke()
+
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Select<'T, 'R>(queryExpr : ParallelQueryExpr<ParallelQuery<'T>>, selector : Expression<Func<'T, 'R>>) =
+            new ParallelQueryExpr<IEnumerable<'R>>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Where<'T>(queryExpr : ParallelQueryExpr<ParallelQuery<'T>>, predicate : Expression<Func<'T, bool>>) =
+            new ParallelQueryExpr<ParallelQuery<'T>>(Filter (predicate, queryExpr.QueryExpr, typeof<'T>))

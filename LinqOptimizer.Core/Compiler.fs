@@ -20,7 +20,7 @@
                                 InitExprs : Expression list; AccExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
 
-        let compile (queryExpr : QueryExpr) : Expression = 
+        let compileToSequential (queryExpr : QueryExpr) : Expression = 
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) : Expression =
                 match queryExpr with
                 | Source (ExprType (Array (_, 1)) as expr, t) ->
@@ -163,7 +163,8 @@
                 expr
             | _ -> failwithf "Invalid state %A" queryExpr 
 
-
+        let compileToParallel (queryExpr : QueryExpr) : Expression =
+            raise <| new NotImplementedException() 
 
         let rec toQueryExpr (expr : Expression) : QueryExpr =
             // TODO: expr type checks

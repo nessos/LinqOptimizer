@@ -10,7 +10,7 @@ namespace LinqOptimizer.Tests
     [TestFixture]
     class QueryExprTests
     {
-        private int[] nums = new[] { 1, 2, 3 , 4, 5 };
+        private int[] nums = Enumerable.Range(1, 5).ToArray();
  
         [Test]
         public void SelectTest()
