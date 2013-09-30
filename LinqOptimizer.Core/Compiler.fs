@@ -137,7 +137,17 @@
                                 InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 let expr = compile' queryExpr' context
-                expr
+                expr 
+            | Count (queryExpr', t) ->
+                let accVarExpr = var "___cnt___" typeof<int>
+                let initExpr = assign accVarExpr (constant 0)
+                let accExpr = addAssign accVarExpr (constant 1)
+                let tmpVarExpr = var "___tmp___" t
+                let context = { CurrentVarExpr = tmpVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                                VarExprs = [tmpVarExpr; accVarExpr]; Exprs = [] }
+                let expr = compile' queryExpr' context
+                expr 
             | Aggregate ((seed, t), Lambda ([accVarExpr; varExpr], bodyExpr), queryExpr') ->
                 let initExpr = assign accVarExpr (constant seed)
                 let accExpr = assign accVarExpr bodyExpr
