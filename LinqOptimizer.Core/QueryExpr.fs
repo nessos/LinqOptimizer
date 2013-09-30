@@ -29,6 +29,7 @@
         | NestedQueryTransform of (ParameterExpression * QueryExpr) * LambdaExpression * QueryExpr * Type
         | Aggregate of (obj *  Type) * LambdaExpression * QueryExpr
         | Sum of QueryExpr * Type 
+        | Count of QueryExpr * Type
         | Take of Expression * QueryExpr * Type
         | Skip of Expression * QueryExpr * Type
         | ForEach of LambdaExpression * QueryExpr 
@@ -47,6 +48,7 @@
             | NestedQueryTransform (_, _, _, t) -> t
             | Aggregate ((_, t), _, _) -> t
             | Sum (_, t) -> t
+            | Count (_, t) -> t
             | Take (_, _, t) -> t
             | Skip (_, _, t) -> t
             | ForEach (_, _) -> typeof<Void>

@@ -209,5 +209,15 @@ namespace LinqOptimizer.Tests
 
             Assert.AreEqual(nums.Reverse(), _result.Run());
         }
+
+
+        [Test]
+        public void CountTest ()
+        {
+            var result = nums.AsQueryExpr().Select(i => i).Count();
+
+            Assert.AreEqual(nums.Select(i => i).Count(), result.Run());
+        }
+
     }
 }

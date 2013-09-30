@@ -68,6 +68,10 @@ namespace LinqOptimizer.Core
             new QueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
 
         [<System.Runtime.CompilerServices.Extension>]
+        static member Count(queryExpr : QueryExpr<IEnumerable<'T>>) =
+            new QueryExpr<'T>(Count (queryExpr.QueryExpr, typeof<'T>))
+            
+        [<System.Runtime.CompilerServices.Extension>]
         static member SelectMany<'T, 'Col, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, 
                                                 collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
                                                 resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr<IEnumerable<'R>> =
