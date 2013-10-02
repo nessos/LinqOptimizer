@@ -60,12 +60,12 @@
         static member length(queryExpr : QueryExpr<IEnumerable<'T>>) =
             ExtensionMethods.Count(queryExpr)
 
-        static member selectMany<'T, 'Col, 'R>(collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
+        static member collect<'T, 'Col, 'R>(collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) =
             fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.SelectMany(queryExpr, collectionSelector, resultSelector)
 
-        static member selectMany<'T, 'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
+        static member collect<'T, 'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
             fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.SelectMany(queryExpr, selector)
 
@@ -85,17 +85,19 @@
             fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.GroupBy(queryExpr, keySelector)
 
-        static member orderBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
+        static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.OrderBy(queryExpr, keySelector)
 
-        static member orderByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
+        static member sortByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.OrderByDescending(queryExpr, keySelector)
 
     type ParallelQuery =
+        static member ofSeq(source : IEnumerable<'T>) = 
+            ParallelQuery.ofQuery(source.AsParallel())
 
-        static member ofSeq(parallelQuery : ParallelQuery<'T>) = 
+        static member ofQuery(parallelQuery : ParallelQuery<'T>) = 
             ExtensionMethods.AsQueryExpr(parallelQuery)
 
         static member compile<'T>(queryExpr : ParallelQueryExpr<'T>) =

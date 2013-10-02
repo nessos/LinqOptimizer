@@ -35,3 +35,15 @@ nums    .Select(fun x -> x * x)
 
 let s = Query.ofSeq nums
 let m = Query.map (fun x -> x * x) s
+
+
+nums
+|> ParallelQuery.ofSeq
+|> ParallelQuery.map (fun x -> x + 1)
+|> ParallelQuery.run
+
+[1..5]
+|> Query.ofSeq
+|> Query.collect (fun t -> Seq.init 10 (fun _ -> t))
+|> Query.run
+|> Seq.toArray
