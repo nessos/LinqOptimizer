@@ -20,7 +20,17 @@
                                 InitExprs : Expression list; AccExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
 
-        let compileToSequential (queryExpr : QueryExpr) : Expression = 
+        let rec compileToSequential (queryExpr : QueryExpr) : Expression = 
+            
+            let toListContext (queryExpr : QueryExpr) =
+                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
+                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                let context = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+                context
+            
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) : Expression =
                 match queryExpr with
                 | Source (ExprType (Array (_, 1)) as expr, t) ->
@@ -162,13 +172,17 @@
                                 VarExprs = [paramExpr]; Exprs = [] }
                 let expr = compile' queryExpr' context
                 expr
-            | queryExpr' ->
+            | ToArray queryExpr' ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
-                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
-                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+                let expr = compileToSequential (ToList queryExpr')
+                let expr' = call (listType.GetMethod "ToArray") expr []
+                expr' :> _
+            | ToList queryExpr' ->
+                let context = toListContext queryExpr'
+                let expr = compile' queryExpr' context
+                expr
+            | queryExpr' ->
+                let context = toListContext queryExpr'
                 let expr = compile' queryExpr context
                 expr
             | _ -> failwithf "Invalid state %A" queryExpr 

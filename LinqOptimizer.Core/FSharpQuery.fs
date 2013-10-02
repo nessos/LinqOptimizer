@@ -93,6 +93,9 @@
             fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.OrderByDescending(queryExpr, keySelector)
 
+        static member toArray(queryExpr : QueryExpr<IEnumerable<'T>>) =
+            ExtensionMethods.ToArray(queryExpr)
+
     type ParallelQuery =
         static member ofSeq(source : IEnumerable<'T>) = 
             ParallelQuery.ofQuery(source.AsParallel())

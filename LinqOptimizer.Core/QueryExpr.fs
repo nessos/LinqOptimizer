@@ -35,6 +35,8 @@
         | ForEach of LambdaExpression * QueryExpr 
         | GroupBy of LambdaExpression * QueryExpr * Type
         | OrderBy of LambdaExpression * Order * QueryExpr * Type
+        | ToList of QueryExpr
+        | ToArray of QueryExpr
         with
 
         member self.Type = 
@@ -54,6 +56,8 @@
             | ForEach (_, _) -> typeof<Void>
             | GroupBy (_, _, t) -> t
             | OrderBy (_, _, _, t) -> t
+            | ToList q -> q.Type
+            | ToArray q -> q.Type
            
      
 
