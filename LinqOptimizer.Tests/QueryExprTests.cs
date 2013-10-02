@@ -219,5 +219,20 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(nums.Select(i => i).Count(), result.Run());
         }
 
+        [Test]
+        public void ToListTest()
+        {
+            var result = nums.AsQueryExpr().ToList();
+
+            Assert.AreEqual(nums.ToList(), result.Run());
+        }
+
+        [Test]
+        public void ToArrayTest()
+        {
+            var result = nums.AsQueryExpr().ToArray();
+
+            Assert.AreEqual(nums.ToArray(), result.Run());
+        }
     }
 }

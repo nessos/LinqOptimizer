@@ -13,6 +13,9 @@ TestResults
 *.user
 *.sln.docstates
 
+# test F# script files
+*.ignore.fsx
+
 # Build results
 [Dd]ebug/
 [Rr]elease/

@@ -21,46 +21,56 @@
                                 InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
 
-        let compileToSequential (queryExpr : QueryExpr) : Expression = 
-            let rec compile queryExpr context =
+        let rec compileToSequential (queryExpr : QueryExpr) : Expression = 
+            
+            let toListContext (queryExpr : QueryExpr) =
+                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
+                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                let context = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+                context
+            
+            let rec compile' (queryExpr : QueryExpr) (context : QueryContext) : Expression =
                 match queryExpr with
                 | Source (ExprType (Array (_, 1)) as expr, t) ->
-                    let indexVarExpr = var "___index___" typeof<int>
-                    let arrayVarExpr = var "___array___" expr.Type
-                    let arrayAssignExpr = assign arrayVarExpr expr
-                    let indexAssignExpr = assign indexVarExpr (constant -1) 
-                    let lengthExpr = arrayLength arrayVarExpr 
-                    let getItemExpr = arrayIndex arrayVarExpr indexVarExpr
-                    let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
-                    let checkBoundExpr = equal indexVarExpr lengthExpr 
-                    let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
-                    let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
-                    block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
+                        let indexVarExpr = var "___index___" typeof<int>
+                        let arrayVarExpr = var "___array___" expr.Type
+                        let arrayAssignExpr = assign arrayVarExpr expr
+                        let indexAssignExpr = assign indexVarExpr (constant -1) 
+                        let lengthExpr = arrayLength arrayVarExpr 
+                        let getItemExpr = arrayIndex arrayVarExpr indexVarExpr
+                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let checkBoundExpr = equal indexVarExpr lengthExpr 
+                        let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
+                        block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
                 | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
-                    let indexVarExpr = var "___index___" typeof<int>
-                    let listVarExpr = var "___list___" expr.Type
-                    let listAssignExpr = assign listVarExpr expr
-                    let indexAssignExpr = assign indexVarExpr (constant -1) 
-                    let lengthExpr = call (expr.Type.GetMethod("get_Count")) listVarExpr []
-                    let getItemExpr = call (expr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
-                    let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
-                    let checkBoundExpr = equal indexVarExpr lengthExpr 
-                    let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
-                    let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
-                    block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
+                        let indexVarExpr = var "___index___" typeof<int>
+                        let listVarExpr = var "___list___" expr.Type
+                        let listAssignExpr = assign listVarExpr expr
+                        let indexAssignExpr = assign indexVarExpr (constant -1) 
+                        let lengthExpr = call (expr.Type.GetMethod("get_Count")) listVarExpr []
+                        let getItemExpr = call (expr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
+                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let checkBoundExpr = equal indexVarExpr lengthExpr 
+                        let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
+                        block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
                 | Source (expr, t) -> // general case for IEnumerable
-                    let enumerableType = typedefof<IEnumerable<_>>.MakeGenericType [| t |]
-                    let enumeratorType = typedefof<IEnumerator<_>>.MakeGenericType [| t |]
-                    let disposableVarExpr = var "___disposable___" typeof<IDisposable>
-                    let enumeratorVarExpr = var "___enumerator___" enumeratorType
-                    let enumeratorAssignExpr = assign enumeratorVarExpr (call (enumerableType.GetMethod("GetEnumerator")) expr [])
-                    let disposableAssignExpr = assign disposableVarExpr enumeratorVarExpr 
-                    let getItemExpr = call (enumeratorType.GetMethod("get_Current")) enumeratorVarExpr []
-                    let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
-                    let checkBoundExpr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumeratorVarExpr []) (constant false)
-                    let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
-                    let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
-                    block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
+                        let enumerableType = typedefof<IEnumerable<_>>.MakeGenericType [| t |]
+                        let enumeratorType = typedefof<IEnumerator<_>>.MakeGenericType [| t |]
+                        let disposableVarExpr = var "___disposable___" typeof<IDisposable>
+                        let enumeratorVarExpr = var "___enumerator___" enumeratorType
+                        let enumeratorAssignExpr = assign enumeratorVarExpr (call (enumerableType.GetMethod("GetEnumerator")) expr [])
+                        let disposableAssignExpr = assign disposableVarExpr enumeratorVarExpr 
+                        let getItemExpr = call (enumeratorType.GetMethod("get_Current")) enumeratorVarExpr []
+                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let checkBoundExpr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumeratorVarExpr []) (constant false)
+                        let brachExpr = ``if`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                        let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
+                        block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
@@ -170,14 +180,18 @@
                                 VarExprs = [paramExpr]; Exprs = [] }
                 let expr = compile queryExpr' context
                 expr
-            | queryExpr' ->
+            | ToArray queryExpr' ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
-                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
-                let expr = compile queryExpr context
+                let expr = compileToSequential (ToList queryExpr')
+                let expr' = call (listType.GetMethod "ToArray") expr []
+                expr' :> _
+            | ToList queryExpr' ->
+                let context = toListContext queryExpr'
+                let expr = compile' queryExpr' context
+                expr
+            | queryExpr' ->
+                let context = toListContext queryExpr'
+                let expr = compile' queryExpr context
                 expr
 
         let compileToParallel (queryExpr : QueryExpr) : Expression =

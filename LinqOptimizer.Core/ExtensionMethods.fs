@@ -121,6 +121,13 @@ namespace LinqOptimizer.Core
                                 : QueryExpr<IEnumerable<'T>> = 
             new QueryExpr<IEnumerable<'T>>(OrderBy (keySelector, Order.Descending, queryExpr.QueryExpr, typeof<'T>))
 
+        [<System.Runtime.CompilerServices.Extension>]
+        static member ToList(queryExpr : QueryExpr<IEnumerable<'T>>) : QueryExpr<List<'T>> = 
+            new QueryExpr<List<'T>>(ToList queryExpr.QueryExpr)
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member ToArray(queryExpr : QueryExpr<IEnumerable<'T>>) : QueryExpr<'T []> = 
+            new QueryExpr<'T []>(ToArray queryExpr.QueryExpr)
 
         // ParallelQuery ExtensionMethods
         [<System.Runtime.CompilerServices.Extension>]
