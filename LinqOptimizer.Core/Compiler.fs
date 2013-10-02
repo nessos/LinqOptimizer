@@ -27,12 +27,12 @@
                 let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context = { CurrentVarExpr = finalVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; ReturnExpr = accVarExpr; 
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 context
             
-            let rec compile' (queryExpr : QueryExpr) (context : QueryContext) : Expression =
+            let rec compile queryExpr context =
                 match queryExpr with
                 | Source (ExprType (Array (_, 1)) as expr, t) ->
                         let indexVarExpr = var "___index___" typeof<int>
@@ -187,11 +187,11 @@
                 expr' :> _
             | ToList queryExpr' ->
                 let context = toListContext queryExpr'
-                let expr = compile' queryExpr' context
+                let expr = compile queryExpr' context
                 expr
             | queryExpr' ->
                 let context = toListContext queryExpr'
-                let expr = compile' queryExpr context
+                let expr = compile queryExpr context
                 expr
 
         let compileToParallel (queryExpr : QueryExpr) : Expression =
