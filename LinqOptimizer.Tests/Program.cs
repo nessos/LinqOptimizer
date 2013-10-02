@@ -13,52 +13,17 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-            
-            Measure(() =>
-            {
-                List<string> list = new List<string>();
-                for (int i = 0; i < 10000000; i++)
-                {
-                    var temp = new String('1', 10);
-                    list.Add(temp);
-                }
-                Console.WriteLine(list.Count);
-            });
+            //var input = Enumerable.Range(1, 250000000).ToArray();
 
-            
-            Measure(() =>
-            {
-                List<char[]> _list = new List<char[]>();
-                var temp = new char[100000000];
-                for (int i = 0; i < temp.Length; i++)
-                {
-                    temp[i] = '1';
-                }
-                Console.WriteLine(temp.Length);
-            });
+            //var query = input.AsQueryExpr().Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum().Compile();
+            //Measure(() => Console.WriteLine(query.Invoke()));
 
+            //Measure(() => Console.WriteLine(input.Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum()));
+            //Measure(() => Console.WriteLine(input.AsParallel().Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum()));
+            //Measure(() => Console.WriteLine(input.AsParallel().Aggregate(() => 0.0, (acc, x) => ((((double)x + 1) + 1) + 1) + acc, (left, right) => left + right, x => x)));
 
-            //Measure(() =>
-            //{
-            //    List<int> _list = new List<int>();
-            //    for (int i = 0; i < 300000000; i++)
-            //    {
-            //        _list.Add(i);
-            //    }
-            //});
-            //Random r = new Random();
-            //var nums = Enumerable.Range(1, 100000000).Select(num => r.Next(1000)).ToArray();
-            
-
-            //Func<int> f = nums.AsQueryExpr().GroupBy(num => num).Select(g => g.Count()).Sum().Compile();
-            //Measure(() => Console.WriteLine(f.Invoke()));
-
-            //Measure(() => Console.WriteLine(nums.AsParallel().GroupBy(num => num)
-            //                                    .Select(g => g.Count())
-            //                                    .Sum()));
-
-            //var tests = new QueryExprTests();
-            //tests.OrderByTest();
+            var tests = new ParallelQueryExprTests();
+            tests.SelectTest();
         }
 
         static void Measure(Action action)

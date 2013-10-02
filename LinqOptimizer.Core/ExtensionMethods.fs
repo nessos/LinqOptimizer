@@ -129,7 +129,9 @@ namespace LinqOptimizer.Core
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Compile<'T>(queryExpr : ParallelQueryExpr<'T>) : Func<'T> =
-            raise <| new NotImplementedException()
+            let expr = Compiler.compileToParallel queryExpr.QueryExpr
+            let func = Expression.Lambda<Func<'T>>(expr).Compile()
+            func
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Run<'T>(queryExpr : ParallelQueryExpr<'T>) : 'T =

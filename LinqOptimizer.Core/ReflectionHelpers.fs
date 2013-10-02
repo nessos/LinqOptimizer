@@ -8,7 +8,13 @@
 
         let (|MethodName|_|) (methodName : string) (methodInfo : MethodInfo) = 
             if methodInfo.Name = methodName then
-                Some methodInfo
+                Some <| methodInfo.GetParameters()
+            else None
+
+
+        let (|ParameterName|_|) (parameterName : string) (parameterInfo : ParameterInfo) = 
+            if parameterInfo.Name = parameterName then
+                Some parameterInfo
             else None
 
         let (|TypeCheck|_|) (paramTypeDef : Type) (typeDef : Type) = 

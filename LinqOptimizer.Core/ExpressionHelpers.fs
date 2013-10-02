@@ -19,13 +19,16 @@ namespace LinqOptimizer.Core
             Expression.AddAssign (leftExpr, rightExpr) :> Expression
 
         let var name (t : Type) = Expression.Parameter(t, name)
+        let lambda paramExprs bodyExpr = 
+            Expression.Lambda(bodyExpr, paramExprs) :> Expression
+
         let label (name : string) = Expression.Label(name) 
         let constant (value : obj) = Expression.Constant(value)
          
         let ``new`` (t : Type) = Expression.New(t)
         let call (methodInfo : MethodInfo) (instance : Expression) 
                     (args : seq<Expression>) =
-            Expression.Call(instance, methodInfo, args)
+            Expression.Call(instance, methodInfo, args) :> Expression
              
         let ``if`` boolExpr thenExpr elseExpr = 
             Expression.IfThenElse(boolExpr, thenExpr, elseExpr) :> Expression
