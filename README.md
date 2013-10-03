@@ -10,18 +10,21 @@ Optimizations
 * Loop fusion
 * Nested loop generation
 
+The expression
 ```csharp
 var query = (from num in nums.AsQueryExpr()
              where num % 2 == 0
              select num * num).Sum();
 
 Console.WriteLine("Result: {0}",query.Run());
-// Compiled query
-int ___sum___ = 0;
-for (int ___index___ = 0; ___index___ < nums.Length; ___index___++)
+```
+will compile to
+```csharp
+int sum = 0;
+for (int index = 0; index < nums.Length; index++)
 {
-   int num = nums[___index___];
+   int num = nums[index];
    if (num % 2 == 0)
-      ___sum___ += num * num;
+      sum += num * num;
 }
 ```
