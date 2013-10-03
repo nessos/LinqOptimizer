@@ -37,6 +37,8 @@
         | OrderBy of LambdaExpression * Order * QueryExpr * Type
         | ToList of QueryExpr
         | ToArray of QueryExpr
+        | RangeGenerator of int * int
+        | RepeatGenerator of obj * Type * int
         with
 
         member self.Type = 
@@ -58,9 +60,21 @@
             | OrderBy (_, _, _, t) -> t
             | ToList q -> q.Type
             | ToArray q -> q.Type
+            | RangeGenerator _ -> typeof<int>
+            | RepeatGenerator (_,t,_) -> t
            
      
+        static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =
+            if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 
+                raise <| ArgumentOutOfRangeException("count")
+            else
+                new QueryExpr<IEnumerable<int>>(RangeGenerator(start, count))
 
+        static member Repeat(element : 'T, count : int) : QueryExpr<IEnumerable<'T>> =
+            if count < 0 then
+                raise <| ArgumentOutOfRangeException("count")
+            else 
+                new QueryExpr<_>(RepeatGenerator(element, typeof<'T>, count))
 
 
 

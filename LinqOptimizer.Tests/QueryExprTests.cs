@@ -234,5 +234,30 @@ namespace LinqOptimizer.Tests
 
             Assert.AreEqual(nums.ToArray(), result.Run());
         }
+
+        [Test]
+        public void RangeTest()
+        {
+            var result = QueryExpr.Range(1, 10);
+
+            Assert.AreEqual(Enumerable.Range(1, 10), result.Run());
+        }
+
+        [Test]
+        public void RepeatTest()
+        {
+            var result = QueryExpr.Repeat(42, 10);
+
+            Assert.AreEqual(Enumerable.Repeat(42, 10), result.Run());
+        }
+
+        [Test]
+        public void RepeatValueTypeCastTest()
+        {
+            var t = (object) DateTime.Now;
+            var result = QueryExpr.Repeat(t, 10);
+
+            Assert.AreEqual(Enumerable.Repeat(t, 10), result.Run());
+        }
     }
 }

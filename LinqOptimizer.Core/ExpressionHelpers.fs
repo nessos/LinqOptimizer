@@ -18,6 +18,9 @@ namespace LinqOptimizer.Core
         let addAssign leftExpr rightExpr = 
             Expression.AddAssign (leftExpr, rightExpr) :> Expression
 
+        let cast expr ty =
+            Expression.Convert(expr, ty) :> Expression
+
         let var name (t : Type) = Expression.Parameter(t, name)
         let lambda paramExprs bodyExpr = 
             Expression.Lambda(bodyExpr, paramExprs) :> Expression

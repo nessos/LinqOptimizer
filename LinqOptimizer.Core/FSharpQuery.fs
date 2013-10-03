@@ -96,6 +96,12 @@
         static member toArray(queryExpr : QueryExpr<IEnumerable<'T>>) =
             ExtensionMethods.ToArray(queryExpr)
 
+        static member range (start : int) (count : int) =
+            QueryExpr.Range(start, count)
+
+        static member repeat (elem : 'T) (count : int) =
+            QueryExpr.Repeat(elem, count)
+
     type ParallelQuery =
         static member ofSeq(source : IEnumerable<'T>) = 
             ParallelQuery.ofQuery(source.AsParallel())
