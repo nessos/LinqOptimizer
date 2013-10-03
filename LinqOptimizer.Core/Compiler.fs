@@ -239,13 +239,26 @@
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
                 | _ -> failwithf "Invalid state %A" queryExpr 
             match queryExpr with
+            | Sum (queryExpr', t) ->
+                let finalVarExpr = var "___final___" t
+                let accVarExpr = var "___acc___" t
+                let initExpr = lambda [||] (``default`` t)
+                let accExpr = addAssign accVarExpr finalVarExpr
+                let leftVarExpr, rightVarExpr = var "___left___" t, var "___right___" t
+                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [addAssign leftVarExpr rightVarExpr; leftVarExpr])
+                let returnExpr = lambda [|accVarExpr|] accVarExpr
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
+                                VarExprs = [finalVarExpr]; Exprs = [] }
+                let expr = compile queryExpr' context
+                expr 
             | queryExpr' ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = lambda [||] (``new`` listType), block [] [call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]; accVarExpr]
                 let leftVarExpr, rightVarExpr = var "___left___" listType, var "___right___" listType
-                let returnExpr = lambda [|accVarExpr|] accVarExpr
                 let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [call (listType.GetMethod("AddRange")) leftVarExpr [rightVarExpr]; leftVarExpr])
+                let returnExpr = lambda [|accVarExpr|] accVarExpr
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
                                     VarExprs = [finalVarExpr]; Exprs = [] }

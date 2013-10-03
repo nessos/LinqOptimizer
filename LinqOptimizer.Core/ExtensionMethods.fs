@@ -151,3 +151,11 @@ namespace LinqOptimizer.Core
         [<System.Runtime.CompilerServices.Extension>]
         static member Where<'T>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, bool>>) =
             new ParallelQueryExpr<IEnumerable<'T>>(Filter (predicate, queryExpr.QueryExpr, typeof<'T>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<double>>) =
+            new ParallelQueryExpr<double>(Sum (queryExpr.QueryExpr, typeof<double>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<int>>) =
+            new ParallelQueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
