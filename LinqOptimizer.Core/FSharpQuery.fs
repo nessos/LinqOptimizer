@@ -110,11 +110,11 @@
             ExtensionMethods.Run(queryExpr)
 
         static member map<'T, 'R>(selector : Expression<Func<'T, 'R>>) =
-            fun (queryExpr : ParallelQueryExpr<ParallelQuery<'T>>) ->
+            fun (queryExpr : ParallelQueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.Select(queryExpr, selector)
 
         static member where<'T>(predicate : Expression<Func<'T, bool>>) =
-            fun (queryExpr : ParallelQueryExpr<ParallelQuery<'T>>) ->
+            fun (queryExpr : ParallelQueryExpr<IEnumerable<'T>>) ->
                 ExtensionMethods.Where(queryExpr, predicate)
 
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
