@@ -79,7 +79,7 @@
                         let checkExpr = equal currVarExpr endExpr
                         let incCurrExpr = addAssign currVarExpr (constant 1)
                         let exprs' = assign context.CurrentVarExpr currVarExpr :: context.Exprs
-                        let branchExpr = ``if`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
+                        let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
                         let loopExpr = loop (block [] [branchExpr; incCurrExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
                         block (currVarExpr :: context.VarExprs) [block [] context.InitExprs; currVarInitExpr; loopExpr; context.ReturnExpr ]
                 | RepeatGenerator(element, t, count) ->
@@ -91,7 +91,7 @@
                         let checkExpr = equal indexVarExpr endExpr
                         let incCurrExpr = addAssign indexVarExpr (constant 1)
                         let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
-                        let branchExpr = ``if`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
+                        let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
                         let loopExpr = loop (block [] [branchExpr; incCurrExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
                         block (indexVarExpr :: elemVarExpr :: context.VarExprs) [block [] context.InitExprs; elemVarInitExpr; indexVarInitExpr; loopExpr; context.ReturnExpr ]
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
