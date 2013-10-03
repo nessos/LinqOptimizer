@@ -23,7 +23,7 @@ namespace LinqOptimizer.Tests
             //Measure(() => Console.WriteLine(input.AsParallel().Aggregate(() => 0.0, (acc, x) => ((((double)x + 1) + 1) + 1) + acc, (left, right) => left + right, x => x)));
 
             var tests = new ParallelQueryExprTests();
-            tests.SelectTest();
+            tests.WhereTest();            
         }
 
         static void Measure(Action action)

@@ -25,7 +25,10 @@ namespace LinqOptimizer.Core
         let lambda paramExprs bodyExpr = 
             Expression.Lambda(bodyExpr, paramExprs) :> Expression
 
-        let label (name : string) = Expression.Label(name) 
+        let labelTarget (name : string) = Expression.Label(name) 
+        let label (labelTarget : LabelTarget) = Expression.Label(labelTarget) 
+        let goto (labelTarget : LabelTarget) = Expression.Goto(labelTarget)
+
         let constant (value : obj) = Expression.Constant(value)
          
         let ``new`` (t : Type) = Expression.New(t)
@@ -33,8 +36,10 @@ namespace LinqOptimizer.Core
                     (args : seq<Expression>) =
             Expression.Call(instance, methodInfo, args) :> Expression
              
-        let ``if`` boolExpr thenExpr elseExpr = 
+        let ``ifThenElse`` boolExpr thenExpr elseExpr = 
             Expression.IfThenElse(boolExpr, thenExpr, elseExpr) :> Expression
+        let ``ifThen`` boolExpr thenExpr = 
+            Expression.IfThen(boolExpr, thenExpr) :> Expression
         let loop bodyExpr breakLabel continueLabel = 
             Expression.Loop(bodyExpr, breakLabel, continueLabel)
         let ``break`` (label : LabelTarget) = 
@@ -49,6 +54,8 @@ namespace LinqOptimizer.Core
         let lessThan leftExpr rightExpr = Expression.LessThan(leftExpr, rightExpr)
         let lessThanOrEqual leftExpr rightExpr = Expression.LessThanOrEqual(leftExpr, rightExpr)
         let notEqual leftExpr rightExpr = Expression.NotEqual(leftExpr, rightExpr)
+
+        let notExpr expr = Expression.Not(expr)
 
         let arrayIndex (arrayExpr : Expression) (indexExpr : Expression) = 
             Expression.ArrayIndex(arrayExpr, indexExpr)
