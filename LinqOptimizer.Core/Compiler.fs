@@ -72,7 +72,7 @@
                         let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
                         block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
                 | RangeGenerator(start, count) ->
-                        let startExpr = constant start
+                        let startExpr = constant (start-1)
                         let endExpr = constant (start + count)
                         let currVarExpr = var "___curr___" typeof<int>
                         let currVarInitExpr = assign currVarExpr startExpr
@@ -80,19 +80,19 @@
                         let incCurrExpr = addAssign currVarExpr (constant 1)
                         let exprs' = assign context.CurrentVarExpr currVarExpr :: context.Exprs
                         let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
-                        let loopExpr = loop (block [] [branchExpr; incCurrExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
+                        let loopExpr = loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel
                         block (currVarExpr :: context.VarExprs) [block [] context.InitExprs; currVarInitExpr; loopExpr; context.ReturnExpr ]
                 | RepeatGenerator(element, t, count) ->
                         let endExpr = constant count
                         let indexVarExpr = var "___index___" typeof<int>
-                        let indexVarInitExpr = assign indexVarExpr (constant 0)
+                        let indexVarInitExpr = assign indexVarExpr (constant count)
                         let elemVarExpr = var "___elem___" t
                         let elemVarInitExpr = assign elemVarExpr (cast (constant element) t)
-                        let checkExpr = equal indexVarExpr endExpr
-                        let incCurrExpr = addAssign indexVarExpr (constant 1)
+                        let checkExpr = lessThan indexVarExpr (constant 0)
+                        let incCurrExpr = subAssign indexVarExpr (constant 1)
                         let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
                         let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
-                        let loopExpr = loop (block [] [branchExpr; incCurrExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
+                        let loopExpr = loop (block [] [incCurrExpr; branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
                         block (indexVarExpr :: elemVarExpr :: context.VarExprs) [block [] context.InitExprs; elemVarInitExpr; indexVarInitExpr; loopExpr; context.ReturnExpr ]
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs

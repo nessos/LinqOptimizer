@@ -259,5 +259,22 @@ namespace LinqOptimizer.Tests
 
             Assert.AreEqual(Enumerable.Repeat(t, 10), result.Run());
         }
+
+        [Test]
+        public void RangeWhereTest()
+        {
+            var result = QueryExpr.Range(1, 10).Where(f => f < 5);
+
+            Assert.AreEqual(Enumerable.Range(1, 10).Where(f => f < 5), result.Run());
+        }
+
+        [Test]
+        public void RepeatWhereTest()
+        {
+            var result = QueryExpr.Repeat(42, 10).Where(f => f < 5);
+
+            Assert.AreEqual(Enumerable.Repeat(42, 10).Where(f => f < 5), result.Run());
+        }
+
     }
 }

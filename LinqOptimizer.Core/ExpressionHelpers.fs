@@ -17,6 +17,8 @@ namespace LinqOptimizer.Core
             Expression.Assign(leftExpr, rightExpr) :> Expression
         let addAssign leftExpr rightExpr = 
             Expression.AddAssign (leftExpr, rightExpr) :> Expression
+        let subAssign leftExpr rightExpr =
+            Expression.SubtractAssign(leftExpr, rightExpr) :> Expression
 
         let cast expr ty =
             Expression.Convert(expr, ty) :> Expression
