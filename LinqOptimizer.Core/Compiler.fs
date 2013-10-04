@@ -71,6 +71,60 @@
                         let brachExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
                         block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
+//                | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), func) ->
+//                        let indexVarExpr = var "___index___" typeof<int>
+//                        let indexAssignExpr = assign indexVarExpr (constant -1) 
+//                        
+//                        let array1VarExpr = var "___array1___" expr1.Type
+//                        let array1AssignExpr = assign array1VarExpr expr1
+//                        let length1Expr = arrayLength array1VarExpr 
+//                        let getItem1Expr = arrayIndex array1VarExpr indexVarExpr
+//
+//                        let array2VarExpr = var "___array2___" expr2.Type
+//                        let array2AssignExpr = assign array1VarExpr expr2
+//                        let length2Expr = arrayLength array2VarExpr 
+//                        let getItem2Expr = arrayIndex array2VarExpr indexVarExpr
+//
+//                        let getItemExpr = Expression.Invoke(func, getItem1Expr, getItem2Expr)
+//                        
+//                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+//                        let checkBound1Expr = equal indexVarExpr length1Expr 
+//                        let checkBound2Expr = equal indexVarExpr length2Expr
+//                        let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
+//                        let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+//
+//                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
+//                        block (array1VarExpr :: array2VarExpr :: indexVarExpr :: context.VarExprs) 
+//                            [block [] context.InitExprs; array1AssignExpr; array2AssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr]
+                | ZipWith((expr1, t1),(expr2,t2), func) ->
+                        let enumerable1Type = typedefof<IEnumerable<_>>.MakeGenericType [| t1 |]
+                        let enumerator1Type = typedefof<IEnumerator<_>>.MakeGenericType [| t1 |]
+                        let disposable1VarExpr = var "___disposable1___" typeof<IDisposable>
+                        let enumerator1VarExpr = var "___enumerator1___" enumerator1Type
+                        let enumerator1AssignExpr = assign enumerator1VarExpr (call (enumerable1Type.GetMethod("GetEnumerator")) expr1 [])
+                        let disposable1AssignExpr = assign disposable1VarExpr enumerator1VarExpr 
+                        let getItem1Expr = call (enumerator1Type.GetMethod("get_Current")) enumerator1VarExpr []
+
+                        let enumerable2Type = typedefof<IEnumerable<_>>.MakeGenericType [| t2 |]
+                        let enumerator2Type = typedefof<IEnumerator<_>>.MakeGenericType [| t2 |]
+                        let disposable2VarExpr = var "___disposable2___" typeof<IDisposable>
+                        let enumerator2VarExpr = var "___enumerator2___" enumerator2Type
+                        let enumerator2AssignExpr = assign enumerator2VarExpr (call (enumerable2Type.GetMethod("GetEnumerator")) expr2 [])
+                        let disposable2AssignExpr = assign disposable2VarExpr enumerator2VarExpr 
+                        let getItem2Expr = call (enumerator2Type.GetMethod("get_Current")) enumerator2VarExpr []
+
+                        let getItemExpr = Expression.Invoke(func, getItem1Expr, getItem2Expr)
+                        
+                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let checkBound1Expr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumerator1VarExpr []) (constant false)
+                        let checkBound2Expr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumerator2VarExpr []) (constant false)
+                        let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
+                        let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+                        let disposeCallExpr = block [] [ (call (typeof<IDisposable>.GetMethod("Dispose")) disposable1VarExpr [])
+                                                         (call (typeof<IDisposable>.GetMethod("Dispose")) disposable2VarExpr []) ]
+                        let loopExpr = tryfinally (loop (block [] [branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) disposeCallExpr
+                        block (enumerator1VarExpr :: disposable1VarExpr :: enumerator2VarExpr :: disposable2VarExpr :: context.VarExprs) 
+                            [block [] context.InitExprs; enumerator1AssignExpr; disposable1AssignExpr; enumerator2AssignExpr; disposable2AssignExpr; loopExpr; context.ReturnExpr]
                 | RangeGenerator(start, count) ->
                         let startExpr = constant (start-1)
                         let endExpr = constant (start + count)
@@ -288,6 +342,8 @@
                 GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
             | MethodCall (_, MethodName "OrderBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
                 OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+            | MethodCall (_, MethodName "Count" _,  [expr'; Lambda ([_], bodyExpr) as f']) -> 
+                Count (toQueryExpr expr', bodyExpr.Type)
             | _ -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())

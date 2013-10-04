@@ -102,6 +102,11 @@
         static member repeat (elem : 'T) (count : int) =
             QueryExpr.Repeat(elem, count)
 
+        static member zipWith (func : Expression<Func<'T,'U,'R>>) =
+            fun (first : seq<'T>) (second : seq<'U>) ->
+                QueryExpr.Zip(first, second, func)
+        
+
     type ParallelQuery =
         static member ofSeq(source : IEnumerable<'T>) = 
             ParallelQuery.ofQuery(source.AsParallel())
