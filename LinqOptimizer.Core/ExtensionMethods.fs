@@ -159,3 +159,13 @@ namespace LinqOptimizer.Core
         [<System.Runtime.CompilerServices.Extension>]
         static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<int>>) =
             new ParallelQueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member SelectMany<'T, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, IEnumerable<'R>>>) =
+            let queryExpr' = 
+                match selector with
+                | Lambda ([paramExpr], bodyExpr) ->
+                    NestedQuery ((paramExpr, Compiler.toQueryExpr bodyExpr), queryExpr.QueryExpr, typeof<'R>)
+                | _ -> failwithf "Invalid state %A" selector
+
+            new ParallelQueryExpr<IEnumerable<'R>>(queryExpr')

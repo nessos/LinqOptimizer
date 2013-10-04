@@ -22,8 +22,11 @@ namespace LinqOptimizer.Tests
             //Measure(() => Console.WriteLine(input.AsParallel().Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum()));
             //Measure(() => Console.WriteLine(input.AsParallel().Aggregate(() => 0.0, (acc, x) => ((((double)x + 1) + 1) + 1) + acc, (left, right) => left + right, x => x)));
 
+            //var parallelQuery = input.AsParallel().AsQueryExpr().Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum().Compile();
+            //Measure(() => Console.WriteLine(parallelQuery.Invoke()));
+
             var tests = new ParallelQueryExprTests();
-            tests.SumTest();
+            tests.SelectManyTest();
         }
 
         static void Measure(Action action)

@@ -31,6 +31,18 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(new[] { 2, 4 }, result.Run());
         }
 
+        [Test]
+        public void PipelineTest()
+        {
+            var result = nums.AsQueryExpr()
+                         .Where(num => num % 2 == 0)
+                         .Select(num => num * 2)
+                         .Select(num => num.ToString())
+                         .Select(num => num + "!");
+
+            Assert.AreEqual(new[] { "4!", "8!" }, result.Run());
+        }
+
 
         [Test]
         public void SumTest()
@@ -39,6 +51,17 @@ namespace LinqOptimizer.Tests
                           select num * 2).Sum();
 
             Assert.AreEqual(30, result.Run());
+        }
+
+
+        [Test]
+        public void SelectManyTest()
+        {
+            var result = nums.AsParallel().AsQueryExpr()
+                         .SelectMany(num => nums.Select(_num => num * _num))
+                         .Sum();
+
+            Assert.AreEqual(225, result.Run());
         }
 
     }
