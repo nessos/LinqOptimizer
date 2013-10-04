@@ -39,6 +39,7 @@
         | ToArray of QueryExpr
         | RangeGenerator of int * int
         | RepeatGenerator of obj * Type * int
+        | ZipWith of (Expression * Type) * (Expression * Type) * LambdaExpression
         with
 
         member self.Type = 
@@ -62,7 +63,7 @@
             | ToArray q -> q.Type
             | RangeGenerator _ -> typeof<int>
             | RepeatGenerator (_,t,_) -> t
-           
+            | ZipWith (_,_,f) -> f.ReturnType
      
         static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =
             if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 
@@ -76,7 +77,11 @@
             else 
                 new QueryExpr<_>(RepeatGenerator(element, typeof<'T>, count))
 
-
+        static member Zip(left : IEnumerable<'T>, right : IEnumerable<'U>, 
+                          func : Expression<Func<'T,'U,'R>>) : QueryExpr<IEnumerable<'R>> =
+            let left  = Expression.Constant left  :> Expression , typeof<'T>
+            let right = Expression.Constant right :> Expression , typeof<'U>
+            new QueryExpr<_>(ZipWith(left, right, func))
 
             
 

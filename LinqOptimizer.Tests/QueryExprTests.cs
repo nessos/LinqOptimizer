@@ -276,5 +276,15 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(Enumerable.Repeat(42, 10).Where(f => f < 5), result.Run());
         }
 
+        [Test]
+        public void ZipTest()
+        {
+            var left  = new int [] { 1,2,3 };
+            var right = new int [] { 4,5,6 };
+
+            var result = QueryExpr.Zip(left, right, (l,r) => l * r);
+
+            Assert.AreEqual(Enumerable.Zip(left, right, (l, r) => l * r), result.Run());
+        }
     }
 }
