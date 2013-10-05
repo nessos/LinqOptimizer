@@ -71,7 +71,7 @@
                         let brachExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
                         block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
-//                | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), func) ->
+//                | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func)) ->
 //                        let indexVarExpr = var "___index___" typeof<int>
 //                        let indexAssignExpr = assign indexVarExpr (constant -1) 
 //                        
@@ -96,7 +96,7 @@
 //                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
 //                        block (array1VarExpr :: array2VarExpr :: indexVarExpr :: context.VarExprs) 
 //                            [block [] context.InitExprs; array1AssignExpr; array2AssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr]
-                | ZipWith((expr1, t1),(expr2,t2), func) ->
+                | ZipWith((expr1, t1),(expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func) ) ->
                         let enumerable1Type = typedefof<IEnumerable<_>>.MakeGenericType [| t1 |]
                         let enumerator1Type = typedefof<IEnumerator<_>>.MakeGenericType [| t1 |]
                         let disposable1VarExpr = var "___disposable1___" typeof<IDisposable>
@@ -113,9 +113,12 @@
                         let disposable2AssignExpr = assign disposable2VarExpr enumerator2VarExpr 
                         let getItem2Expr = call (enumerator2Type.GetMethod("get_Current")) enumerator2VarExpr []
 
-                        let getItemExpr = Expression.Invoke(func, getItem1Expr, getItem2Expr)
-                        
-                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let param1AssignExpr = assign param1Expr getItem1Expr
+                        let param2AssignExpr = assign param2Expr getItem2Expr
+                        let getItemExpr = bodyExpr
+
+                        let exprs' = param1AssignExpr ::  param2AssignExpr :: assign context.CurrentVarExpr getItemExpr :: context.Exprs
+
                         let checkBound1Expr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumerator1VarExpr []) (constant false)
                         let checkBound2Expr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumerator2VarExpr []) (constant false)
                         let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
@@ -123,7 +126,10 @@
                         let disposeCallExpr = block [] [ (call (typeof<IDisposable>.GetMethod("Dispose")) disposable1VarExpr [])
                                                          (call (typeof<IDisposable>.GetMethod("Dispose")) disposable2VarExpr []) ]
                         let loopExpr = tryfinally (loop (block [] [branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) disposeCallExpr
-                        block (enumerator1VarExpr :: disposable1VarExpr :: enumerator2VarExpr :: disposable2VarExpr :: context.VarExprs) 
+                        let vars =  
+                            param1Expr :: param2Expr :: enumerator1VarExpr :: disposable1VarExpr :: 
+                            enumerator2VarExpr :: disposable2VarExpr :: context.VarExprs
+                        block vars 
                             [block [] context.InitExprs; enumerator1AssignExpr; disposable1AssignExpr; enumerator2AssignExpr; disposable2AssignExpr; loopExpr; context.ReturnExpr]
                 | RangeGenerator(start, count) ->
                         let startExpr = constant (start-1)
