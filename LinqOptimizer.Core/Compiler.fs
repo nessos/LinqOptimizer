@@ -71,31 +71,62 @@
                         let brachExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                         let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
                         block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
-//                | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func)) ->
-//                        let indexVarExpr = var "___index___" typeof<int>
-//                        let indexAssignExpr = assign indexVarExpr (constant -1) 
-//                        
-//                        let array1VarExpr = var "___array1___" expr1.Type
-//                        let array1AssignExpr = assign array1VarExpr expr1
-//                        let length1Expr = arrayLength array1VarExpr 
-//                        let getItem1Expr = arrayIndex array1VarExpr indexVarExpr
-//
-//                        let array2VarExpr = var "___array2___" expr2.Type
-//                        let array2AssignExpr = assign array1VarExpr expr2
-//                        let length2Expr = arrayLength array2VarExpr 
-//                        let getItem2Expr = arrayIndex array2VarExpr indexVarExpr
-//
-//                        let getItemExpr = Expression.Invoke(func, getItem1Expr, getItem2Expr)
-//                        
-//                        let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
-//                        let checkBound1Expr = equal indexVarExpr length1Expr 
-//                        let checkBound2Expr = equal indexVarExpr length2Expr
-//                        let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
-//                        let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
-//
-//                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
-//                        block (array1VarExpr :: array2VarExpr :: indexVarExpr :: context.VarExprs) 
-//                            [block [] context.InitExprs; array1AssignExpr; array2AssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr]
+                | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func)) ->
+                        let indexVarExpr = var "___index___" typeof<int>
+                        let indexAssignExpr = assign indexVarExpr (constant -1) 
+                         
+                        let array1VarExpr = var "___array1___" expr1.Type
+                        let array1AssignExpr = assign array1VarExpr expr1
+                        let length1Expr = arrayLength array1VarExpr 
+                        let getItem1Expr = arrayIndex array1VarExpr indexVarExpr
+
+                        let array2VarExpr = var "___array2___" expr2.Type
+                        let array2AssignExpr = assign array2VarExpr expr2
+                        let length2Expr = arrayLength array2VarExpr 
+                        let getItem2Expr = arrayIndex array2VarExpr indexVarExpr
+
+                        let param1AssignExpr = assign param1Expr getItem1Expr
+                        let param2AssignExpr = assign param2Expr getItem2Expr
+                        let getItemExpr = bodyExpr
+                        
+                        let exprs' = param1AssignExpr ::  param2AssignExpr :: assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let checkBound1Expr = equal indexVarExpr length1Expr 
+                        let checkBound2Expr = equal indexVarExpr length2Expr
+                        let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
+                        let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+
+                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
+                        let vars =   param1Expr :: param2Expr ::array1VarExpr :: array2VarExpr :: indexVarExpr :: context.VarExprs
+                        block vars
+                            [block [] context.InitExprs; array1AssignExpr; array2AssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr]
+                | ZipWith((ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr1, t1),(ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func)) ->
+                        let indexVarExpr = var "___index___" typeof<int>
+                        let indexAssignExpr = assign indexVarExpr (constant -1) 
+                        
+                        let list1VarExpr = var "___list1___" expr1.Type
+                        let list1AssignExpr = assign list1VarExpr expr1
+                        let length1Expr = call (expr1.Type.GetMethod("get_Count")) list1VarExpr []
+                        let getItem1Expr = call (expr1.Type.GetMethod("get_Item")) list1VarExpr [indexVarExpr]
+
+                        let list2VarExpr = var "___list2___" expr2.Type
+                        let list2AssignExpr = assign list2VarExpr expr2
+                        let length2Expr = call (expr2.Type.GetMethod("get_Count")) list2VarExpr []
+                        let getItem2Expr = call (expr2.Type.GetMethod("get_Item")) list2VarExpr [indexVarExpr]
+                                                
+                        let param1AssignExpr = assign param1Expr getItem1Expr
+                        let param2AssignExpr = assign param2Expr getItem2Expr
+                        let getItemExpr = bodyExpr
+                        
+                        let exprs' = param1AssignExpr ::  param2AssignExpr :: assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                        let checkBound1Expr = equal indexVarExpr length1Expr 
+                        let checkBound2Expr = equal indexVarExpr length2Expr
+                        let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
+                        let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+
+                        let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
+                        let vars = param1Expr :: param2Expr ::list1VarExpr :: list2VarExpr :: indexVarExpr :: context.VarExprs
+                        block vars
+                            [block [] context.InitExprs; list1AssignExpr; list2AssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr]
                 | ZipWith((expr1, t1),(expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func) ) ->
                         let enumerable1Type = typedefof<IEnumerable<_>>.MakeGenericType [| t1 |]
                         let enumerator1Type = typedefof<IEnumerator<_>>.MakeGenericType [| t1 |]
