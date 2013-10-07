@@ -27,6 +27,7 @@ namespace LinqOptimizer.Tests
 
             var tests = new ParallelQueryExprTests();
             tests.SelectManyTest();
+
         }
 
         static void Measure(Action action)
