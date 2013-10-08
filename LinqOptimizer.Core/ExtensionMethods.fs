@@ -17,7 +17,19 @@ namespace LinqOptimizer.Core
 
         [<System.Runtime.CompilerServices.Extension>]
         static member AsQueryExpr(enumerable : IEnumerable<'T>) = 
-            new QueryExpr<IEnumerable<'T>>(Source (constant enumerable, typeof<'T>))
+            // Hack to optimize Enumerable.Range and Enumerable.Repeat calls
+            // TODO : check Mono generated types
+            let ty = enumerable.GetType()
+            match ty.FullName with
+            | s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
+                let start = ty.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
+                let count = ty.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+                new QueryExpr<IEnumerable<'T>>(RangeGenerator(start :?> int, count :?> int))
+            | s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
+                let element = ty.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
+                let count = ty.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+                new QueryExpr<IEnumerable<'T>>(RepeatGenerator(element, typeof<'T>, count :?> int))
+            | _ -> new QueryExpr<IEnumerable<'T>>(Source (constant enumerable, typeof<'T>))
 
         [<System.Runtime.CompilerServices.Extension>]
         static member Compile<'T>(queryExpr : QueryExpr<'T>) : Func<'T> =

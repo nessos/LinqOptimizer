@@ -393,6 +393,10 @@
                 OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
             | MethodCall (_, MethodName "Count" _,  [expr'; Lambda ([_], bodyExpr) as f']) -> 
                 Count (toQueryExpr expr', bodyExpr.Type)
+            | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
+                let start = Expression.Lambda(startExpr).Compile().DynamicInvoke() :?> int
+                let count = Expression.Lambda(countExpr).Compile().DynamicInvoke() :?> int
+                RangeGenerator(start, count)
             | _ -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())

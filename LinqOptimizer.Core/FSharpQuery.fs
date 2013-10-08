@@ -96,11 +96,11 @@
         static member toArray(queryExpr : QueryExpr<IEnumerable<'T>>) =
             ExtensionMethods.ToArray(queryExpr)
 
-        static member range (start : int) (count : int) =
-            QueryExpr.Range(start, count)
-
-        static member repeat (elem : 'T) (count : int) =
-            QueryExpr.Repeat(elem, count)
+//        static member range (start : int) (count : int) =
+//            QueryExpr.Range(start, count)
+//
+//        static member repeat (elem : 'T) (count : int) =
+//            QueryExpr.Repeat(elem, count)
 
         static member zipWith (func : Expression<Func<'T,'U,'R>>) =
             fun (first : seq<'T>) (second : seq<'U>) ->
