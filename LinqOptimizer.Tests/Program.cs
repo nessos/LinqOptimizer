@@ -26,7 +26,7 @@ namespace LinqOptimizer.Tests
             //Measure(() => Console.WriteLine(parallelQuery.Invoke()));
 
             var tests = new ParallelQueryExprTests();
-            tests.SelectManyTest();
+            tests.SelectManyComprehensionTest();
 
         }
 

@@ -169,3 +169,15 @@ namespace LinqOptimizer.Core
                 | _ -> failwithf "Invalid state %A" selector
 
             new ParallelQueryExpr<IEnumerable<'R>>(queryExpr')
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member SelectMany<'T, 'Col, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, 
+                                                collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
+                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) =
+            let queryExpr' = 
+                match collectionSelector with
+                | Lambda ([paramExpr], bodyExpr) ->
+                    NestedQueryTransform ((paramExpr, Compiler.toQueryExpr bodyExpr), resultSelector, queryExpr.QueryExpr, typeof<'R>)
+                | _ -> failwithf "Invalid state %A" collectionSelector
+
+            new ParallelQueryExpr<IEnumerable<'R>>(queryExpr')

@@ -64,15 +64,15 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(225, result.Run());
         }
 
-        //[Test]
-        //public void SelectManyComprehensionTest()
-        //{
-        //    var result = (from num in nums.AsParallel().AsQueryExpr()
-        //                  from _num in nums
-        //                  select num * _num).Sum();
+        [Test]
+        public void SelectManyComprehensionTest()
+        {
+            var result = (from num in nums.AsParallel().AsQueryExpr()
+                          from _num in nums
+                          select num * _num).Sum();
 
-        //    Assert.AreEqual(225, result.Run());
-        //}
+            Assert.AreEqual(225, result.Run());
+        }
 
         [Test]
         public void SelectManyNestedTest()

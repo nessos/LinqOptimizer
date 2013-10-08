@@ -333,6 +333,13 @@
 
                     let expr = compileToSeqPipeline nestedQueryExpr context'
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
+                | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr', t) ->
+                    let context' = { CurrentVarExpr = valueExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                        VarExprs = []; Exprs = assign colExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
+
+                    let expr = compileToSeqPipeline nestedQueryExpr context'
+                    compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
                 | _ -> failwithf "Invalid state %A" queryExpr 
             match queryExpr with
             | Sum (queryExpr', t) ->
