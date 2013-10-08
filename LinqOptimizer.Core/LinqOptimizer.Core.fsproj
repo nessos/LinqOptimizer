@@ -43,6 +43,7 @@
     <Compile Include="Compiler.fs" />
     <Compile Include="ExtensionMethods.fs" />
     <Compile Include="FSharpQuery.fs" />
+    <Compile Include="QueryBuilder.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

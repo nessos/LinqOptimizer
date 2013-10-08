@@ -238,7 +238,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RangeTest()
         {
-            var result = QueryExpr.Range(1, 10);
+            var result = Enumerable.Range(1, 10).AsQueryExpr();
 
             Assert.AreEqual(Enumerable.Range(1, 10), result.Run());
         }
@@ -246,7 +246,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RepeatTest()
         {
-            var result = QueryExpr.Repeat(42, 10);
+            var result = Enumerable.Repeat(42, 10).AsQueryExpr();
 
             Assert.AreEqual(Enumerable.Repeat(42, 10), result.Run());
         }
@@ -255,7 +255,7 @@ namespace LinqOptimizer.Tests
         public void RepeatValueTypeCastTest()
         {
             var t = (object) DateTime.Now;
-            var result = QueryExpr.Repeat(t, 10);
+            var result = Enumerable.Repeat(t, 10).AsQueryExpr();
 
             Assert.AreEqual(Enumerable.Repeat(t, 10), result.Run());
         }
@@ -263,7 +263,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RangeWhereTest()
         {
-            var result = QueryExpr.Range(1, 10).Where(f => f < 5);
+            var result = Enumerable.Range(1, 10).AsQueryExpr().Where(f => f < 5);
 
             Assert.AreEqual(Enumerable.Range(1, 10).Where(f => f < 5), result.Run());
         }
@@ -271,7 +271,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RepeatWhereTest()
         {
-            var result = QueryExpr.Repeat(42, 10).Where(f => f < 5);
+            var result = Enumerable.Repeat(42, 10).AsQueryExpr().Where(f => f < 5);
 
             Assert.AreEqual(Enumerable.Repeat(42, 10).Where(f => f < 5), result.Run());
         }
@@ -286,5 +286,30 @@ namespace LinqOptimizer.Tests
 
             Assert.AreEqual(Enumerable.Zip(left, right, (l, r) => l * r), result.Run());
         }
+
+        [Test]
+        public void RangeInvalidArgTest ()
+        {
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(0, -1).AsQueryExpr().Run());
+        }
+
+        [Test]
+        public void RepeatInvalidArgTest()
+        {
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Repeat(0, -1).AsQueryExpr().Run());
+        }
+
+        [Test]
+        public void NestedRangeInvalidArgTest()
+        {
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1,10).AsQueryExpr().SelectMany( _ => Enumerable.Range(0, -1).AsQueryExpr().Run()).Run());
+        }
+
+        [Test]
+        public void NestedRepeatInvalidArgTest()
+        {
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1).AsQueryExpr().Run()).Run());
+        }
+
     }
 }
