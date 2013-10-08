@@ -181,3 +181,15 @@ namespace LinqOptimizer.Core
                 | _ -> failwithf "Invalid state %A" collectionSelector
 
             new ParallelQueryExpr<IEnumerable<'R>>(queryExpr')
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member GroupBy<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) =
+            new ParallelQueryExpr<IEnumerable<IGrouping<'Key, 'T>>>(GroupBy (keySelector, queryExpr.QueryExpr, typeof<IGrouping<'Key, 'T>>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member OrderBy<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) = 
+            new ParallelQueryExpr<IEnumerable<'T>>(OrderBy (keySelector, Order.Ascending, queryExpr.QueryExpr, typeof<'T>))
+
+        [<System.Runtime.CompilerServices.Extension>]
+        static member OrderByDescending<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) = 
+            new ParallelQueryExpr<IEnumerable<'T>>(OrderBy (keySelector, Order.Descending, queryExpr.QueryExpr, typeof<'T>))
