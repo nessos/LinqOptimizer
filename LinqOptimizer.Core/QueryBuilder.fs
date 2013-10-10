@@ -32,14 +32,14 @@
 
         member __.Run (expr : Expr<'T>) = expr
 
-//    module QueryBuilderCompiler =
-//        
-//        let toExpression (expr : Expr) : Expression =
-//            Linq.RuntimeHelpers.LeafExpressionConverter.QuotationToExpression(expr)
-//
-//        let evalExpr<'T> (expr : Expr) =
-//            Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation(expr) :?> 'T
-//
+    module QueryBuilderCompiler =
+        
+        let toExpression (expr : Expr) : Expression =
+            Linq.RuntimeHelpers.LeafExpressionConverter.QuotationToExpression(expr)
+
+        let evalExpr<'T> (expr : Expr) =
+            Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation(expr) :?> 'T
+
 //        let rec transform (expr : Expr<QueryExpr<IEnumerable<'T>>>) : Expr<QueryExpr<IEnumerable<'T>>> =
 //            match expr with
 //            | Call (o ,m, [seqExpr]) when m.Name = "Source" ->

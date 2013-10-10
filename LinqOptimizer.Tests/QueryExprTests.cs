@@ -302,13 +302,13 @@ namespace LinqOptimizer.Tests
         [Test]
         public void NestedRangeInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1,10).AsQueryExpr().SelectMany( _ => Enumerable.Range(0, -1).AsQueryExpr().Run()).Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1,10).AsQueryExpr().SelectMany( _ => Enumerable.Range(0, -1)).Run());
         }
 
         [Test]
         public void NestedRepeatInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1).AsQueryExpr().Run()).Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
         }
 
     }
