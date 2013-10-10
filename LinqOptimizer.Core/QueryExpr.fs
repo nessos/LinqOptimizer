@@ -77,11 +77,11 @@
 //            else 
 //                new QueryExpr<_>(RepeatGenerator(element, typeof<'T>, count))
 
-        static member Zip(left : IEnumerable<'T>, right : IEnumerable<'U>, 
-                          func : Expression<Func<'T,'U,'R>>) : QueryExpr<IEnumerable<'R>> =
-            let left  = Expression.Constant left  :> Expression , typeof<'T>
-            let right = Expression.Constant right :> Expression , typeof<'U>
-            new QueryExpr<_>(ZipWith(left, right, func))
+//        static member Zip(left : IEnumerable<'T>, right : IEnumerable<'U>, 
+//                          func : Expression<Func<'T,'U,'R>>) : QueryExpr<IEnumerable<'R>> =
+//            let left  = Expression.Constant left  :> Expression , typeof<'T>
+//            let right = Expression.Constant right :> Expression , typeof<'U>
+//            new QueryExpr<_>(ZipWith(left, right, func))
 
             
 
