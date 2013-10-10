@@ -37,8 +37,8 @@
         | OrderBy of LambdaExpression * Order * QueryExpr * Type
         | ToList of QueryExpr
         | ToArray of QueryExpr
-        | RangeGenerator of int * int
-        | RepeatGenerator of obj * Type * int
+        | RangeGenerator of Expression * Expression
+        | RepeatGenerator of obj * Type * Expression
         | ZipWith of (Expression * Type) * (Expression * Type) * LambdaExpression
         with
 

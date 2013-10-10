@@ -161,8 +161,8 @@
                     block vars 
                         [block [] context.InitExprs; enumerator1AssignExpr; disposable1AssignExpr; enumerator2AssignExpr; disposable2AssignExpr; loopExpr; context.ReturnExpr]
             | RangeGenerator(start, count) ->
-                    let startExpr = constant (start-1)
-                    let endExpr = constant (start + count)
+                    let startExpr = Expression.Subtract(start , constant 1)
+                    let endExpr = Expression.Add(start, count)
                     let currVarExpr = var "___curr___" typeof<int>
                     let currVarInitExpr = assign currVarExpr startExpr
                     let checkExpr = equal currVarExpr endExpr
@@ -171,10 +171,10 @@
                     let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
                     let loopExpr = loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel
                     block (currVarExpr :: context.VarExprs) [block [] context.InitExprs; currVarInitExpr; loopExpr; context.ReturnExpr ]
-            | RepeatGenerator(element, t, count) ->
-                    let endExpr = constant count
+            | RepeatGenerator(element, t, countExpr) ->
+                    let endExpr = countExpr
                     let indexVarExpr = var "___index___" typeof<int>
-                    let indexVarInitExpr = assign indexVarExpr (constant count)
+                    let indexVarInitExpr = assign indexVarExpr countExpr
                     let elemVarExpr = var "___elem___" t
                     let elemVarInitExpr = assign elemVarExpr (cast (constant element) t)
                     let checkExpr = lessThan indexVarExpr (constant 0)
@@ -394,9 +394,7 @@
             | MethodCall (_, MethodName "Count" _,  [expr'; Lambda ([_], bodyExpr) as f']) -> 
                 Count (toQueryExpr expr', bodyExpr.Type)
             | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
-                let start = Expression.Lambda(startExpr).Compile().DynamicInvoke() :?> int
-                let count = Expression.Lambda(countExpr).Compile().DynamicInvoke() :?> int
-                RangeGenerator(start, count)
+                RangeGenerator(startExpr, countExpr)
             | _ -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())

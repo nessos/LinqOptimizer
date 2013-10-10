@@ -24,11 +24,11 @@ namespace LinqOptimizer.Core
             | s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
                 let start = ty.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
                 let count = ty.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                new QueryExpr<_>(RangeGenerator(start :?> int, count :?> int))
+                new QueryExpr<_>(RangeGenerator(constant start , constant count))
             | s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
                 let element = ty.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
                 let count = ty.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                new QueryExpr<_>(RepeatGenerator(element, typeof<'T>, count :?> int))
+                new QueryExpr<_>(RepeatGenerator(element, typeof<'T> ,constant count))
             | _ -> new QueryExpr<_>(Source (constant enumerable, typeof<'T>))
 
         [<System.Runtime.CompilerServices.Extension>]
