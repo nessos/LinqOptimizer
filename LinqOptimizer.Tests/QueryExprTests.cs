@@ -374,16 +374,16 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(Enumerable.Repeat(42, 10).Where(f => f < 5), result.Run());
         }
 
-        [Test]
-        public void ZipTest()
-        {
-            var left  = new int [] { 1,2,3 };
-            var right = new int [] { 4,5,6 };
+        //[Test]
+        //public void ZipTest()
+        //{
+        //    var left  = new int [] { 1,2,3 };
+        //    var right = new int [] { 4,5,6 };
 
-            var result = QueryExpr.Zip(left, right, (l,r) => l * r);
+        //    var result = QueryExpr.Zip(left, right, (l,r) => l * r);
 
-            Assert.AreEqual(Enumerable.Zip(left, right, (l, r) => l * r), result.Run());
-        }
+        //    Assert.AreEqual(Enumerable.Zip(left, right, (l, r) => l * r), result.Run());
+        //}
 
         [Test]
         public void RangeInvalidArgTest ()
@@ -400,13 +400,13 @@ namespace LinqOptimizer.Tests
         [Test]
         public void NestedRangeInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1,10).AsQueryExpr().SelectMany( _ => Enumerable.Range(0, -1).AsQueryExpr().Run()).Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1,10).AsQueryExpr().SelectMany( _ => Enumerable.Range(0, -1)).Run());
         }
 
         [Test]
         public void NestedRepeatInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1).AsQueryExpr().Run()).Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
         }
 
     }

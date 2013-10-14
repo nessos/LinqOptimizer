@@ -160,29 +160,56 @@
                         enumerator2VarExpr :: disposable2VarExpr :: context.VarExprs
                     block vars 
                         [block [] context.InitExprs; enumerator1AssignExpr; disposable1AssignExpr; enumerator2AssignExpr; disposable2AssignExpr; loopExpr; context.ReturnExpr]
-            | RangeGenerator(start, count) ->
-                    let startExpr = constant (start-1)
-                    let endExpr = constant (start + count)
+            | RangeGenerator(start, countExpr) ->
+                    
+                    // count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue
+                    let countVarExpr = var "___count___" typeof<int>
+                    let countVarInitExpr = assign countVarExpr countExpr
+                    let countCheckExpr = 
+                        let left = Expression.LessThan(countVarExpr, constant 0)
+                        let right = Expression.GreaterThan(
+                                        Expression.Subtract(
+                                            Expression.Add(cast start typeof<int64>, cast countVarExpr typeof<int64>),
+                                            constant 1L),
+                                        constant (int64 Int32.MaxValue))
+                        Expression.Or(left, right)
+                    let exceptionExpr = 
+                        Expression.Block(Expression.Throw(constant(ArgumentOutOfRangeException("count"))), 
+                                         constant Unchecked.defaultof<IEnumerable<int>>)
+
+                    let startExpr = Expression.Subtract(start , constant 1)
+                    let endExpr = Expression.Add(start, countVarExpr)
                     let currVarExpr = var "___curr___" typeof<int>
                     let currVarInitExpr = assign currVarExpr startExpr
                     let checkExpr = equal currVarExpr endExpr
                     let incCurrExpr = addAssign currVarExpr (constant 1)
                     let exprs' = assign context.CurrentVarExpr currVarExpr :: context.Exprs
                     let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
-                    let loopExpr = loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel
-                    block (currVarExpr :: context.VarExprs) [block [] context.InitExprs; currVarInitExpr; loopExpr; context.ReturnExpr ]
-            | RepeatGenerator(element, t, count) ->
-                    let endExpr = constant count
+                    let loopExpr = 
+                        ifThenElse countCheckExpr exceptionExpr 
+                            (loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel)
+                    block (countVarExpr :: currVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; currVarInitExpr; loopExpr; context.ReturnExpr ]
+            | RepeatGenerator(element, t, countExpr) ->
+                    let countVarExpr = var "___count___" typeof<int>
+                    let countVarInitExpr = assign countVarExpr countExpr
+                    let countCheckExpr = Expression.LessThan(countVarExpr, constant 0)
+                    let exceptionExpr = 
+                        Expression.Block(Expression.Throw(constant(ArgumentOutOfRangeException("count"))), 
+                                         constant null)
+
+                    let endExpr = countExpr
                     let indexVarExpr = var "___index___" typeof<int>
-                    let indexVarInitExpr = assign indexVarExpr (constant count)
+                    let indexVarInitExpr = assign indexVarExpr countExpr
                     let elemVarExpr = var "___elem___" t
                     let elemVarInitExpr = assign elemVarExpr (cast (constant element) t)
                     let checkExpr = lessThan indexVarExpr (constant 0)
-                    let incCurrExpr = subAssign indexVarExpr (constant 1)
+                    let incCurrExpr = subAssign indexVarExpr (constant 1) 
                     let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
                     let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
-                    let loopExpr = loop (block [] [incCurrExpr; branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
-                    block (indexVarExpr :: elemVarExpr :: context.VarExprs) [block [] context.InitExprs; elemVarInitExpr; indexVarInitExpr; loopExpr; context.ReturnExpr ]
+                    let loopExpr = 
+                        ifThenElse countCheckExpr  exceptionExpr 
+                            (loop (block [] [incCurrExpr; branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel)
+                    block (countVarExpr :: indexVarExpr :: elemVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; elemVarInitExpr; indexVarInitExpr; loopExpr; context.ReturnExpr ]
             | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                 let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
@@ -421,9 +448,9 @@
             | MethodCall (_, MethodName "Count" _,  [expr'; Lambda ([_], bodyExpr) as f']) -> 
                 Count (toQueryExpr expr', bodyExpr.Type)
             | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
-                let start = Expression.Lambda(startExpr).Compile().DynamicInvoke() :?> int
-                let count = Expression.Lambda(countExpr).Compile().DynamicInvoke() :?> int
-                RangeGenerator(start, count)
+                RangeGenerator(startExpr, countExpr)
+//            | MethodCall (_, MethodName "Repeat" _, [e1; e2]) ->
+//                failwith "unimpl"
             | _ -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())
