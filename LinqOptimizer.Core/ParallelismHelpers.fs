@@ -13,7 +13,11 @@
                                                     combiner : Func<'Acc, 'Acc, 'Acc>,
                                                     selector : Func<'Acc, 'R>) : 'R = 
 
-            let seqReduceCount = values.Count / Environment.ProcessorCount
+            let seqReduceCount = 
+                if values.Count > Environment.ProcessorCount then 
+                    values.Count / Environment.ProcessorCount 
+                else
+                    Environment.ProcessorCount 
             let rec reduceCombine s e =
                 async { 
                     if e - s <= seqReduceCount then

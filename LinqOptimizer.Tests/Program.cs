@@ -91,7 +91,7 @@ namespace LinqOptimizer.Tests
             //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => 0.0, (acc, v) => { return ((double) v + 1 + 1 + 1) + acc; }, (left, right) => { return left + right; }, x => x)));
 
             var tests = new ParallelQueryExprTests();
-            //tests.OrderByTest();
+            tests.SelectTest();
         }
 
         static void Measure(Action action)
