@@ -307,13 +307,24 @@
                 expr
 
         let compileToParallel (queryExpr : QueryExpr) : Expression =
+            let toParallelListContext (queryExpr : QueryExpr) = 
+                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
+                let initExpr, accExpr = lambda [||] (``new`` listType), block [] [call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]; accVarExpr]
+                let leftVarExpr, rightVarExpr = var "___left___" listType, var "___right___" listType
+                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [call (listType.GetMethod("AddRange")) leftVarExpr [rightVarExpr]; leftVarExpr])
+                let returnExpr = lambda [|accVarExpr|] accVarExpr
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
+                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                context
             let rec compile queryExpr context =
                 match queryExpr with
                 | Source (expr, t) -> 
-                    let aggregateMethodInfo = typeof<ParallelEnumerable>.GetMethods()
+                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
-                                                                | MethodName "Aggregate" [|_; ParameterName "seedFactory" _; _; _; _|] -> true
+                                                                | MethodName "ReduceCombine" [|_; _; _; _; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
                     let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
@@ -340,6 +351,30 @@
 
                     let expr = compileToSeqPipeline nestedQueryExpr context'
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
+                | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
+                    let context' = toParallelListContext queryExpr'
+                    let expr = compile queryExpr' context'
+                    let methodName = match order with Ascending -> "OrderBy" | Descending -> "OrderByDescending"
+                    let orderByMethodInfo = typeof<ParallelEnumerable>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName methodName [|_; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                    let asParallelMethodInfo = typeof<ParallelEnumerable>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "AsParallel" [|_|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type|])
+                    let toListMethodInfo = typeof<ParallelEnumerable>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "ToList" [|_|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type|])
+                    let orderByCallExpr = call toListMethodInfo null [call orderByMethodInfo null [call asParallelMethodInfo null [expr]; lambdaExpr]]
+                    compile (Source (orderByCallExpr, t)) context
                 | _ -> failwithf "Invalid state %A" queryExpr 
             match queryExpr with
             | Sum (queryExpr', t) ->
@@ -356,15 +391,7 @@
                 let expr = compile queryExpr' context
                 expr 
             | queryExpr' ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
-                let initExpr, accExpr = lambda [||] (``new`` listType), block [] [call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]; accVarExpr]
-                let leftVarExpr, rightVarExpr = var "___left___" listType, var "___right___" listType
-                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [call (listType.GetMethod("AddRange")) leftVarExpr [rightVarExpr]; leftVarExpr])
-                let returnExpr = lambda [|accVarExpr|] accVarExpr
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                let context = toParallelListContext queryExpr'
                 let expr = compile queryExpr context
                 expr
 

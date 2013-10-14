@@ -15,16 +15,17 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectTest()
         {
-            var result = from num in nums.AsParallel().AsQueryExpr()
+            var result = from num in nums.AsParallelQueryExpr()
                          select num * 2;
 
-            Assert.AreEqual(new[] { 2, 4, 6, 8, 10 }, result.Run());
+            var temp = result.Run();
+            Assert.AreEqual(new[] { 2, 4, 6, 8, 10 }, temp);
         }
 
         [Test]
         public void WhereTest()
         {
-            var result = from num in nums.AsParallel().AsQueryExpr()
+            var result = from num in nums.AsParallelQueryExpr()
                          where num % 2 == 0
                          select num;
 
@@ -47,7 +48,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SumTest()
         {
-            var result = (from num in nums.AsParallel().AsQueryExpr()
+            var result = (from num in nums.AsParallelQueryExpr()
                           select num * 2).Sum();
 
             Assert.AreEqual(30, result.Run());
@@ -57,7 +58,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectManyTest()
         {
-            var result = nums.AsParallel().AsQueryExpr()
+            var result = nums.AsParallelQueryExpr()
                          .SelectMany(num => nums.Select(_num => num * _num))
                          .Sum();
 
@@ -67,7 +68,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectManyComprehensionTest()
         {
-            var result = (from num in nums.AsParallel().AsQueryExpr()
+            var result = (from num in nums.AsParallelQueryExpr()
                           from _num in nums
                           select num * _num).Sum();
 
@@ -77,7 +78,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectManyNestedTest()
         {
-            var result = nums.AsParallel().AsQueryExpr()
+            var result = nums.AsParallelQueryExpr()
                          .SelectMany(num => nums.SelectMany(_num => new[] { num * _num }))
                          .Sum();
 
@@ -88,7 +89,7 @@ namespace LinqOptimizer.Tests
         public void SelectManyPipelineTest()
         {
 
-            var result = nums.AsParallel().AsQueryExpr()
+            var result = nums.AsParallelQueryExpr()
                             .Where(num => num % 2 == 0)
                             .SelectMany(num => nums.Select(_num => num * _num))
                             .Select(x => x + 1)
@@ -101,7 +102,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void GroupByTest()
         {
-            var result = (from num in new[] { 1, 1, 2, 2 }.AsParallel().AsQueryExpr()
+            var result = (from num in new[] { 1, 1, 2, 2 }.AsParallelQueryExpr()
                           group num by num into g
                           select g.Count()).Sum();
 
@@ -111,17 +112,20 @@ namespace LinqOptimizer.Tests
         [Test]
         public void OrderByTest()
         {
-            var result = from num in nums.Reverse().AsParallel().AsQueryExpr()
+            Random random = new Random();
+            var nums = Enumerable.Range(1, 10).Select(_ => random.Next()).ToArray();            
+
+            var result = from num in nums.AsParallelQueryExpr()
                          orderby num
                          select num;
 
-            Assert.AreEqual(nums, result.Run());
+            Assert.AreEqual(nums.OrderBy(x => x), result.Run());
 
-            var _result = from num in nums.AsParallel().AsQueryExpr()
+            var _result = from num in nums.AsParallelQueryExpr()
                           orderby num descending
                           select num;
 
-            Assert.AreEqual(nums.Reverse(), _result.Run());
+            Assert.AreEqual(nums.OrderByDescending(x => x), _result.Run());
         }
 
     }

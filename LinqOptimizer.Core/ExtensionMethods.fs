@@ -142,8 +142,9 @@ namespace LinqOptimizer.Core
             new QueryExpr<_>(ToArray queryExpr.QueryExpr)
 
         // ParallelQuery ExtensionMethods
+
         [<System.Runtime.CompilerServices.Extension>]
-        static member AsQueryExpr(parallelQuery : ParallelQuery<'T>) : ParallelQueryExpr<IEnumerable<'T>> = 
+        static member AsParallelQueryExpr(parallelQuery : IEnumerable<'T>) : ParallelQueryExpr<IEnumerable<'T>> = 
             new ParallelQueryExpr<_>(Source (constant parallelQuery, typeof<'T>))
 
         [<System.Runtime.CompilerServices.Extension>]
