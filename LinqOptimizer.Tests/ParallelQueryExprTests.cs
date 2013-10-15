@@ -98,7 +98,6 @@ namespace LinqOptimizer.Tests
             Assert.AreEqual(100, result.Run());
         }
 
-
         [Test]
         public void GroupByTest()
         {
@@ -113,7 +112,7 @@ namespace LinqOptimizer.Tests
         public void OrderByTest()
         {
             Random random = new Random();
-            var nums = Enumerable.Range(1, 10).Select(_ => random.Next()).ToArray();            
+            var nums = Enumerable.Range(1, 10).Select(_ => random.Next()).ToArray();
 
             var result = from num in nums.AsParallelQueryExpr()
                          orderby num

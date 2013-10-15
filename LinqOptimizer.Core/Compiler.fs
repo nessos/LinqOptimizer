@@ -6,9 +6,11 @@
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open System.Collections.Concurrent
 
     module internal Compiler =
         let listTypeDef = typedefof<List<_>>
+        let partitionerTypeDef = typedefof<Partitioner<_>>
 
         let breakLabel () = labelTarget "break"
         let continueLabel () = labelTarget "continue"
@@ -347,7 +349,7 @@
                 context
             let rec compile queryExpr context =
                 match queryExpr with
-                | Source (expr, t) -> 
+                | Source (ExprType (Array (_, 1)) as expr, t) | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
@@ -358,6 +360,24 @@
                                             (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
                                             (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
                     call aggregateMethodInfo null [expr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
+                | Source (expr, t) ->
+                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "ReduceCombine" [| ParamType (Named (TypeCheck partitionerTypeDef _, [|_|])); _; _; _; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
+                    let partitionerCreateMethodInfo = typeof<Partitioner>.GetMethods()
+                                                        |> Array.find (fun methodInfo -> 
+                                                                        match methodInfo with
+                                                                        | MethodName "Create" [|_|] -> true
+                                                                        | _ -> false) // TODO: reflection type checks
+                                                        |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type|])
+                    let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
+                                            (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
+                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
+                    let partitionerCallExpr = call partitionerCreateMethodInfo  null [expr]
+                    call aggregateMethodInfo null [partitionerCallExpr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
@@ -378,6 +398,18 @@
 
                     let expr = compileToSeqPipeline nestedQueryExpr context'
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
+                | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
+                    let context' = toParallelListContext queryExpr'
+                    let expr = compile queryExpr' context'
+                    let groupByMethodInfo = typeof<Enumerable>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "GroupBy" [|_; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                    let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
+                    let groupByCallExpr = call groupByMethodInfo null [expr; lambdaExpr]
+                    compile (Source (groupByCallExpr, groupingType)) context
                 | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
