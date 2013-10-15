@@ -5,12 +5,12 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>6fea9d47-1291-40ce-9716-619bcc2f485a</ProjectGuid>
+    <ProjectGuid>5c5fe9f9-91df-44e2-a68d-b9a49828e0bb</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>LinqOptimizer.Core</RootNamespace>
-    <AssemblyName>LinqOptimizer.Core</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <Name>LinqOptimizer.Core</Name>
+    <RootNamespace>LinqOptimizer.FSharp</RootNamespace>
+    <AssemblyName>LinqOptimizer.FSharp</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <Name>LinqOptimizer.FSharp</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,7 +20,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\LinqOptimizer.Core.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\LinqOptimizer.FSharp.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,21 +29,8 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\LinqOptimizer.Core.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\LinqOptimizer.FSharp.XML</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="QueryExpr.fs" />
-    <Compile Include="ExpressionHelpers.fs" />
-    <Compile Include="ParallelismHelpers.fs" />
-    <Compile Include="ReflectionHelpers.fs" />
-    <Compile Include="Compiler.fs" />
-    <Compile Include="ExtensionMethods.fs" />
-  </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -53,6 +40,21 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="QueryBuilder.fs" />
+    <Compile Include="FSharpQuery.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LinqOptimizer.Core\LinqOptimizer.Core.fsproj">
+      <Name>LinqOptimizer.Core</Name>
+      <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
