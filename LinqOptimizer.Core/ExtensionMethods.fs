@@ -8,6 +8,33 @@ namespace LinqOptimizer.Core
     open System.Linq.Expressions
     open System.Reflection
 
+
+    type CoreExts =
+        static member AsQueryExpr(enumerable : IEnumerable, ty : Type) : QueryExpr = 
+            // Hack to optimize Enumerable.Range and Enumerable.Repeat calls
+            // TODO : check Mono generated types
+            let t = enumerable.GetType()
+            match t.FullName with
+            | s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
+                let start = t.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
+                let count = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+                RangeGenerator(constant start , constant count)
+            | s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
+                let element = t.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
+                let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+                RepeatGenerator(element, ty ,constant count)
+            | _ -> 
+                Source (constant enumerable, ty)
+
+        static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
+            let expr = Compiler.compileToSequential queryExpr
+            let func = Expression.Lambda<Func<'T>>(expr).Compile()
+            func
+
+        static member Select<'T, 'R>(queryExpr : QueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, 'R>>) : QueryExpr<IEnumerable<'R>> =
+            new QueryExpr<_>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
+
+
     // LINQ-C# friendly extension methods 
     [<AutoOpen>]
     [<System.Runtime.CompilerServices.Extension>]
