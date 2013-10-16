@@ -22,6 +22,8 @@
                 Some typeDef
             else None
 
+        let (|ParamType|) (paramInfo : ParameterInfo) = paramInfo.ParameterType
+
         let (|Named|Array|Ptr|Param|) (t : System.Type) =
             if t.IsGenericType
             then Named(t.GetGenericTypeDefinition(), t.GetGenericArguments())

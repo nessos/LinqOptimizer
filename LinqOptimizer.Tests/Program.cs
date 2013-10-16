@@ -26,15 +26,16 @@ namespace LinqOptimizer.Tests
             #endregion
         }
 
-        public static Dictionary<T, List<T>> Grouping<T>(Dictionary<T, List<T>> dict, T key)
+
+        public static Dictionary<Key, List<Value>> Grouping<Key, Value>(Dictionary<Key, List<Value>> dict, Key key, Value value)
         {            
-            List<T> list = null;   
+            List<Value> list = null;
             if(!dict.TryGetValue(key, out list))
             {
-                list = new List<T>();
+                list = new List<Value>();
                 dict.Add(key, list);
             }
-            list.Add(key);
+            list.Add(value);
             
             return dict;
         }
@@ -49,7 +50,7 @@ namespace LinqOptimizer.Tests
                     list = new List<T>();
                     left.Add(item.Key, list);
                 }
-                list.AddRange(item.Value);
+                //list.AddRange(item.Value);
             }
             return left;
         }
@@ -57,7 +58,7 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
             //Random random = new Random();
-            //var nums = Enumerable.Range(1, 200000000).ToArray();
+            //var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 1000000)).ToArray();
 
             //////var list = new KeyValuePair<int, int>[100000000];
             //////Measure(() =>
@@ -70,28 +71,34 @@ namespace LinqOptimizer.Tests
             //////});
 
             //////Measure(() => Array.Sort(nums));
-            //////var keys = nums.ToArray();
-            //////var values = nums.ToArray();
-            //////Measure(() => Array.Sort(keys, values));
+            //var keys = nums.ToArray();
+            //var values = nums.ToArray();
+            //Measure(() => Array.Sort(keys, values));
             //////Measure(() => Array.Sort(list, new KeyValuePairComparer<int>()));
-            //////Measure(() => nums.OrderBy(x => x).ToList());
+            //Measure(() => nums.OrderBy(x => x).ToList());
 
             
-            ////Measure(() => nums.Select(x => x).GroupBy(x => x).Select(g => g).ToList());
+            //Measure(() => nums.GroupBy(x => x).ToList());
+            //Measure(() => nums.Aggregate(new Dictionary<int, List<int>>(), (acc, v) => { return Grouping(acc, v); }));
             //Measure(() => Console.WriteLine(nums.AsParallel().Aggregate(() => 0.0, (acc, v) => { return ((double) v + 1 + 1 + 1)  + acc; }, (left, right) => { return left + right; }, x => x)));
             //Measure(() => Console.WriteLine(nums.AsParallel().Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum()));
-            ////Measure(() => Grouping(nums));
+            //Measure(() =>
+            //{
+            //    var dict = new Dictionary<int, List<int>>();
+            //    for (int i = 0; i < nums.Length; i++)
+            //    {
+            //        dict = Grouping(dict, nums[i], nums[i]);
+            //    }
+            //});
 
-            //////Measure(() => nums.Sort((x, y) => { if (x < y) return -1; else if (x == y) return 0; else return 1; }));
-            //////Measure(() => nums.Sort((x, y) => { if (x < y) return -1; else if (x == y) return 0; else return 1; }));
-            //////Measure(() => nums.Sort(Comparer<int>.Default));
+            //var _nums = nums.ToList();
+            //Measure(() => _nums.Sort((x, y) => { if (x < y) return -1; else if (x == y) return 0; else return 1; }));
 
-
-            
             //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => 0.0, (acc, v) => { return ((double) v + 1 + 1 + 1) + acc; }, (left, right) => { return left + right; }, x => x)));
+            //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => new Dictionary<int, List<int>>(), (acc, v) => { return Grouping(acc, v, v); }, (left, right) => { return Merge(left, right); }, x => x)));
 
             var tests = new ParallelQueryExprTests();
-            tests.SelectTest();
+            tests.GroupByTest();
         }
 
         static void Measure(Action action)

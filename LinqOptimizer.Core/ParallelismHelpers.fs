@@ -38,16 +38,11 @@
 
 
         
-        static member ReduceCombine<'T, 'Acc, 'R>(values : IEnumerable<'T>, 
+        static member ReduceCombine<'T, 'Acc, 'R>( partitioner : Partitioner<'T>,
                                                     init : Func<'Acc>, 
                                                     reducer : Func<'Acc, 'T, 'Acc>,
                                                     combiner : Func<'Acc, 'Acc, 'Acc>,
                                                     selector : Func<'Acc, 'R>) : 'R = 
-            let partitioner : Partitioner<'T> = 
-                match values with
-                | :? array<'T>  as array -> Partitioner.Create(array, false) :> _
-                | :? IList<'T> as list -> Partitioner.Create(list, false) :> _
-                | _ -> Partitioner.Create(values) :> _
 
             let split (partitions : IEnumerator<'T> [])  =
                 let half = partitions.Length / 2
