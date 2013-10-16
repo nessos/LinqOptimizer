@@ -12,11 +12,12 @@
     open Microsoft.FSharp.Quotations.Patterns
     open Microsoft.FSharp.Quotations.DerivedPatterns
        
+    open LinqOptimizer.Base
 
     type QueryBuilder () =
         
         member __.Quote (expr : Expr<'T>) = expr
-        member __.Source(source:IEnumerable<'T>) : QueryExpr<IEnumerable<'T>> = raise <| NotImplementedException()
+        member __.Source(source:IEnumerable<'T>) : IQueryExpr<IEnumerable<'T>> = raise <| NotImplementedException()
 
         [<CustomOperation("select",AllowIntoPattern=true)>] 
         member __.Select(source : QueryExpr<IEnumerable<'T>>, [<ProjectionParameter>] projection:('T -> 'R)) : QueryExpr<IEnumerable<'R>> = raise <| NotImplementedException()

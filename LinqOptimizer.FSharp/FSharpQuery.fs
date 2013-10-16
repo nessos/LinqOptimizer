@@ -6,95 +6,95 @@
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open LinqOptimizer.Base
+    open LinqOptimizer.CSharp
 
-    // F# friendly class
-    //[<CompiledName("FSharpQuery")>]
     type Query =
         static member ofSeq (source : IEnumerable<'T>) =
-            ExtensionMethods.AsQueryExpr(source)
+            Extensions.AsQueryExpr(source)
 
-        static member compile<'T>(queryExpr : QueryExpr<'T>) = 
-            ExtensionMethods.Compile(queryExpr).Invoke
+        static member compile<'T>(queryExpr : IQueryExpr<'T>) = 
+            Extensions.Compile(queryExpr).Invoke
 
-        static member compile(queryExpr : QueryExprVoid)  =
-            ExtensionMethods.Compile(queryExpr).Invoke
+        static member compile(queryExpr : IQueryExpr)  =
+            Extensions.Compile(queryExpr).Invoke
 
-        static member run (source : QueryExpr<'T>) =
-            ExtensionMethods.Run(source)
+        static member run (source : IQueryExpr<'T>) =
+            Extensions.Run(source)
 
-        static member run(queryExpr : QueryExprVoid) : unit =
-            ExtensionMethods.Run(queryExpr)
+        static member run(queryExpr : IQueryExpr) : unit =
+            Extensions.Run(queryExpr)
 
         static member map<'T,'R> (projection : Expression<Func<'T,'R>>) = 
-            fun (source : QueryExpr<IEnumerable<'T>>) -> 
-                ExtensionMethods.Select(source, projection)
+            fun (source : IQueryExpr<IEnumerable<'T>>) -> 
+                Extensions.Select(source, projection)
 
         static member map<'T, 'R>(selector : Expression<Func<'T, int, 'R>>) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Select(queryExpr, selector)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.Select(queryExpr, selector)
                 
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Where(queryExpr, predicate)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.Where(queryExpr, predicate)
 
         static member where<'T>(predicate : Expression<Func<'T, bool>>) =
             Query.filter predicate
 
         static member where<'T>(predicate : Expression<Func<'T, int, bool>>) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Where(queryExpr, predicate)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.Where(queryExpr, predicate)
 
         static member filter<'T>(predicate : Expression<Func<'T, int, bool>>) =
             Query.where predicate
 
         static member fold(func : Expression<Func<'Acc, 'T, 'Acc>>) =
-            fun (seed : 'Acc) (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Aggregate(queryExpr, seed, func)
+            fun (seed : 'Acc) (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.Aggregate(queryExpr, seed, func)
 
-        static member sum (source : QueryExpr<IEnumerable<double>>) =
-            ExtensionMethods.Sum(source)
+        static member sum (source : IQueryExpr<IEnumerable<double>>) =
+            Extensions.Sum(source)
 
-        static member sum (source : QueryExpr<IEnumerable<int>>) =
-            ExtensionMethods.Sum(source)
+        static member sum (source : IQueryExpr<IEnumerable<int>>) =
+            Extensions.Sum(source)
 
-        static member length(queryExpr : QueryExpr<IEnumerable<'T>>) =
-            ExtensionMethods.Count(queryExpr)
+        static member length(queryExpr : IQueryExpr<IEnumerable<'T>>) =
+            Extensions.Count(queryExpr)
 
         static member collect<'T, 'Col, 'R>(collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.SelectMany(queryExpr, collectionSelector, resultSelector)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.SelectMany(queryExpr, collectionSelector, resultSelector)
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.SelectMany(queryExpr, selector)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.SelectMany(queryExpr, selector)
 
         static member take<'T>(n : int) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Take(queryExpr, n)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.Take(queryExpr, n)
 
         static member skip<'T>(n : int) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Skip(queryExpr, n)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.Skip(queryExpr, n)
 
         static member iter<'T>(action : Expression<Action<'T>>) =
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.ForEach(queryExpr, action)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.ForEach(queryExpr, action)
 
         static member groupBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.GroupBy(queryExpr, keySelector)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.GroupBy(queryExpr, keySelector)
 
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.OrderBy(queryExpr, keySelector)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.OrderBy(queryExpr, keySelector)
 
         static member sortByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
-            fun (queryExpr : QueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.OrderByDescending(queryExpr, keySelector)
+            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+                Extensions.OrderByDescending(queryExpr, keySelector)
 
-        static member toArray(queryExpr : QueryExpr<IEnumerable<'T>>) =
-            ExtensionMethods.ToArray(queryExpr)
+        static member toArray(queryExpr : IQueryExpr<IEnumerable<'T>>) =
+            Extensions.ToArray(queryExpr)
 
 //        static member range (start : int) (count : int) =
 //            QueryExpr.Range(start, count)
@@ -112,7 +112,7 @@
             ParallelQuery.ofQuery(source.AsParallel())
 
         static member ofQuery(parallelQuery : ParallelQuery<'T>) = 
-            ExtensionMethods.AsQueryExpr(parallelQuery)
+            ExtensionMethods.AsParallelQueryExpr(parallelQuery)
 
         static member compile<'T>(queryExpr : ParallelQueryExpr<'T>) =
             ExtensionMethods.Compile(queryExpr).Invoke

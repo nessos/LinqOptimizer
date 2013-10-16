@@ -35,7 +35,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void PipelineTest()
         {
-            var result = nums.AsQueryExpr()
+            var result = nums.AsParallelQueryExpr()
                          .Where(num => num % 2 == 0)
                          .Select(num => num * 2)
                          .Select(num => num.ToString())

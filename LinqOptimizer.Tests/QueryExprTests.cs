@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using LinqOptimizer.Core;
+using LinqOptimizer.CSharp;
 using System.Threading.Tasks;
 
 namespace LinqOptimizer.Tests

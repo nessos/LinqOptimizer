@@ -7,14 +7,14 @@
     open System.Linq.Expressions
     open System.Reflection
 
-    // Typed Wrapper for QueryExpr 
-    type QueryExpr<'T>(queryExpr : QueryExpr) =
-        member self.QueryExpr = queryExpr 
-    and ParallelQueryExpr<'T>(queryExpr : QueryExpr) =
+//    // Typed Wrapper for QueryExpr 
+//    type QueryExpr<'T>(queryExpr : QueryExpr) =
+//        member self.QueryExpr = queryExpr 
+    type ParallelQueryExpr<'T>(queryExpr : QueryExpr) =
         member self.QueryExpr = queryExpr 
     // C# friendly QueryExpr<unit>
-    and QueryExprVoid(queryExpr : QueryExpr) =
-        member self.QueryExpr = queryExpr 
+//    and QueryExprVoid(queryExpr : QueryExpr) =
+//        member self.QueryExpr = queryExpr 
     and ParallelQueryExprVoid(queryExpr : QueryExpr) =
         member self.QueryExpr = queryExpr 
     // Main Query representation

@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E606C2C2-C219-4E51-B928-5B192E283A54}</ProjectGuid>
+    <ProjectGuid>{F21F83A3-BDBD-4965-87D6-94E65A069A7B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LinqOptimizer.CSharp</RootNamespace>
-    <AssemblyName>LinqOptimizer.CSharp</AssemblyName>
+    <RootNamespace>LinqOptimizer.Base</RootNamespace>
+    <AssemblyName>LinqOptimizer.Base</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,14 +39,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Extensions.cs" />
+    <Compile Include="QueryExpr.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">
-      <Project>{f21f83a3-bdbd-4965-87d6-94e65a069a7b}</Project>
-      <Name>LinqOptimizer.Base</Name>
-    </ProjectReference>
     <ProjectReference Include="..\LinqOptimizer.Core\LinqOptimizer.Core.fsproj">
       <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
       <Name>LinqOptimizer.Core</Name>
