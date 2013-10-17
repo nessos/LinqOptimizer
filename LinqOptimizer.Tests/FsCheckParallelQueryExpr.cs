@@ -16,9 +16,9 @@ namespace LinqOptimizer.Tests
         {
             Spec.ForAny<int[]>(xs =>
             {
-                var x = xs.AsParallelQueryExpr().Select(n => n * 2).Run();
-                var y = xs.AsParallel().Select(n => n * 2);
-                return Enumerable.SequenceEqual(x, y);
+                var x = xs.AsParallelQueryExpr().Select(n => n * 2).Sum().Run();
+                var y = xs.AsParallel().Select(n => n * 2).Sum();
+                return x == y;
             }).QuickCheckThrowOnFailure();
         }
 
@@ -29,12 +29,15 @@ namespace LinqOptimizer.Tests
             {
                 var x = (from n in xs.AsParallelQueryExpr()
                          where n % 2 == 0
-                         select n).Run();
-                var y = from n in xs.AsParallel()
-                        where n % 2 == 0
-                        select n;
+                         select n)
+                         .Sum()
+                         .Run();
+                var y = (from n in xs.AsParallel()
+                         where n % 2 == 0
+                         select n)
+                         .Sum();
 
-                return Enumerable.SequenceEqual(x, y);
+                return x == y;
             }).QuickCheckThrowOnFailure();
         }
 
@@ -46,18 +49,18 @@ namespace LinqOptimizer.Tests
                 var x = xs.AsParallelQueryExpr()
                         .Where(n => n % 2 == 0)
                         .Select(n => n * 2)
-                        .Select(n => n.ToString())
-                        .Select(n => n + "!")
+                        .Select(n => n * n)
+                        .Sum()
                         .Run();
 
                 var y = xs
                         .AsParallel()
                         .Where(n => n % 2 == 0)
                         .Select(n => n * 2)
-                        .Select(n => n.ToString())
-                        .Select(n => n + "!");
+                        .Select(n => n * n)
+                        .Sum();
 
-                return Enumerable.SequenceEqual(x, y);
+                return x == y;
             }).QuickCheckThrowOnFailure();
         }
 
