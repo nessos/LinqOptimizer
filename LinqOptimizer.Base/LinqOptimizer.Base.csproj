@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ParallelQueryExpr.cs" />
     <Compile Include="QueryExpr.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

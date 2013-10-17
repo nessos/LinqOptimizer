@@ -10,15 +10,15 @@
 //    // Typed Wrapper for QueryExpr 
 //    type QueryExpr<'T>(queryExpr : QueryExpr) =
 //        member self.QueryExpr = queryExpr 
-    type ParallelQueryExpr<'T>(queryExpr : QueryExpr) =
-        member self.QueryExpr = queryExpr 
+//    type ParallelQueryExpr<'T>(queryExpr : QueryExpr) =
+//        member self.QueryExpr = queryExpr 
     // C# friendly QueryExpr<unit>
 //    and QueryExprVoid(queryExpr : QueryExpr) =
 //        member self.QueryExpr = queryExpr 
-    and ParallelQueryExprVoid(queryExpr : QueryExpr) =
-        member self.QueryExpr = queryExpr 
+//    and ParallelQueryExprVoid(queryExpr : QueryExpr) =
+//        member self.QueryExpr = queryExpr 
     // Main Query representation
-    and Order = Ascending | Descending
+    type Order = Ascending | Descending
     and QueryExpr = 
         | Source of Expression * Type
         | Transform of LambdaExpression * QueryExpr * Type

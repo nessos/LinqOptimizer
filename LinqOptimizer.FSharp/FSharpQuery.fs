@@ -112,21 +112,21 @@
             ParallelQuery.ofQuery(source.AsParallel())
 
         static member ofQuery(parallelQuery : ParallelQuery<'T>) = 
-            ExtensionMethods.AsParallelQueryExpr(parallelQuery)
+            ParallelExtensions.AsParallelQueryExpr(parallelQuery)
 
         static member compile<'T>(queryExpr : ParallelQueryExpr<'T>) =
-            ExtensionMethods.Compile(queryExpr).Invoke
+            ParallelExtensions.Compile(queryExpr).Invoke
 
         static member run<'T>(queryExpr : ParallelQueryExpr<'T>) : 'T =
-            ExtensionMethods.Run(queryExpr)
+            ParallelExtensions.Run(queryExpr)
 
         static member map<'T, 'R>(selector : Expression<Func<'T, 'R>>) =
             fun (queryExpr : ParallelQueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Select(queryExpr, selector)
+                ParallelExtensions.Select(queryExpr, selector)
 
         static member where<'T>(predicate : Expression<Func<'T, bool>>) =
             fun (queryExpr : ParallelQueryExpr<IEnumerable<'T>>) ->
-                ExtensionMethods.Where(queryExpr, predicate)
+                ParallelExtensions.Where(queryExpr, predicate)
 
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
             ParallelQuery.where predicate

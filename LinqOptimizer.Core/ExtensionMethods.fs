@@ -50,11 +50,15 @@ namespace LinqOptimizer.Core
                 NestedQuery ((paramExpr, Compiler.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" selector
 
+        static member CompileToParallel<'T>(queryExpr : QueryExpr) : Func<'T> =
+            let expr = Compiler.compileToParallel queryExpr
+            let func = Expression.Lambda<Func<'T>>(expr).Compile()
+            func
 
-    // LINQ-C# friendly extension methods 
-    [<AutoOpen>]
-    [<System.Runtime.CompilerServices.Extension>]
-    type ExtensionMethods =
+//    // LINQ-C# friendly extension methods 
+//    [<AutoOpen>]
+//    [<System.Runtime.CompilerServices.Extension>]
+//    type ExtensionMethods =
 
 //        // SequentialQuery ExtensionMethods
 //
@@ -186,73 +190,75 @@ namespace LinqOptimizer.Core
 //
 //        // ParallelQuery ExtensionMethods
 
-        [<System.Runtime.CompilerServices.Extension>]
-        static member AsParallelQueryExpr(parallelQuery : IEnumerable<'T>) : ParallelQueryExpr<IEnumerable<'T>> = 
-            new ParallelQueryExpr<_>(Source (constant parallelQuery, typeof<'T>))
 
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Compile<'T>(queryExpr : ParallelQueryExpr<'T>) : Func<'T> =
-            let expr = Compiler.compileToParallel queryExpr.QueryExpr
-            let func = Expression.Lambda<Func<'T>>(expr).Compile()
-            func
 
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Run<'T>(queryExpr : ParallelQueryExpr<'T>) : 'T =
-            ExtensionMethods.Compile(queryExpr).Invoke()
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Select<'T, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, 'R>>)
-                        : ParallelQueryExpr<IEnumerable<'R>> =
-            new ParallelQueryExpr<_>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Where<'T>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, bool>>) 
-                        : ParallelQueryExpr<IEnumerable<'T>> =
-            new ParallelQueryExpr<_>(Filter (predicate, queryExpr.QueryExpr, typeof<'T>))
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<double>>) : ParallelQueryExpr<double> =
-            new ParallelQueryExpr<double>(Sum (queryExpr.QueryExpr, typeof<double>))
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<int>>) : ParallelQueryExpr<int> =
-            new ParallelQueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member SelectMany<'T, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, IEnumerable<'R>>>) 
-                        : ParallelQueryExpr<IEnumerable<'R>> =
-            let queryExpr' = 
-                match selector with
-                | Lambda ([paramExpr], bodyExpr) ->
-                    NestedQuery ((paramExpr, Compiler.toQueryExpr bodyExpr), queryExpr.QueryExpr, typeof<'R>)
-                | _ -> failwithf "Invalid state %A" selector
-
-            new ParallelQueryExpr<_>(queryExpr')
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member SelectMany<'T, 'Col, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, 
-                                                collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
-                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) 
-                            : ParallelQueryExpr<IEnumerable<'R>> =
-            let queryExpr' = 
-                match collectionSelector with
-                | Lambda ([paramExpr], bodyExpr) ->
-                    NestedQueryTransform ((paramExpr, Compiler.toQueryExpr bodyExpr), resultSelector, queryExpr.QueryExpr, typeof<'R>)
-                | _ -> failwithf "Invalid state %A" collectionSelector
-
-            new ParallelQueryExpr<_>(queryExpr')
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member GroupBy<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) 
-                        : ParallelQueryExpr<IEnumerable<IGrouping<'Key, 'T>>> =
-            new ParallelQueryExpr<_>(GroupBy (keySelector, queryExpr.QueryExpr, typeof<IGrouping<'Key, 'T>>))
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member OrderBy<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) 
-                                    : ParallelQueryExpr<IEnumerable<'T>> = 
-            new ParallelQueryExpr<_>(OrderBy (keySelector, Order.Ascending, queryExpr.QueryExpr, typeof<'T>))
-
-        [<System.Runtime.CompilerServices.Extension>]
-        static member OrderByDescending<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) 
-                                : ParallelQueryExpr<IEnumerable<'T>> = 
-            new ParallelQueryExpr<_>(OrderBy (keySelector, Order.Descending, queryExpr.QueryExpr, typeof<'T>))
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member AsParallelQueryExpr(parallelQuery : IEnumerable<'T>) : ParallelQueryExpr<IEnumerable<'T>> = 
+//            new ParallelQueryExpr<_>(Source (constant parallelQuery, typeof<'T>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member Compile<'T>(queryExpr : ParallelQueryExpr<'T>) : Func<'T> =
+//            let expr = Compiler.compileToParallel queryExpr.QueryExpr
+//            let func = Expression.Lambda<Func<'T>>(expr).Compile()
+//            func
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member Run<'T>(queryExpr : ParallelQueryExpr<'T>) : 'T =
+//            ExtensionMethods.Compile(queryExpr).Invoke()
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member Select<'T, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, 'R>>)
+//                        : ParallelQueryExpr<IEnumerable<'R>> =
+//            new ParallelQueryExpr<_>(Transform (selector, queryExpr.QueryExpr, typeof<'R>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member Where<'T>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, predicate : Expression<Func<'T, bool>>) 
+//                        : ParallelQueryExpr<IEnumerable<'T>> =
+//            new ParallelQueryExpr<_>(Filter (predicate, queryExpr.QueryExpr, typeof<'T>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<double>>) : ParallelQueryExpr<double> =
+//            new ParallelQueryExpr<double>(Sum (queryExpr.QueryExpr, typeof<double>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member Sum(queryExpr : ParallelQueryExpr<IEnumerable<int>>) : ParallelQueryExpr<int> =
+//            new ParallelQueryExpr<int>(Sum (queryExpr.QueryExpr, typeof<int>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member SelectMany<'T, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, selector : Expression<Func<'T, IEnumerable<'R>>>) 
+//                        : ParallelQueryExpr<IEnumerable<'R>> =
+//            let queryExpr' = 
+//                match selector with
+//                | Lambda ([paramExpr], bodyExpr) ->
+//                    NestedQuery ((paramExpr, Compiler.toQueryExpr bodyExpr), queryExpr.QueryExpr, typeof<'R>)
+//                | _ -> failwithf "Invalid state %A" selector
+//
+//            new ParallelQueryExpr<_>(queryExpr')
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member SelectMany<'T, 'Col, 'R>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, 
+//                                                collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
+//                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) 
+//                            : ParallelQueryExpr<IEnumerable<'R>> =
+//            let queryExpr' = 
+//                match collectionSelector with
+//                | Lambda ([paramExpr], bodyExpr) ->
+//                    NestedQueryTransform ((paramExpr, Compiler.toQueryExpr bodyExpr), resultSelector, queryExpr.QueryExpr, typeof<'R>)
+//                | _ -> failwithf "Invalid state %A" collectionSelector
+//
+//            new ParallelQueryExpr<_>(queryExpr')
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member GroupBy<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) 
+//                        : ParallelQueryExpr<IEnumerable<IGrouping<'Key, 'T>>> =
+//            new ParallelQueryExpr<_>(GroupBy (keySelector, queryExpr.QueryExpr, typeof<IGrouping<'Key, 'T>>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member OrderBy<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) 
+//                                    : ParallelQueryExpr<IEnumerable<'T>> = 
+//            new ParallelQueryExpr<_>(OrderBy (keySelector, Order.Ascending, queryExpr.QueryExpr, typeof<'T>))
+//
+//        [<System.Runtime.CompilerServices.Extension>]
+//        static member OrderByDescending<'T, 'Key>(queryExpr : ParallelQueryExpr<IEnumerable<'T>>, keySelector : Expression<Func<'T, 'Key>>) 
+//                                : ParallelQueryExpr<IEnumerable<'T>> = 
+//            new ParallelQueryExpr<_>(OrderBy (keySelector, Order.Descending, queryExpr.QueryExpr, typeof<'T>))
