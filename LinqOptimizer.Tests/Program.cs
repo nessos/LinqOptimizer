@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using LinqOptimizer.Core;
 
 
@@ -13,52 +14,49 @@ namespace LinqOptimizer.Tests
 {
     class Program
     {
-
-        sealed class KeyValuePairComparer<Value> : IComparer<KeyValuePair<int, Value>>
+        class StringComparer : IComparer<string>
         {
-            #region IComparer<Key> Members
-
-            public int Compare(KeyValuePair<int, Value> x, KeyValuePair<int, Value> y)
+            #region IComparer<string> Members
+            public int Compare(string x, string y)
             {
-                if (x.Key < y.Key) return -1; else if (x.Key == y.Key) return 0; else return 1;
+                var count = Math.Min(x.Length, y.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    if (x[i] < y[i])
+                        return -1;
+                    if (x[i] > y[i])
+                        return 1;
+            }
+                if (x.Length < y.Length)
+                    return -1;
+                if (x.Length > y.Length)
+                    return 1;
+                return 0;
+                //return x.CompareTo(y);
+
             }
 
             #endregion
         }
 
-
-        public static Dictionary<Key, List<Value>> Grouping<Key, Value>(Dictionary<Key, List<Value>> dict, Key key, Value value)
+        class IntComparer : IComparer<int>
         {            
-            List<Value> list = null;
-            if(!dict.TryGetValue(key, out list))
+            #region IComparer<int> Members
+            public int counter = 0;
+            public int Compare(int x, int y)
             {
-                list = new List<Value>();
-                dict.Add(key, list);
+                counter++;
+                return x.CompareTo(y);
             }
-            list.Add(value);
             
-            return dict;
+            #endregion
         }
 
-        public static Dictionary<T, List<T>> Merge<T>(Dictionary<T, List<T>> left, Dictionary<T, List<T>> right)
-        {
-            foreach (var item in right)
-            {
-                List<T> list = null;
-                if (!left.TryGetValue(item.Key, out list))
-                {
-                    list = new List<T>();
-                    left.Add(item.Key, list);
-                }
-                //list.AddRange(item.Value);
-            }
-            return left;
-        }
 
         public static void Main(string[] args)
         {
-            //Random random = new Random();
-            //var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 1000000)).ToArray();
+            Random random = new Random();
+            var nums = Enumerable.Range(1, 10000000).Select(_ => random.Next(1, 10000000)).Select(x => x.ToString()).ToArray();
 
             //////var list = new KeyValuePair<int, int>[100000000];
             //////Measure(() =>
@@ -69,19 +67,22 @@ namespace LinqOptimizer.Tests
             //////        list[i] = new KeyValuePair<int, int>(item, item);
             //////    }
             //////});
-
             //////Measure(() => Array.Sort(nums));
-            //var keys = nums.ToArray();
-            //var values = nums.ToArray();
+            var keys = nums.Select(x => x).ToArray();
+            var values = nums.Select(x => x).ToArray();
+            var comparer = new StringComparer();
+            Measure(() => Array.Sort(keys, values, comparer));
             //Measure(() => Array.Sort(keys, values));
-            //////Measure(() => Array.Sort(list, new KeyValuePairComparer<int>()));
+            //Measure(() => DoQuickSort(nums, 0, nums.Length - 1));
+            //Measure(() => ParallelSort.QuicksortSequential(values));
+            //Measure(() => ParallelSort.QuicksortParallel(values));
+            //Measure(() => Array.Sort(list, new KeyValuePairComparer<int>()));
             //Measure(() => nums.OrderBy(x => x).ToList());
 
-            
             //Measure(() => nums.GroupBy(x => x).ToList());
             //Measure(() => nums.Aggregate(new Dictionary<int, List<int>>(), (acc, v) => { return Grouping(acc, v); }));
             //Measure(() => Console.WriteLine(nums.AsParallel().Aggregate(() => 0.0, (acc, v) => { return ((double) v + 1 + 1 + 1)  + acc; }, (left, right) => { return left + right; }, x => x)));
-            //Measure(() => Console.WriteLine(nums.AsParallel().Select(x => (double)x).Select(x => x + 1).Select(x => x + 1).Select(x => x + 1).Sum()));
+            //Measure(() => Console.WriteLine(nums.AsParallel().Select(x => (double)x).Sum()));
             //Measure(() =>
             //{
             //    var dict = new Dictionary<int, List<int>>();
@@ -94,7 +95,7 @@ namespace LinqOptimizer.Tests
             //var _nums = nums.ToList();
             //Measure(() => _nums.Sort((x, y) => { if (x < y) return -1; else if (x == y) return 0; else return 1; }));
 
-            //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => 0.0, (acc, v) => { return ((double) v + 1 + 1 + 1) + acc; }, (left, right) => { return left + right; }, x => x)));
+            //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => 0.0, (acc, v) => { return (double) v + acc; }, (left, right) => { return left + right; }, x => x)));
             //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => new Dictionary<int, List<int>>(), (acc, v) => { return Grouping(acc, v, v); }, (left, right) => { return Merge(left, right); }, x => x)));
 
             var tests = new FsCheckParallelQueryExpr();
