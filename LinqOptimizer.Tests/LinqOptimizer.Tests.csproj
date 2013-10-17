@@ -48,10 +48,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FsCheckParallelQueryExpr.cs" />
     <Compile Include="FsCheckQueryExpr.cs" />
-    <Compile Include="ParallelQueryExprTests.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryExprTests.cs" />
