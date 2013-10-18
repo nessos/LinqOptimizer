@@ -5,13 +5,12 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>5c5fe9f9-91df-44e2-a68d-b9a49828e0bb</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>LinqOptimizer.FSharp</RootNamespace>
-    <AssemblyName>LinqOptimizer.FSharp</AssemblyName>
+    <ProjectGuid>38a228d2-764c-4103-9ac2-58452630cba2</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>LinqOptimizer.FSharp.Tests</RootNamespace>
+    <AssemblyName>LinqOptimizer.FSharp.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <Name>LinqOptimizer.FSharp</Name>
-    <TargetFrameworkProfile />
+    <Name>LinqOptimizer.Tests.FSharp</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +20,9 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\LinqOptimizer.FSharp.XML</DocumentationFile>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>bin\Debug\LinqOptimizer.FSharp.Tests.XML</DocumentationFile>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,11 +31,21 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\LinqOptimizer.FSharp.XML</DocumentationFile>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>bin\Release\LinqOptimizer.FSharp.Tests.XML</DocumentationFile>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FsCheck">
+      <HintPath>..\packages\FsCheck.0.9.1.0\lib\net40-Client\FsCheck.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -42,8 +53,10 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="QueryBuilder.fs" />
-    <Compile Include="FSharpQuery.fs" />
+    <Compile Include="QueryExpr.fs" />
+    <Compile Include="Program.fs" />
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">
@@ -56,9 +69,9 @@
       <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\LinqOptimizer.CSharp\LinqOptimizer.CSharp.csproj">
-      <Name>LinqOptimizer.CSharp</Name>
-      <Project>{e606c2c2-c219-4e51-b928-5b192e283a54}</Project>
+    <ProjectReference Include="..\LinqOptimizer.FSharp\LinqOptimizer.FSharp.fsproj">
+      <Name>LinqOptimizer.FSharp</Name>
+      <Project>{5c5fe9f9-91df-44e2-a68d-b9a49828e0bb}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

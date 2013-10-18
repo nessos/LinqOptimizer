@@ -1,4 +1,4 @@
-﻿namespace LinqOptimizer.Core
+﻿namespace LinqOptimizer.FSharp
 
     open System
     open System.Collections
