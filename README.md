@@ -38,7 +38,7 @@ will compile to a reduce-combine style straregy
 Parallel.ReduceCombine(nums, 0, 
                           (acc, num) => { 
                                        if (num % 2 == 0)  
-                                         return acc + num * 2; 
+                                         return acc + num * num; 
                                        else
                                          return acc; 
                           }, (left, right) => left + right);
