@@ -73,19 +73,26 @@ type ``F# Query tests`` () =
         |> Check.QuickThrowOnFailure
 
     [<Test>]
-    member __.``collect is buggy`` () =
+    member __.``collect`` () =
         fun (xs : int list) -> 
-//            let x = xs |> Query.ofSeq 
-//                       |> Query.collect (fun ls ->  )
-//                       |> Query.fold (fun acc x -> acc + x) 0
-//                       |> Query.run
-//            let y = xs |> Seq.map (fun x -> x * x) 
-//                       |> Seq.fold (fun acc x -> acc + x) 0
-//            x = y
-            false
+            let x = xs |> Query.ofSeq 
+                       |> Query.collect (fun n -> Seq.map (fun n' -> n' * n) xs)
+                       |> Query.run
+            let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
+            equal x y
         |> Check.QuickThrowOnFailure
 
-        
+    [<Test>]
+    member __.``collect (nested pipe)`` () =
+        fun (xs : int list) -> 
+            let x = xs |> Query.ofSeq 
+                       |> Query.collect (fun n -> xs |> Seq.map (fun n' -> n' * n) )
+                       |> Query.run
+            let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
+//            equal x y
+            false
+        |> Check.QuickThrowOnFailure
+           
     [<Test>]
     member __.``take`` () =
         fun (xs : int list, n) -> 
