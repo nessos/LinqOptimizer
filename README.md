@@ -37,7 +37,7 @@ will compile to a reduce-combine style straregy
 ```csharp
 Parallel.ReduceCombine(nums, 0, 
                           (acc, num) => { 
-                                       if  (num % 2 == 0) then 
+                                       if (num % 2 == 0)  
                                          return acc + num * 2; 
                                        else
                                          return acc; 
