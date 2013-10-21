@@ -8,55 +8,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LinqOptimizer.Core;
+using LinqOptimizer.CSharp;
 
 
 namespace LinqOptimizer.Tests
 {
     class Program
     {
-        class StringComparer : IComparer<string>
-        {
-            #region IComparer<string> Members
-            public int Compare(string x, string y)
-            {
-                var count = Math.Min(x.Length, y.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    if (x[i] < y[i])
-                        return -1;
-                    if (x[i] > y[i])
-                        return 1;
-            }
-                if (x.Length < y.Length)
-                    return -1;
-                if (x.Length > y.Length)
-                    return 1;
-                return 0;
-                //return x.CompareTo(y);
 
-            }
-
-            #endregion
-        }
-
-        class IntComparer : IComparer<int>
-        {            
-            #region IComparer<int> Members
-            public int counter = 0;
-            public int Compare(int x, int y)
-            {
-                counter++;
-                return x.CompareTo(y);
-            }
-            
-            #endregion
-        }
 
 
         public static void Main(string[] args)
         {
             Random random = new Random();
-            var nums = Enumerable.Range(1, 10000000).Select(_ => random.Next(1, 10000000)).Select(x => x.ToString()).ToArray();
+            //var nums = Enumerable.Range(1, 10000000).Select(_ => random.Next(1, 10000000)).Select(x => x.ToString()).ToArray();
 
             //////var list = new KeyValuePair<int, int>[100000000];
             //////Measure(() =>
@@ -68,10 +33,10 @@ namespace LinqOptimizer.Tests
             //////    }
             //////});
             //////Measure(() => Array.Sort(nums));
-            var keys = nums.Select(x => x).ToArray();
-            var values = nums.Select(x => x).ToArray();
-            var comparer = new StringComparer();
-            Measure(() => Array.Sort(keys, values, comparer));
+            //var keys = nums.Select(x => x).ToArray();
+            //var values = nums.Select(x => x).ToArray();
+            //var comparer = new StringComparer();
+            //Measure(() => Array.Sort(keys, values, comparer));
             //Measure(() => Array.Sort(keys, values));
             //Measure(() => DoQuickSort(nums, 0, nums.Length - 1));
             //Measure(() => ParallelSort.QuicksortSequential(values));
@@ -98,8 +63,8 @@ namespace LinqOptimizer.Tests
             //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => 0.0, (acc, v) => { return (double) v + acc; }, (left, right) => { return left + right; }, x => x)));
             //Measure(() => Console.WriteLine(ParallelismHelpers.ReduceCombine(nums, () => new Dictionary<int, List<int>>(), (acc, v) => { return Grouping(acc, v, v); }, (left, right) => { return Merge(left, right); }, x => x)));
 
-            var tests = new FsCheckParallelQueryExpr();
-            tests.GroupBy();
+            //var tests = new FsCheckQueryExpr();
+            //tests.SumDouble();
         }
 
         static void Measure(Action action)

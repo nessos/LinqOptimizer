@@ -182,7 +182,7 @@ namespace LinqOptimizer.Tests
                         orderby num
                         select num;
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
     }

@@ -9,7 +9,7 @@ using LinqOptimizer.CSharp;
 namespace LinqOptimizer.Tests
 {
     [TestFixture]
-    public class QuickCheckQueryExpr
+    public class FsCheckQueryExpr
     {
         [Test]
         public void Select()
@@ -105,6 +105,9 @@ namespace LinqOptimizer.Tests
                          select n * 2).Sum().Run();
                 var y = (from n in xs
                          select n * 2).Sum();
+
+                if (Double.IsNaN(x) && Double.IsNaN(y))
+                    return true;
 
                 return x == y;
             }).QuickCheckThrowOnFailure();
@@ -207,7 +210,7 @@ namespace LinqOptimizer.Tests
                 var y = (from n in ys
                          select n * 2);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -223,7 +226,7 @@ namespace LinqOptimizer.Tests
                 var y = (from n in xs
                          select n * 2);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -239,7 +242,7 @@ namespace LinqOptimizer.Tests
                 var y = xs
                         .Take(n);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -255,7 +258,7 @@ namespace LinqOptimizer.Tests
                 var y = xs
                         .Skip(n);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -273,7 +276,7 @@ namespace LinqOptimizer.Tests
                         .Take(n)
                         .Skip(n);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -291,7 +294,7 @@ namespace LinqOptimizer.Tests
                         .Take(n)
                         .SelectMany(_ => xs.Skip(n).Take(n));
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -306,7 +309,7 @@ namespace LinqOptimizer.Tests
                 var y = new List<int>();
                 xs.ToList().ForEach(num => y.Add(num));
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -342,7 +345,7 @@ namespace LinqOptimizer.Tests
                         orderby num
                         select num;
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
 
             Spec.ForAny<int[]>(xs =>
@@ -356,7 +359,7 @@ namespace LinqOptimizer.Tests
                         orderby num descending
                         select num;
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -390,7 +393,7 @@ namespace LinqOptimizer.Tests
                 var y = xs
                         .ToList();
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -406,7 +409,7 @@ namespace LinqOptimizer.Tests
                 var y = xs
                         .ToArray();
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
