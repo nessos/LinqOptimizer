@@ -29,7 +29,7 @@ for (int index = 0; index < nums.Length; index++)
 ```
 and for the parallel case
 ```csharp
-var query = (from num in nums.AsQueryExpr()
+var query = (from num in nums.AsParallelQueryExpr()
              where num % 2 == 0
              select num * num).Sum();
 ```
