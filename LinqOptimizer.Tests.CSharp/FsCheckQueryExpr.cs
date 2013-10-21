@@ -106,10 +106,7 @@ namespace LinqOptimizer.Tests
                 var y = (from n in xs
                          select n * 2).Sum();
 
-                if (Double.IsNaN(x) && Double.IsNaN(y))
-                    return true;
-
-                return x == y;
+                return (Double.IsNaN(x) && Double.IsNaN(y)) || x == y;
             }).QuickCheckThrowOnFailure();
         }
 

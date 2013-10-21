@@ -57,7 +57,7 @@ type ``F# Query tests`` () =
         fun (xs : float list) -> 
             let x = xs |> Query.ofSeq |> Query.map (fun x -> x * x) |> Query.sum |> Query.run
             let y = xs |> Seq.map (fun x -> x * x) |> Seq.sum
-            x = y
+            (Double.IsNaN x && Double.IsNaN y) || x = y
         |> Check.QuickThrowOnFailure
 
     [<Test>]
