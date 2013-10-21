@@ -1,4 +1,4 @@
-Copyright 2010-2013
+Copyright 2013
 
     Nick Palladinos
     Nessos Information Technologies SA
