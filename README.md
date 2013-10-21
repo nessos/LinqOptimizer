@@ -9,6 +9,7 @@ Optimizations
 * Lambda inlining
 * Loop fusion
 * Nested loop generation
+* Specialized strategies and algorithms
 
 The expression
 ```csharp
@@ -25,4 +26,20 @@ for (int index = 0; index < nums.Length; index++)
    if (num % 2 == 0)
       sum += num * num;
 }
+```
+and for the parallel case
+```csharp
+var query = (from num in nums.AsQueryExpr()
+             where num % 2 == 0
+             select num * num).Sum();
+```
+will compile to a reduce-combine style straregy
+```csharp
+Parallel.ReduceCombine(nums, 0, 
+                          (acc, num) => { 
+                                       if  (num % 2 == 0) then 
+                                         return acc + num * 2; 
+                                       else
+                                         return acc; 
+                          }, (left, right) => left + right);
 ```
