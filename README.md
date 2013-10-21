@@ -43,3 +43,9 @@ Parallel.ReduceCombine(nums, 0,
                                          return acc; 
                           }, (left, right) => left + right);
 ```
+
+References
+----------
+LinqOptimizer draws heavy inspiration from 
+* [Steno](http://research.microsoft.com/pubs/173946/paper-pldi.pdf)
+* [Clojure - reducers](http://clojure.org/reducers)
