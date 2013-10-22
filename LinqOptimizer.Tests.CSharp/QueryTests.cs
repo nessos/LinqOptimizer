@@ -9,7 +9,7 @@ using LinqOptimizer.CSharp;
 namespace LinqOptimizer.Tests
 {
     [TestFixture]
-    public class FsCheckQueryExpr
+    public class QueryTests
     {
         [Test]
         public void Select()

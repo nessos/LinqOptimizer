@@ -7,6 +7,7 @@
     open System.Linq.Expressions
     open System.Reflection
     open LinqOptimizer.Base
+    open LinqOptimizer.Core
     open LinqOptimizer.CSharp
 
     type Query =
@@ -29,10 +30,10 @@
             fun (source : IQueryExpr<IEnumerable<'T>>) -> 
                 Extensions.Select(source, projection)
 
-        static member map<'T, 'R>(selector : Expression<Func<'T, int, 'R>>) =
+        static member mapi<'T, 'R>(selector : Expression<Func<'T, int, 'R>>) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
                 Extensions.Select(queryExpr, selector)
-                
+
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
                 Extensions.Where(queryExpr, predicate)
@@ -40,13 +41,13 @@
         static member where<'T>(predicate : Expression<Func<'T, bool>>) =
             Query.filter predicate
 
-        static member where<'T>(predicate : Expression<Func<'T, int, bool>>) =
-            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.Where(queryExpr, predicate)
-
-        static member filter<'T>(predicate : Expression<Func<'T, int, bool>>) =
-            Query.where predicate
-
+//        static member where<'T>(predicate : Expression<Func<'T, int, bool>>) =
+//            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+//                Extensions.Where(queryExpr, predicate)
+//
+//        static member filter<'T>(predicate : Expression<Func<'T, int, bool>>) =
+//            Query.where predicate
+            
         static member fold(func : Expression<Func<'Acc, 'T, 'Acc>>) =
             fun (seed : 'Acc) (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
                 Extensions.Aggregate(queryExpr, seed, func)
@@ -60,14 +61,14 @@
         static member length(queryExpr : IQueryExpr<IEnumerable<'T>>) =
             Extensions.Count(queryExpr)
 
-        static member collect<'T, 'Col, 'R>(collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
-                                               resultSelector : Expression<Func<'T, 'Col, 'R>>) =
-            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.SelectMany(queryExpr, collectionSelector, resultSelector)
+//        static member collect<'T, 'Col, 'R>(collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
+//                                               resultSelector : Expression<Func<'T, 'Col, 'R>>) =
+//            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+//                Extensions.SelectMany(queryExpr, collectionSelector, resultSelector)
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.SelectMany(queryExpr, selector)
+                QueryExpr<IEnumerable<'R>>(CoreExts.SelectManyFSharp<'T, 'R>(queryExpr.Expr, selector))
 
         static member take<'T>(n : int) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
@@ -85,14 +86,17 @@
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
                 Extensions.GroupBy(queryExpr, keySelector)
 
+        static member sort<'T>(queryExpr : IQueryExpr<IEnumerable<'T>>) =
+            Extensions.OrderBy(queryExpr, fun i -> i)
+
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
                 Extensions.OrderBy(queryExpr, keySelector)
 
-        static member sortByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
-            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.OrderByDescending(queryExpr, keySelector)
-
+//        static member sortByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
+//            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
+//                Extensions.OrderByDescending(queryExpr, keySelector)
+                
         static member toArray(queryExpr : IQueryExpr<IEnumerable<'T>>) =
             Extensions.ToArray(queryExpr)
 

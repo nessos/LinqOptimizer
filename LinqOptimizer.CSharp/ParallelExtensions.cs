@@ -49,12 +49,12 @@ namespace LinqOptimizer.CSharp
 
         public static IParallelQueryExpr<IEnumerable<R>> SelectMany<T, Col, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<Col>>> collectionSelector, Expression<Func<T, Col, R>> resultSelector)
         {
-            return new ParallelQueryExpr<IEnumerable<R>>(CoreExts.SelectMany<T, Col, R>(query.Expr, collectionSelector, resultSelector));
+            return new ParallelQueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, Col, R>(query.Expr, collectionSelector, resultSelector));
         }
 
         public static IParallelQueryExpr<IEnumerable<R>> SelectMany<T, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<R>>> selector)
         {
-            return new ParallelQueryExpr<IEnumerable<R>>(CoreExts.SelectMany<T, R>(query.Expr, selector));
+            return new ParallelQueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, R>(query.Expr, selector));
         }
 
         public static IParallelQueryExpr<IEnumerable<IGrouping<Key, T>>> GroupBy<T, Key>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
