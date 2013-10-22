@@ -36,18 +36,24 @@ namespace LinqOptimizer.Core
             let action = Expression.Lambda<Action>(expr).Compile()
             action
 
-        static member SelectMany<'T, 'Col, 'R>(queryExpr : QueryExpr, 
-                                                collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
-                                                resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr =
+        static member SelectManyCSharp<'T, 'Col, 'R>(queryExpr : QueryExpr, 
+                                                     collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
+                                                     resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr =
             match collectionSelector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQueryTransform ((paramExpr, Compiler.toQueryExpr bodyExpr), resultSelector, queryExpr, typeof<'R>)
+                NestedQueryTransform ((paramExpr, CSharpExpressionTransformer.toQueryExpr bodyExpr), resultSelector, queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" collectionSelector
 
-        static member SelectMany<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
+        static member SelectManyCSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
             match selector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQuery ((paramExpr, Compiler.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
+                NestedQuery ((paramExpr, CSharpExpressionTransformer.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
+            | _ -> failwithf "Invalid state %A" selector
+
+        static member SelectManyFSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
+            match selector with
+            | Lambda ([paramExpr], bodyExpr) ->
+                NestedQuery ((paramExpr, FSharpExpressionTransformer.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" selector
 
         static member CompileToParallel<'T>(queryExpr : QueryExpr) : Func<'T> =

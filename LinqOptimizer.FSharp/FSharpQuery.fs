@@ -7,6 +7,7 @@
     open System.Linq.Expressions
     open System.Reflection
     open LinqOptimizer.Base
+    open LinqOptimizer.Core
     open LinqOptimizer.CSharp
 
     type Query =
@@ -67,7 +68,7 @@
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.SelectMany(queryExpr, selector)
+                QueryExpr<IEnumerable<'R>>(CoreExts.SelectManyFSharp<'T, 'R>(queryExpr.Expr, selector))
 
         static member take<'T>(n : int) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->

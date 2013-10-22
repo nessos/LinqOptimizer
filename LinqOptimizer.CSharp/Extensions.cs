@@ -79,12 +79,12 @@ namespace LinqOptimizer.CSharp
 
         public static IQueryExpr<IEnumerable<R>> SelectMany<T,Col,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<Col>>> collectionSelector, Expression<Func<T, Col, R>> resultSelector)
         {
-            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectMany<T, Col, R>(query.Expr, collectionSelector, resultSelector));
+            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, Col, R>(query.Expr, collectionSelector, resultSelector));
         }
 
         public static IQueryExpr<IEnumerable<R>> SelectMany<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<R>>> selector )
         {
-            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectMany<T, R>(query.Expr, selector));
+            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, R>(query.Expr, selector));
         }
 
         public static IQueryExpr<IEnumerable<T>> Take<T>(this IQueryExpr<IEnumerable<T>> query, int n)
