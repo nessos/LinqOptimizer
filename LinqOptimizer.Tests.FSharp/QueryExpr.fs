@@ -89,8 +89,7 @@ type ``F# Query tests`` () =
                        |> Query.collect (fun n -> xs |> Seq.map (fun n' -> n' * n) )
                        |> Query.run
             let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
-//            equal x y
-            false
+            equal x y
         |> Check.QuickThrowOnFailure
            
     [<Test>]
