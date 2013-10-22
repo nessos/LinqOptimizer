@@ -344,7 +344,11 @@ namespace LinqOptimizer.Tests
 
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
+        }
 
+        [Test]
+        public void OrderByDescending()
+        {
             Spec.ForAny<int[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()

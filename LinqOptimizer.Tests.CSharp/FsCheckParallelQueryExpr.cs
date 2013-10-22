@@ -185,5 +185,23 @@ namespace LinqOptimizer.Tests
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
+
+        [Test]
+        public void OrderByDescending()
+        {
+            Spec.ForAny<int[]>(xs =>
+            {
+                var x = (from num in xs.AsParallelQueryExpr()
+                         orderby num descending 
+                         select num)
+                        .Run();
+
+                var y = from num in xs.AsParallel()
+                        orderby num descending
+                        select num;
+
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
     }
 }

@@ -38,9 +38,9 @@ namespace LinqOptimizer.Core
                     (args : seq<Expression>) =
             Expression.Call(instance, methodInfo, args) :> Expression
              
-        let ``ifThenElse`` boolExpr thenExpr elseExpr = 
+        let ifThenElse boolExpr thenExpr elseExpr = 
             Expression.IfThenElse(boolExpr, thenExpr, elseExpr) :> Expression
-        let ``ifThen`` boolExpr thenExpr = 
+        let ifThen boolExpr thenExpr = 
             Expression.IfThen(boolExpr, thenExpr) :> Expression
         let loop bodyExpr breakLabel continueLabel = 
             Expression.Loop(bodyExpr, breakLabel, continueLabel)
@@ -59,6 +59,10 @@ namespace LinqOptimizer.Core
 
         let notExpr expr = Expression.Not(expr)
 
+        let arrayNew (t : Type) (lengthExpr : Expression) =
+            Expression.NewArrayBounds(t, [|lengthExpr|]) 
+        let arrayAccess (arrayExpr : Expression) (indexExpr  : Expression) = 
+            Expression.ArrayAccess(arrayExpr, indexExpr)
         let arrayIndex (arrayExpr : Expression) (indexExpr : Expression) = 
             Expression.ArrayIndex(arrayExpr, indexExpr)
         let arrayLength arrayExpr = Expression.ArrayLength(arrayExpr)

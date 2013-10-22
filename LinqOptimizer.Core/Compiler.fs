@@ -43,7 +43,7 @@
                     let getItemExpr = arrayIndex arrayVarExpr indexVarExpr
                     let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
                     let checkBoundExpr = equal indexVarExpr lengthExpr 
-                    let brachExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                    let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
                     block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
             | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
@@ -55,7 +55,7 @@
                     let getItemExpr = call (expr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
                     let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
                     let checkBoundExpr = equal indexVarExpr lengthExpr 
-                    let brachExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                    let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
                     block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
             | Source (expr, t) -> // general case for IEnumerable
@@ -68,7 +68,7 @@
                     let getItemExpr = call (enumeratorType.GetMethod("get_Current")) enumeratorVarExpr []
                     let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
                     let checkBoundExpr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumeratorVarExpr []) (constant false)
-                    let brachExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                    let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
                     block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
             | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func)) ->
@@ -93,7 +93,7 @@
                     let checkBound1Expr = equal indexVarExpr length1Expr 
                     let checkBound2Expr = equal indexVarExpr length2Expr
                     let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
-                    let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let branchExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
                     let vars =   param1Expr :: param2Expr ::array1VarExpr :: array2VarExpr :: indexVarExpr :: context.VarExprs
@@ -121,7 +121,7 @@
                     let checkBound1Expr = equal indexVarExpr length1Expr 
                     let checkBound2Expr = equal indexVarExpr length2Expr
                     let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
-                    let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let branchExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel
                     let vars = param1Expr :: param2Expr ::list1VarExpr :: list2VarExpr :: indexVarExpr :: context.VarExprs
@@ -153,7 +153,7 @@
                     let checkBound1Expr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumerator1VarExpr []) (constant false)
                     let checkBound2Expr = equal (call (typeof<IEnumerator>.GetMethod("MoveNext")) enumerator2VarExpr []) (constant false)
                     let checkBoundExpr = Expression.Or(checkBound1Expr, checkBound2Expr)
-                    let branchExpr = ``ifThenElse`` checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let branchExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs')
                     let disposeCallExpr = block [] [ (call (typeof<IDisposable>.GetMethod("Dispose")) disposable1VarExpr []);
                                                         (call (typeof<IDisposable>.GetMethod("Dispose")) disposable2VarExpr []) ]
                     let loopExpr = tryfinally (loop (block [] [branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) disposeCallExpr
@@ -186,7 +186,7 @@
                     let checkExpr = equal currVarExpr endExpr
                     let incCurrExpr = addAssign currVarExpr (constant 1)
                     let exprs' = assign context.CurrentVarExpr currVarExpr :: context.Exprs
-                    let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let branchExpr = ifThenElse checkExpr (``break`` context.BreakLabel) (block [] exprs')
                     let loopExpr = 
                         ifThenElse countCheckExpr exceptionExpr 
                             (loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel)
@@ -207,7 +207,7 @@
                     let checkExpr = lessThan indexVarExpr (constant 0)
                     let incCurrExpr = subAssign indexVarExpr (constant 1) 
                     let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
-                    let branchExpr = ``ifThenElse`` checkExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let branchExpr = ifThenElse checkExpr (``break`` context.BreakLabel) (block [] exprs')
                     let loopExpr = 
                         ifThenElse countCheckExpr  exceptionExpr 
                             (loop (block [] [incCurrExpr; branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel)
@@ -219,18 +219,18 @@
                 let exprs' = addAssign indexExpr (constant 1) :: assign context.CurrentVarExpr bodyExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = paramExpr :: indexExpr :: context.VarExprs; Exprs = exprs' }
             | Filter (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
-                let exprs' = ``ifThenElse`` bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                let exprs' = ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
             | FilterIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr', _) ->
-                let exprs' = addAssign indexExpr (constant 1) :: ``ifThenElse`` bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                let exprs' = addAssign indexExpr (constant 1) :: ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = indexExpr :: paramExpr :: context.VarExprs; Exprs = exprs' }
             | Take (countExpr, queryExpr', _) ->
                 let countVarExpr = var "___takeCount___" typeof<int> //special "local" variable for Take
-                let exprs' = addAssign countVarExpr (constant 1) :: ``ifThenElse`` (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
+                let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' }
             | Skip (countExpr, queryExpr', _) ->
                 let countVarExpr = var "___skipCount___" typeof<int> //special "local" variable for Skip
-                let exprs' = addAssign countVarExpr (constant 1) :: ``ifThenElse`` (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
+                let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' }
             | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr', t) ->
                 let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
@@ -272,16 +272,44 @@
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
                                     VarExprs = [finalVarExpr]; Exprs = [] }
                 let expr = compileToSeqPipeline queryExpr' context'
-                let methodName = match order with Ascending -> "OrderBy" | Descending -> "OrderByDescending"
-                let orderByMethodInfo = typeof<Enumerable>.GetMethods()
+                // Generate loop to extract keys
+                let loopBreak = breakLabel()
+                let loopContinue = continueLabel()
+                let indexVarExpr = var "___index___" typeof<int>
+                let indexAssignExpr = assign indexVarExpr (constant -1) 
+                let lengthExpr = call (accVarExpr.Type.GetMethod("get_Count")) accVarExpr []
+                let getItemExpr = call (accVarExpr.Type.GetMethod("get_Item")) accVarExpr [indexVarExpr]
+                
+                let keyVarArrayExpr = var "___keys___" (bodyExpr.Type.MakeArrayType())
+                let valueVarArrayExpr = var "___values___" (paramExpr.Type.MakeArrayType())
+                let initKeyArrayExpr = assign keyVarArrayExpr (arrayNew bodyExpr.Type lengthExpr)
+                let initValueArrayExpr = assign valueVarArrayExpr (arrayNew paramExpr.Type lengthExpr)
+                let accessKeyArrayExpr = arrayAccess keyVarArrayExpr indexVarExpr 
+                let accessValueArrayExpr = arrayAccess valueVarArrayExpr indexVarExpr 
+                let exprs' = [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
+                let checkBoundExpr = equal indexVarExpr lengthExpr 
+                let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 
+                let loopExpr = block [paramExpr; indexVarExpr] [initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; ]) loopBreak loopContinue]
+                // generate sort 
+                let sortMethodInfo = typeof<Array>.GetMethods()
                                             |> Array.find (fun methodInfo -> 
                                                             match methodInfo with
-                                                            | MethodName methodName [|_; _|] -> true
+                                                            | MethodName "Sort" [|_; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
-                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
-                let orderByCallExpr = call orderByMethodInfo null [accVarExpr; lambdaExpr]
-                let expr' = compileToSeqPipeline (Source (orderByCallExpr, t)) context
-                block [accVarExpr] [expr; expr']
+                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
+                // reverse for descending 
+                let reverseCallExpr : Expression = 
+                    match order with 
+                    | Ascending -> empty :> _
+                    | Descending -> 
+                        let reverseMethodInfo = typeof<Array>.GetMethods()
+                                                    |> Array.find (fun methodInfo -> 
+                                                                    match methodInfo with
+                                                                    | MethodName "Reverse" [|_|] -> true
+                                                                    | _ -> false) // TODO: reflection type checks
+                        call reverseMethodInfo  null [valueVarArrayExpr]
+                let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, t)) context
+                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; reverseCallExpr; expr']
             | _ -> failwithf "Invalid state %A" queryExpr 
 
         let rec compileToSequential (queryExpr : QueryExpr) : Expression = 
@@ -382,7 +410,7 @@
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
                 | Filter (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
-                    let exprs' = ``ifThen`` (notExpr bodyExpr) (goto context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                    let exprs' = ifThen (notExpr bodyExpr) (goto context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
                 | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr', t) ->
                     let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
