@@ -128,22 +128,35 @@ type ``F# Query tests`` () =
         |> Check.QuickThrowOnFailure
 
     [<Test>]
-    member __.``groupBy is buggy`` () =
+    member __.``groupBy`` () =
         fun (xs : int list) -> 
             let x = xs |> Query.ofSeq 
                        |> Query.groupBy (fun x -> x)
+                       |> Query.map (fun x -> Seq.sum x)
                        |> Query.run
             let y = xs |> Seq.groupBy (fun x -> x)
-            false
+                       |> Seq.map (fun (_,x) -> Seq.sum x)
+                       
+            equal x y
+        |> Check.QuickThrowOnFailure
+
+    [<Test>]
+    member __.``sort`` () =
+        fun (xs : int list, n) -> 
+            let x = xs |> Query.ofSeq 
+                       |> Query.sort
+                       |> Query.run
+            let y = xs |> Seq.sort
+            equal x y
         |> Check.QuickThrowOnFailure
 
     [<Test>]
     member __.``sortBy`` () =
         fun (xs : int list, n) -> 
             let x = xs |> Query.ofSeq 
-                       |> Query.sortBy (fun x -> x)
+                       |> Query.sortBy (fun x -> -x)
                        |> Query.run
-            let y = xs |> Seq.sortBy (fun x -> x)
+            let y = xs |> Seq.sortBy (fun x -> -x)
             equal x y
         |> Check.QuickThrowOnFailure
 

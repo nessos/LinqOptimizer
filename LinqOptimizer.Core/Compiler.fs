@@ -478,8 +478,9 @@
                 GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
             | MethodCall (_, MethodName "OrderBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
                 OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
-            | MethodCall (_, MethodName "Count" _,  [expr'; Lambda ([_], bodyExpr) as f']) -> 
-                Count (toQueryExpr expr', bodyExpr.Type)
+            | MethodCall (_, MethodName "Count" _,  [expr']) -> 
+                let query' = toQueryExpr expr'
+                Count (query', query'.Type)
             | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
                 RangeGenerator(startExpr, countExpr)
             
@@ -498,11 +499,21 @@
                 Skip (countExpr, queryExpr, queryExpr.Type)
             | MethodCall (_, (MethodName "Collect" [|_; _|] as m), [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
                 NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+            | MethodCall (_, MethodName "Sort" _, [expr']) -> 
+                let query' = toQueryExpr expr'
+                let v = var "x" query'.Type
+                let f = Expression.Lambda(v,v)
+                OrderBy (f, Order.Ascending, query', query'.Type)
+            | MethodCall (_, MethodName "SortBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
+                OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+            | MethodCall (_, MethodName "Length" _, [expr']) -> 
+                let query' = toQueryExpr expr'
+                Count (query', query'.Type)
+//            | MethodCall (_, MethodName "ToArray" _, [expr']) -> 
+//                ToArray(toQueryExpr expr')
 
-            // Type signature missmatch
 //            | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
 //                GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
-            
 
             | _ -> 
                 if expr.Type.IsArray then
