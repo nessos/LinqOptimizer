@@ -78,6 +78,3 @@ namespace LinqOptimizer.Core
                 else None
 
         let (|ExprType|) (expr : Expression) = ExprType expr.Type
-
-        
-

@@ -10,6 +10,12 @@
 
     module FSharpExpressionTransformer =
 
+        let (|PipeMethodCall|_|) (expr : Expression) =
+            match expr with
+            | MethodCall (_, MethodName "op_PipeRight" _, [expr'; MethodCall(Lambda([m], MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda([s], MethodCall(_, mi, [m'; s']) )]) ) , MethodName "Invoke" _, [ f' ]) ]) when m :> Expression = m' && s :> Expression = s' -> 
+                Some(expr', mi, f')
+            | _ -> None
+
         // F# call patterns
         // TODO: expr type checks
         let rec toQueryExpr (expr : Expression) : QueryExpr =
@@ -46,6 +52,27 @@
             | MethodCall (_, MethodName "Length" _, [expr']) -> 
                 let query' = toQueryExpr expr'
                 Count (query', query'.Type)
+
+            //
+            // Pipe (|>) optimizations
+            //
+
+            | PipeMethodCall(expr', MethodName "Map" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                Transform (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+
+            | PipeMethodCall(expr', MethodName "Filter" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+
+            | PipeMethodCall(expr', MethodName "Where" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+
+            | PipeMethodCall(expr', MethodName "Take" _, countExpr) ->
+                let queryExpr = toQueryExpr expr'
+                Take (countExpr, queryExpr, queryExpr.Type)
+
+            | PipeMethodCall(expr', MethodName "Skip" _, countExpr) ->
+                let queryExpr = toQueryExpr expr'
+                Skip (countExpr, queryExpr, queryExpr.Type)
 
             | _ -> 
                 if expr.Type.IsArray then

@@ -9,14 +9,15 @@ module Program =
     [<EntryPoint>]
     let main argv = 
         
-        let test = new ``F# Query tests``()
-        let t = test.groupBy()
-//
-//        let xs = 
-//            [1..10]
-//            |> Query.ofSeq
-//            |> Query.collect (fun n -> Seq.map (fun k -> k * k) (Seq.filter (fun x -> x < 5) [1..10]) )
-//            |> Query.run
+//        let test = new ``F# Query tests``()
+//        let t = test.groupBy()
+
+        
+        let xs = 
+            [1..10]
+            |> Query.ofSeq
+            |> Query.collect (fun n -> [1..10] |> Seq.take 2 |> Seq.map (fun i -> i * i) )
+            |> Query.run
 
             
         0 // return an integer exit code
