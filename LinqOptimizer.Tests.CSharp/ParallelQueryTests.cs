@@ -9,7 +9,7 @@ using FsCheck.Fluent;
 namespace LinqOptimizer.Tests
 {
     [TestFixture]
-    class FsCheckParallelQueryExpr
+    class ParallelQueryTests
     {
         [Test]
         public void Select()
