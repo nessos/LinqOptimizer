@@ -107,21 +107,27 @@ type ``F# Query tests`` () =
     [<Test>]
     member __.``take`` () =
         fun (xs : int list, n) -> 
-            let x = xs |> Query.ofSeq 
-                       |> Query.take n
-                       |> Query.run
-            let y = xs |> Seq.take n
-            equal x y
+            // Query.skip n xs and linq does not throw then n > xs.Length
+            if n <= xs.Length && n >= 0 then
+                let x = xs |> Query.ofSeq 
+                           |> Query.take n
+                           |> Query.run
+                let y = xs |> Seq.take n
+                equal x y
+            else true
         |> Check.QuickThrowOnFailure
 
     [<Test>]
     member __.``skip`` () =
         fun (xs : int list, n) -> 
-            let x = xs |> Query.ofSeq 
-                       |> Query.skip n
-                       |> Query.run
-            let y = xs |> Seq.skip n
-            equal x y
+            // Query.skip n xs and linq does not throw then n > xs.Length
+            if n <= xs.Length && n >= 0 then
+                let x = xs |> Query.ofSeq 
+                           |> Query.skip n
+                           |> Query.run
+                let y = xs |> Seq.skip n
+                equal x y
+            else true
         |> Check.QuickThrowOnFailure
 
 
