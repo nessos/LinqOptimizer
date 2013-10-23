@@ -16,7 +16,7 @@ module Program =
         let xs = 
             [1..10]
             |> Query.ofSeq
-            |> Query.collect (fun n -> [1..10] |> Seq.take 2 |> Seq.map (fun i -> i * i) )
+            |> Query.collect (fun n -> Seq.sort([1..10] |> Seq.collect (fun x -> [x])))
             |> Query.run
 
             
