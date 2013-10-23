@@ -44,6 +44,12 @@ Parallel.ReduceCombine(nums, 0,
                           }, (left, right) => left + right);
 ```
 
+Future work
+-----------
+* Many missing operators
+* New specialized operators 
+* Even more optimizations
+
 References
 ----------
 LinqOptimizer draws heavy inspiration from 
