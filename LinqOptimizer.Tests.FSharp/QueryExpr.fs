@@ -91,6 +91,18 @@ type ``F# Query tests`` () =
             let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
             equal x y
         |> Check.QuickThrowOnFailure
+         
+    [<Test>]
+    member __.``collect (nested groupBy)`` () =
+        fun (xs : int list) -> 
+            let x = xs |> Query.ofSeq 
+                       |> Query.collect (fun n -> xs |> Seq.groupBy (fun x -> x))
+                       |> Query.map (fun (_,x)  -> x |> Seq.sum)
+                       |> Query.run
+            let y = xs |> Seq.collect (fun n ->  xs |> Seq.groupBy (fun x -> x))
+                       |> Seq.map (fun (_,x)  -> x |> Seq.sum)
+            equal x y
+        |> Check.QuickThrowOnFailure 
            
     [<Test>]
     member __.``take`` () =
@@ -131,7 +143,7 @@ type ``F# Query tests`` () =
         fun (xs : int list) -> 
             let x = xs |> Query.ofSeq 
                        |> Query.groupBy (fun x -> x)
-                       |> Query.map (fun x -> Seq.sum x)
+                       |> Query.map (fun (_,x) -> Seq.sum x)
                        |> Query.run
             let y = xs |> Seq.groupBy (fun x -> x)
                        |> Seq.map (fun (_,x) -> Seq.sum x)

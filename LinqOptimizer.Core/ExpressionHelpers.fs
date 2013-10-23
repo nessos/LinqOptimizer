@@ -82,3 +82,6 @@ namespace LinqOptimizer.Core
                 else None
 
         let (|ExprType|) (expr : Expression) = ExprType expr.Type
+
+        type internal Expression with
+            static member ofFSharpFunc<'T,'R>(func : Expression<Func<'T,'R>>) = func

@@ -48,7 +48,7 @@
 
             | MethodCall (_, MethodName "Sort" _, [expr']) -> 
                 let query' = toQueryExpr expr'
-                let v = var "x" query'.Type
+                let v = var "___x___" query'.Type
                 let f = Expression.Lambda(v,v)
                 OrderBy (f, Order.Ascending, query', query'.Type)
 
@@ -58,6 +58,22 @@
             | MethodCall (_, MethodName "Length" _, [expr']) -> 
                 let query' = toQueryExpr expr'
                 Count (query', query'.Type)
+
+            | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
+                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+                
+                let grp = var "___grp___" query'.Type
+                
+                // IEnumerable<'Body>
+                let seqTy = typedefof<IEnumerable<_>>.MakeGenericType [| bodyExpr.Type|]
+                
+                // 'Param * IEnumerable<'Body>
+                let tupleTy = typedefof<Tuple<_, _>>.MakeGenericType [|paramExpr.Type; seqTy |]
+                
+                let ci = tupleTy.GetConstructor([|paramExpr.Type; seqTy|])
+                let body = Expression.New(ci, [ Expression.Property(grp, "Key") :> Expression; Expression.Convert(grp, seqTy) :> Expression ]) :> Expression
+                let project = Expression.Lambda(body,[grp])
+                Transform(project, query', tupleTy)
 
             //
             // Pipe (|>) optimizations
@@ -96,6 +112,22 @@
                 let query' = toQueryExpr expr'
                 Count (query', query'.Type)
 
+            | PipedMethodCall1(expr', MethodName "GroupBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+                
+                let grp = var "___grp___" query'.Type
+                
+                // IEnumerable<'Body>
+                let seqTy = typedefof<IEnumerable<_>>.MakeGenericType [| bodyExpr.Type|]
+                
+                // 'Param * IEnumerable<'Body>
+                let tupleTy = typedefof<Tuple<_, _>>.MakeGenericType [|paramExpr.Type; seqTy |]
+                
+                let ci = tupleTy.GetConstructor([|paramExpr.Type; seqTy|])
+                let body = Expression.New(ci, [ Expression.Property(grp, "Key") :> Expression; Expression.Convert(grp, seqTy) :> Expression ]) :> Expression
+                let project = Expression.Lambda(body,[grp])
+                Transform(project, query', tupleTy)
+
             | _ -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())
@@ -105,5 +137,3 @@
 
 //            | MethodCall (_, MethodName "ToArray" _, [expr']) -> 
 //                ToArray(toQueryExpr expr')
-//            | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
-//                GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])

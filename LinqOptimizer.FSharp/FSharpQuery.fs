@@ -68,7 +68,7 @@
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                QueryExpr<IEnumerable<'R>>(CoreExts.SelectManyFSharp<'T, 'R>(queryExpr.Expr, selector))
+                QueryExpr<IEnumerable<'R>>(CoreExts.SelectManyFSharp<'T, 'R>(queryExpr.Expr, selector)) :> IQueryExpr<IEnumerable<'R>>
 
         static member take<'T>(n : int) =
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
@@ -84,15 +84,17 @@
 
         static member groupBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.GroupBy(queryExpr, keySelector)
-
+                Extensions.Select(
+                    Extensions.GroupBy(queryExpr, keySelector),
+                    (fun (grp : IGrouping<'Key, 'T>) -> (grp.Key, (grp :> IEnumerable<'T>))))
+                
         static member sort<'T>(queryExpr : IQueryExpr<IEnumerable<'T>>) =
             Extensions.OrderBy(queryExpr, fun i -> i)
 
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
                 Extensions.OrderBy(queryExpr, keySelector)
-
+                
 //        static member sortByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
 //            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
 //                Extensions.OrderByDescending(queryExpr, keySelector)

@@ -246,7 +246,7 @@
 
                 let expr = compileToSeqPipeline nestedQueryExpr context'
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
-            | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
+            | GroupBy (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
@@ -261,7 +261,7 @@
                                                             | _ -> false) // TODO: reflection type checks
                                             |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
                 let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
-                let groupByCallExpr = call groupByMethodInfo null [accVarExpr; lambdaExpr]
+                let groupByCallExpr = call groupByMethodInfo null [accVarExpr; lambda [|paramExpr|] bodyExpr]
                 let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context
                 block [accVarExpr] [expr; expr']
             | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->

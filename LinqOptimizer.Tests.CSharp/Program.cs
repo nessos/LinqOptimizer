@@ -20,11 +20,14 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-            Random random = new Random();
-            var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 10000000)).Select(x => x).ToArray();
+            var tests = new QueryTests();
+            tests.GroupBy();
 
-            Measure(() => nums.AsQueryExpr().OrderBy(x => x).ToList().Run());
-            Measure(() => nums.OrderBy(x => x).ToList());
+            //Random random = new Random();
+            //var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 10000000)).Select(x => x).ToArray();
+
+            //Measure(() => nums.AsQueryExpr().OrderBy(x => x).ToList().Run());
+            //Measure(() => nums.OrderBy(x => x).ToList());
 
 
             
