@@ -49,6 +49,7 @@ Future work
 * Many missing operators
 * New specialized operators 
 * Even more optimizations
+* DistributedLinq (Combining LinqOptimizer with MBrace)
 
 References
 ----------
