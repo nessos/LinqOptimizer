@@ -10,11 +10,17 @@
 
     module FSharpExpressionTransformer =
 
-        let (|PipeMethodCall|_|) (expr : Expression) =
+        let (|PipedMethodCall1|_|) (expr : Expression) =
             match expr with
             | MethodCall (_, MethodName "op_PipeRight" _, [expr'; MethodCall(Lambda([m], MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda([s], MethodCall(_, mi, [m'; s']) )]) ) , MethodName "Invoke" _, [ f' ]) ]) when m :> Expression = m' && s :> Expression = s' -> 
                 Some(expr', mi, f')
             | _ -> None
+
+        let (|PipedMethodCall0|_|) (expr : Expression) =
+            match expr with
+            | MethodCall (_, MethodName "op_PipeRight" _, [expr'; MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda([s], MethodCall(_, mi, [s']) )]) ]) when s :> Expression = s' -> 
+                Some(expr', mi)
+            | _ -> None        
 
         // F# call patterns
         // TODO: expr type checks
@@ -42,7 +48,7 @@
 
             | MethodCall (_, MethodName "Sort" _, [expr']) -> 
                 let query' = toQueryExpr expr'
-                let v = var "x" query'.Type
+                let v = var "___x___" query'.Type
                 let f = Expression.Lambda(v,v)
                 OrderBy (f, Order.Ascending, query', query'.Type)
 
@@ -53,26 +59,74 @@
                 let query' = toQueryExpr expr'
                 Count (query', query'.Type)
 
+            | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
+                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+                
+                let grp = var "___grp___" query'.Type
+                
+                // IEnumerable<'Body>
+                let seqTy = typedefof<IEnumerable<_>>.MakeGenericType [| bodyExpr.Type|]
+                
+                // 'Param * IEnumerable<'Body>
+                let tupleTy = typedefof<Tuple<_, _>>.MakeGenericType [|paramExpr.Type; seqTy |]
+                
+                let ci = tupleTy.GetConstructor([|paramExpr.Type; seqTy|])
+                let body = Expression.New(ci, [ Expression.Property(grp, "Key") :> Expression; Expression.Convert(grp, seqTy) :> Expression ]) :> Expression
+                let project = Expression.Lambda(body,[grp])
+                Transform(project, query', tupleTy)
+
             //
             // Pipe (|>) optimizations
             //
 
-            | PipeMethodCall(expr', MethodName "Map" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+            | PipedMethodCall1(expr', MethodName "Map" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
                 Transform (f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
 
-            | PipeMethodCall(expr', MethodName "Filter" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+            | PipedMethodCall1(expr', MethodName "Filter" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
                 Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
 
-            | PipeMethodCall(expr', MethodName "Where" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+            | PipedMethodCall1(expr', MethodName "Where" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
                 Filter (f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
 
-            | PipeMethodCall(expr', MethodName "Take" _, countExpr) ->
+            | PipedMethodCall1(expr', MethodName "Take" _, countExpr) ->
                 let queryExpr = toQueryExpr expr'
                 Take (countExpr, queryExpr, queryExpr.Type)
 
-            | PipeMethodCall(expr', MethodName "Skip" _, countExpr) ->
+            | PipedMethodCall1(expr', MethodName "Skip" _, countExpr) ->
                 let queryExpr = toQueryExpr expr'
                 Skip (countExpr, queryExpr, queryExpr.Type)
+
+            | PipedMethodCall1(expr', (MethodName "Collect" [|_; _|] as m), (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+
+            | PipedMethodCall0(expr', MethodName "Sort" _) ->
+                let query' = toQueryExpr expr'
+                let v = var "x" query'.Type
+                let f = Expression.Lambda(v,v)
+                OrderBy (f, Order.Ascending, query', query'.Type)
+
+            | PipedMethodCall1(expr', MethodName "SortBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+
+            | PipedMethodCall0(expr', MethodName "Length" _) ->
+                let query' = toQueryExpr expr'
+                Count (query', query'.Type)
+
+            | PipedMethodCall1(expr', MethodName "GroupBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
+                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+                
+                let grp = var "___grp___" query'.Type
+                
+                // IEnumerable<'Body>
+                let seqTy = typedefof<IEnumerable<_>>.MakeGenericType [| bodyExpr.Type|]
+                
+                // 'Param * IEnumerable<'Body>
+                let tupleTy = typedefof<Tuple<_, _>>.MakeGenericType [|paramExpr.Type; seqTy |]
+                
+                let ci = tupleTy.GetConstructor([|paramExpr.Type; seqTy|])
+                let body = Expression.New(ci, [ Expression.Property(grp, "Key") :> Expression; Expression.Convert(grp, seqTy) :> Expression ]) :> Expression
+                let project = Expression.Lambda(body,[grp])
+                Transform(project, query', tupleTy)
 
             | _ -> 
                 if expr.Type.IsArray then
@@ -83,5 +137,3 @@
 
 //            | MethodCall (_, MethodName "ToArray" _, [expr']) -> 
 //                ToArray(toQueryExpr expr')
-//            | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
-//                GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])

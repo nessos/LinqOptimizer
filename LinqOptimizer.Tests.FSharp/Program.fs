@@ -16,8 +16,8 @@ module Program =
         let xs = 
             [1..10]
             |> Query.ofSeq
-            |> Query.collect (fun n -> [1..10] |> Seq.take 2 |> Seq.map (fun i -> i * i) )
+            |> Query.collect (fun n -> Seq.groupBy (fun y -> y) [1..10])
             |> Query.run
-
+            
             
         0 // return an integer exit code

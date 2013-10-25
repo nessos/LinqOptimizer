@@ -31,7 +31,7 @@
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 context
-
+            
         let collectKeyValueArrays (listVarExpr : ParameterExpression) (paramExpr : ParameterExpression) (bodyExpr : Expression) = 
                 let loopBreak = breakLabel()
                 let loopContinue = continueLabel()
@@ -267,7 +267,7 @@
 
                 let expr = compileToSeqPipeline nestedQueryExpr context'
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
-            | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
+            | GroupBy (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]

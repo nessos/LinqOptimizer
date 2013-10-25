@@ -91,25 +91,43 @@ type ``F# Query tests`` () =
             let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
             equal x y
         |> Check.QuickThrowOnFailure
+         
+    [<Test>]
+    member __.``collect (nested groupBy)`` () =
+        fun (xs : int list) -> 
+            let x = xs |> Query.ofSeq 
+                       |> Query.collect (fun n -> xs |> Seq.groupBy (fun x -> x))
+                       |> Query.map (fun (_,x)  -> x |> Seq.sum)
+                       |> Query.run
+            let y = xs |> Seq.collect (fun n ->  xs |> Seq.groupBy (fun x -> x))
+                       |> Seq.map (fun (_,x)  -> x |> Seq.sum)
+            equal x y
+        |> Check.QuickThrowOnFailure 
            
     [<Test>]
     member __.``take`` () =
         fun (xs : int list, n) -> 
-            let x = xs |> Query.ofSeq 
-                       |> Query.take n
-                       |> Query.run
-            let y = xs |> Seq.take n
-            equal x y
+            // Query.skip n xs and linq does not throw then n > xs.Length
+            if n <= xs.Length && n >= 0 then
+                let x = xs |> Query.ofSeq 
+                           |> Query.take n
+                           |> Query.run
+                let y = xs |> Seq.take n
+                equal x y
+            else true
         |> Check.QuickThrowOnFailure
 
     [<Test>]
     member __.``skip`` () =
         fun (xs : int list, n) -> 
-            let x = xs |> Query.ofSeq 
-                       |> Query.skip n
-                       |> Query.run
-            let y = xs |> Seq.skip n
-            equal x y
+            // Query.skip n xs and linq does not throw then n > xs.Length
+            if n <= xs.Length && n >= 0 then
+                let x = xs |> Query.ofSeq 
+                           |> Query.skip n
+                           |> Query.run
+                let y = xs |> Seq.skip n
+                equal x y
+            else true
         |> Check.QuickThrowOnFailure
 
 
@@ -131,7 +149,7 @@ type ``F# Query tests`` () =
         fun (xs : int list) -> 
             let x = xs |> Query.ofSeq 
                        |> Query.groupBy (fun x -> x)
-                       |> Query.map (fun x -> Seq.sum x)
+                       |> Query.map (fun (_,x) -> Seq.sum x)
                        |> Query.run
             let y = xs |> Seq.groupBy (fun x -> x)
                        |> Seq.map (fun (_,x) -> Seq.sum x)
