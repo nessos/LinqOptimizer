@@ -31,6 +31,27 @@
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 context
+
+        let collectKeyValueArrays (listVarExpr : ParameterExpression) (paramExpr : ParameterExpression) (bodyExpr : Expression) = 
+                let loopBreak = breakLabel()
+                let loopContinue = continueLabel()
+                let indexVarExpr = var "___index___" typeof<int>
+                let indexAssignExpr = assign indexVarExpr (constant -1) 
+                let lengthExpr = call (listVarExpr.Type.GetMethod("get_Count")) listVarExpr []
+                let getItemExpr = call (listVarExpr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
+                
+                let keyVarArrayExpr = var "___keys___" (bodyExpr.Type.MakeArrayType())
+                let valueVarArrayExpr = var "___values___" (paramExpr.Type.MakeArrayType())
+                let initKeyArrayExpr = assign keyVarArrayExpr (arrayNew bodyExpr.Type lengthExpr)
+                let initValueArrayExpr = assign valueVarArrayExpr (arrayNew paramExpr.Type lengthExpr)
+                let accessKeyArrayExpr = arrayAccess keyVarArrayExpr indexVarExpr 
+                let accessValueArrayExpr = arrayAccess valueVarArrayExpr indexVarExpr 
+                let exprs' = [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
+                let checkBoundExpr = equal indexVarExpr lengthExpr 
+                let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 
+                let loopExpr = block [paramExpr; indexVarExpr] [initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; 
+                                                    loop (block [] [addAssign indexVarExpr (constant 1); brachExpr]) loopBreak loopContinue]
+                (keyVarArrayExpr, valueVarArrayExpr, loopExpr)
             
         let rec compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) : Expression =
             match queryExpr with
@@ -254,16 +275,19 @@
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
                                     VarExprs = [finalVarExpr]; Exprs = [] }
                 let expr = compileToSeqPipeline queryExpr' context'
-                let groupByMethodInfo = typeof<Enumerable>.GetMethods()
+                // Generate loop to extract keys
+                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
+                // generare grouping
+                let groupByMethodInfo = typeof<Grouping>.GetMethods()
                                             |> Array.find (fun methodInfo -> 
                                                             match methodInfo with
                                                             | MethodName "GroupBy" [|_; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
                                             |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
                 let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
-                let groupByCallExpr = call groupByMethodInfo null [accVarExpr; lambdaExpr]
+                let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                 let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context
-                block [accVarExpr] [expr; expr']
+                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
             | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
@@ -273,23 +297,7 @@
                                     VarExprs = [finalVarExpr]; Exprs = [] }
                 let expr = compileToSeqPipeline queryExpr' context'
                 // Generate loop to extract keys
-                let loopBreak = breakLabel()
-                let loopContinue = continueLabel()
-                let indexVarExpr = var "___index___" typeof<int>
-                let indexAssignExpr = assign indexVarExpr (constant -1) 
-                let lengthExpr = call (accVarExpr.Type.GetMethod("get_Count")) accVarExpr []
-                let getItemExpr = call (accVarExpr.Type.GetMethod("get_Item")) accVarExpr [indexVarExpr]
-                
-                let keyVarArrayExpr = var "___keys___" (bodyExpr.Type.MakeArrayType())
-                let valueVarArrayExpr = var "___values___" (paramExpr.Type.MakeArrayType())
-                let initKeyArrayExpr = assign keyVarArrayExpr (arrayNew bodyExpr.Type lengthExpr)
-                let initValueArrayExpr = assign valueVarArrayExpr (arrayNew paramExpr.Type lengthExpr)
-                let accessKeyArrayExpr = arrayAccess keyVarArrayExpr indexVarExpr 
-                let accessValueArrayExpr = arrayAccess valueVarArrayExpr indexVarExpr 
-                let exprs' = [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
-                let checkBoundExpr = equal indexVarExpr lengthExpr 
-                let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 
-                let loopExpr = block [paramExpr; indexVarExpr] [initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; ]) loopBreak loopContinue]
+                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
                 // generate sort 
                 let sortMethodInfo = typeof<Array>.GetMethods()
                                             |> Array.find (fun methodInfo -> 

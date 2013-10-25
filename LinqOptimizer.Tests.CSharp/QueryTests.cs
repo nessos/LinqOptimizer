@@ -317,14 +317,14 @@ namespace LinqOptimizer.Tests
             {
                 var x = (from num in xs.AsQueryExpr()
                          group num by num into g
-                         select g.Count()).Sum()
+                         select g.Sum())
                         .Run();
 
                 var y = (from num in xs
                          group num by num into g
-                         select g.Count()).Sum();
+                         select g.Sum());
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
