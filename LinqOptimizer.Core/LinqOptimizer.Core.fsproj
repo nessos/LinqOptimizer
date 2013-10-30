@@ -38,9 +38,9 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="QueryExpr.fs" />
+    <Compile Include="ParallelismHelpers.fs" />
     <Compile Include="GroupingHelpers.fs" />
     <Compile Include="ExpressionHelpers.fs" />
-    <Compile Include="ParallelismHelpers.fs" />
     <Compile Include="ReflectionHelpers.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionTransformer.fs" />

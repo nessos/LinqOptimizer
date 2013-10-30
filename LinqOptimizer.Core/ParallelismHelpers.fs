@@ -12,10 +12,18 @@
                                                     reducer : Func<'Acc, 'T, 'Acc>,
                                                     combiner : Func<'Acc, 'Acc, 'Acc>,
                                                     selector : Func<'Acc, 'R>) : 'R = 
+            ParallelismHelpers.ReduceCombine(values.Count, init, (fun acc index -> reducer.Invoke(acc, values.[index])), combiner, selector)
+    
+
+        static member ReduceCombine<'T, 'Acc, 'R>(length : int, 
+                                                        init : Func<'Acc>, 
+                                                        reducer : Func<'Acc, int, 'Acc>,
+                                                        combiner : Func<'Acc, 'Acc, 'Acc>,
+                                                        selector : Func<'Acc, 'R>) : 'R = 
 
             let seqReduceCount = 
-                if values.Count > Environment.ProcessorCount then 
-                    values.Count / Environment.ProcessorCount 
+                if length > Environment.ProcessorCount then 
+                    length / Environment.ProcessorCount 
                 else
                     Environment.ProcessorCount 
             let rec reduceCombine s e =
@@ -25,7 +33,7 @@
                         let result = 
                             let mutable r = init.Invoke()
                             for i = s' to e do
-                                r <- reducer.Invoke(r, values.[i]) 
+                                r <- reducer.Invoke(r, i) 
                             r
                         return result
                     else 
@@ -33,9 +41,7 @@
                         let! result =  Async.Parallel [| reduceCombine s m; reduceCombine m e |]
                         return combiner.Invoke(result.[0], result.[1])
                 }
-            reduceCombine 0 (values.Count - 1) |> Async.RunSynchronously |> selector.Invoke
-
-
+            reduceCombine 0 (length - 1) |> Async.RunSynchronously |> selector.Invoke
 
         
         static member ReduceCombine<'T, 'Acc, 'R>( partitioner : Partitioner<'T>,

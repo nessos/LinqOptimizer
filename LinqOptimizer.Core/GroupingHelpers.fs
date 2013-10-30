@@ -6,28 +6,27 @@
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open System.Threading;
     open System.Collections.Concurrent
 
     type Grouping<'Key, 'Value> =
         new(key, count, values) = { key = key; count = count; index = -1; position = -1; values = values }
         val private key : 'Key
         val private values : 'Value[]
-        val mutable private count : int
+        val mutable private count : int 
         val mutable private index : int
         val mutable private position : int
         
-        member self.IncrementCount() = self.count <- self.count + 1
+        
+        member self.IncrCount() = self.count <- self.count + 1
+        member self.InterlockedIncrCount() = Interlocked.Increment(&self.count)
         member self.Count = self.count
-        member self.Index = self.index
-        member self.UpdateIndex(index : int) =
-            if self.index = -1 then
-                self.index <- index
-                index + self.count
-            else
-                index 
-        member self.AddValue(value : 'Value) = 
-            self.position <- self.position + 1
-            self.values.[self.index + self.position] <- value
+        member self.Position = self.position
+        member self.Index with get () = self.index
+                          and set (index) = self.index <- index
+        member self.IncrPosition() = self.position <- self.position + 1
+        member self.InterlockedIncrPosition() = Interlocked.Increment(&self.position)
+            
 
 
         interface IGrouping<'Key, 'Value> with
@@ -54,7 +53,8 @@
                 enumerator :> _
 
     type Grouping = 
-        static member GroupBy(keys : 'Key[], values : 'Value[]) : IGrouping<'Key, 'Value>[] = 
+
+        static member GroupBy(keys : 'Key[], values : 'Value[]) : IEnumerable<IGrouping<'Key, 'Value>> = 
             let values' : 'Value[] = Array.zeroCreate values.Length 
             let dict = new Dictionary<'Key, Grouping<'Key, 'Value>>()
             let mutable grouping = Unchecked.defaultof<Grouping<'Key, 'Value>>
@@ -65,20 +65,56 @@
                     grouping <- new Grouping<'Key, 'Value>(key, 1, values')
                     dict.Add(key, grouping)
                 else
-                    grouping.IncrementCount()
+                    grouping.IncrCount() 
             // rearrange
             let mutable currentIndex = 0
             for i = 0 to values.Length - 1 do
                 let key = keys.[i]
                 let value = values.[i]
                 dict.TryGetValue(key, &grouping) |> ignore 
-                currentIndex <- grouping.UpdateIndex(currentIndex)
-                grouping.AddValue(value)
+                if grouping.Index = -1 then
+                    grouping.Index <- currentIndex 
+                    currentIndex <- grouping.Index + grouping.Count
+
+                grouping.IncrPosition() 
+                values'.[grouping.Index + grouping.Position] <- value
             // collect results
-            let result : IGrouping<'Key, 'Value>[] = Array.zeroCreate dict.Values.Count 
-            let mutable i = 0
-            for value in dict.Values do
-                result.[i] <- value :> _
-                i <- i + 1
-            result
+            dict.Values |> Seq.map (fun value -> value :> _)
+
+        static member ParallelGroupBy(keys : 'Key[], values : 'Value[]) : IEnumerable<IGrouping<'Key, 'Value>> = 
+            let values' : 'Value[] = Array.zeroCreate values.Length 
+            let dict = new ConcurrentDictionary<'Key, Grouping<'Key, 'Value>>()
+            // grouping count
+            ParallelismHelpers.ReduceCombine(keys, (fun () -> dict), 
+                                    (fun (dict : ConcurrentDictionary<'Key, Grouping<'Key, 'Value>>) key -> 
+                                        let mutable grouping = Unchecked.defaultof<Grouping<'Key, 'Value>>
+                                        if not <| dict.TryGetValue(key, &grouping) then
+                                            grouping <- new Grouping<'Key, 'Value>(key, 1, values')
+                                            if not <| dict.TryAdd(key, grouping) then
+                                                dict.TryGetValue(key, &grouping) |> ignore
+                                                grouping.InterlockedIncrCount() |> ignore
+                                        else
+                                            grouping.InterlockedIncrCount() |> ignore
+                                        dict
+                                    ), (fun dict _ -> dict), (fun x -> x)) |> ignore 
+            // fix grouping index
+            let mutable currentIndex = 0 
+            for grouping in dict.Values do
+                grouping.Index <- currentIndex
+                currentIndex <- currentIndex + grouping.Count
+            // rearrange
+            ParallelismHelpers.ReduceCombine(keys.Length, (fun () -> dict), 
+                                    (fun (dict : ConcurrentDictionary<'Key, Grouping<'Key, 'Value>>) index -> 
+                                        let mutable grouping = Unchecked.defaultof<Grouping<'Key, 'Value>>
+                                        dict.TryGetValue(keys.[index], &grouping) |> ignore
+
+                                        let position = grouping.InterlockedIncrPosition()
+                                        values'.[grouping.Index + position] <- values.[index]
+                                        dict
+                                    ), (fun dict _ -> dict), (fun x -> x)) |> ignore 
+            // collect results
+            dict.Values |> Seq.map (fun value -> value :> _)
+
+            
+            
 

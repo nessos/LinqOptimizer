@@ -19,12 +19,6 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-            Random random = new Random();
-            var nums = Enumerable.Range(1, 10).Select(_ => random.Next(1, 10)).Select(x => x).ToArray();
-
-            var f = nums.AsQueryExpr().GroupBy(x => x).Select(g => g.Sum()).Compile();
-            Measure(() => f.Invoke());
-            //Measure(() => nums.GroupBy(x => x).ToList());
 
         }
 

@@ -10,6 +10,7 @@
 
     module internal Compiler =
         let listTypeDef = typedefof<List<_>>
+        let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
 
         let breakLabel () = labelTarget "break"
@@ -32,10 +33,12 @@
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 context
             
-        let collectKeyValueArrays (listVarExpr : ParameterExpression) (paramExpr : ParameterExpression) (bodyExpr : Expression) = 
+        let collectKeyValueArrays (listExpr : Expression) (paramExpr : ParameterExpression) (bodyExpr : Expression) = 
                 let loopBreak = breakLabel()
                 let loopContinue = continueLabel()
+                let listVarExpr = var "___listVar___" listExpr.Type
                 let indexVarExpr = var "___index___" typeof<int>
+                let listAssignExpr = assign listVarExpr listExpr
                 let indexAssignExpr = assign indexVarExpr (constant -1) 
                 let lengthExpr = call (listVarExpr.Type.GetMethod("get_Count")) listVarExpr []
                 let getItemExpr = call (listVarExpr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
@@ -49,7 +52,7 @@
                 let exprs' = [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
                 let checkBoundExpr = equal indexVarExpr lengthExpr 
                 let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 
-                let loopExpr = block [paramExpr; indexVarExpr] [initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; 
+                let loopExpr = block [paramExpr; listVarExpr; indexVarExpr] [listAssignExpr; initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; 
                                                     loop (block [] [addAssign indexVarExpr (constant 1); brachExpr]) loopBreak loopContinue]
                 (keyVarArrayExpr, valueVarArrayExpr, loopExpr)
             
@@ -389,7 +392,7 @@
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
-                                                                | MethodName "ReduceCombine" [|_; _; _; _; _|] -> true
+                                                                | MethodName "ReduceCombine" [|ParamType (Named (TypeCheck interfaceListTypeDef _, [|_|])); _; _; _; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
                     let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
@@ -437,15 +440,17 @@
                 | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
-                    let groupByMethodInfo = typeof<Enumerable>.GetMethods()
+                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
+                    let groupByMethodInfo = typeof<Grouping>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
-                                                                | MethodName "GroupBy" [|_; _|] -> true
+                                                                | MethodName "ParallelGroupBy" [|_; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
                     let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
-                    let groupByCallExpr = call groupByMethodInfo null [expr; lambdaExpr]
-                    compile (Source (groupByCallExpr, groupingType)) context
+                    let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
+                    let expr' = compile (Source (groupByCallExpr, groupingType)) context
+                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']
                 | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
