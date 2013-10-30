@@ -44,7 +44,9 @@
                     defaultArg (transformer expr) (expr :> _)
                     
                 override this.VisitDynamic(expr : DynamicExpression) =
-                    failwith "Not implemented"
+                    let args = this.Visit expr.Arguments
+                    let e    = expr.Update(args)
+                    defaultArg (transformer e) (e :> _)
 
                 override this.VisitElementInit(expr : ElementInit) =
                     ExpressionTransformer.VisitElementInitWrapper(this, expr)
