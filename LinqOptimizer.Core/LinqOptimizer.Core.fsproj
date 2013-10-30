@@ -42,6 +42,7 @@
     <Compile Include="ExpressionHelpers.fs" />
     <Compile Include="ParallelismHelpers.fs" />
     <Compile Include="ReflectionHelpers.fs" />
+    <Compile Include="ExpressionTransformer.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionTransformer.fs" />
     <Compile Include="FSharpExpressionTransformer.fs" />
