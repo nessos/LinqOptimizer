@@ -10,7 +10,7 @@
 
     module internal ExpressionTransformer =
 
-        type private ExpressionTransformer (transformer : Expression -> Expression option) as self =
+        type private ExpressionTransformer (transformer : Expression -> Expression option) =
 
             inherit ExpressionVisitor() with
                 override this.VisitBinary(expr : BinaryExpression) =
@@ -24,12 +24,8 @@
                     let e = Expression.Block(exprs')
                     defaultArg (transformer e) (e :> _)
 
-                // transform
                 override this.VisitCatchBlock(expr : CatchBlock) =
-                    let var    = this.Visit expr.Variable :?> ParameterExpression
-                    let body   = this.Visit expr.Body
-                    let filter = this.Visit expr.Filter
-                    Expression.MakeCatchBlock(expr.Test, var, body, filter)
+                    ExpressionTransformer.VisitCatchBlockWrapper(this, expr)
 
                 override this.VisitConditional(expr : ConditionalExpression) =
                     let ifTrue = this.Visit expr.IfTrue
@@ -51,14 +47,14 @@
                     failwith "Not implemented"
 
                 override this.VisitElementInit(expr : ElementInit) =
-                    expr
+                    ExpressionTransformer.VisitElementInitWrapper(this, expr)
 
                 override this.VisitExtension(expr : Expression) =
                     defaultArg (transformer expr) expr
 
                 override this.VisitGoto(expr : GotoExpression) =
                     let value = this.Visit expr.Value
-                    let e = Expression.MakeGoto(expr.Kind, expr.Target, value, expr.Type)
+                    let e = expr.Update(expr.Target, value)
                     defaultArg (transformer e) (e :> _)
 
                 override this.VisitIndex(expr : IndexExpression) =
@@ -68,9 +64,9 @@
                     defaultArg (transformer e) (e :> _)
 
                 override this.VisitInvocation(expr : InvocationExpression) =
-                    let expr' = this.Visit expr.Expression
-                    let args  = this.Visit expr.Arguments
-                    let e = expr.Update(expr', args)
+                    let expr'   = this.Visit expr.Expression
+                    let args    = this.Visit expr.Arguments
+                    let e       = expr.Update(expr', args)
                     defaultArg (transformer e) (e :> _)
 
                 override this.VisitLabel(expr : LabelExpression) =
@@ -84,13 +80,12 @@
                 override this.VisitLambda<'T>(expr : Expression<'T>) =
                     let body = this.Visit expr.Body
                     let par =  expr.Parameters |> Seq.map this.VisitParameter |> Seq.cast<ParameterExpression>
-                    let e = expr.Update(body, par) :> Expression
-                    defaultArg (transformer e) e
+                    let e = expr.Update(body, par)
+                    defaultArg (transformer e) (e :> _)
 
-                // inits
                 override this.VisitListInit(expr : ListInitExpression) =
                     let newExpr = this.Visit expr.NewExpression :?> NewExpression
-                    let inits = expr.Initializers
+                    let inits = expr.Initializers |> Seq.map (fun ei -> ExpressionTransformer.VisitElementInitWrapper(this, ei))
                     let e = expr.Update(newExpr, inits)
                     defaultArg (transformer e) (e :> _)
 
@@ -104,25 +99,26 @@
                     let e = expr.Update(expr')
                     defaultArg (transformer e) (e :> _)
 
-                // transform
                 override this.VisitMemberAssignment(expr : MemberAssignment) =
                     let expr' = this.Visit expr.Expression
-                    let e = expr.Update(expr') 
-                    e
+                    expr.Update(expr')
 
                 override this.VisitMemberBinding(expr : MemberBinding) =
-                    expr
+                    ExpressionTransformer.VisitMemberBindingWrapper(this, expr)
 
                 override this.VisitMemberInit(expr : MemberInitExpression) =
                     let newExpr = this.Visit expr.NewExpression :?> NewExpression
-                    let e = expr.Update(newExpr, expr.Bindings)
+                    let bindings = expr.Bindings |> Seq.map (fun mb -> ExpressionTransformer.VisitMemberBindingWrapper(this, mb))
+                    let e = expr.Update(newExpr, bindings)
                     defaultArg (transformer e) (e :> _)
 
                 override this.VisitMemberListBinding(expr : MemberListBinding) =
-                    expr
+                    let inits = expr.Initializers |> Seq.map (fun ei -> ExpressionTransformer.VisitElementInitWrapper(this,ei))
+                    expr.Update(inits)
 
                 override this.VisitMemberMemberBinding(expr : MemberMemberBinding) =
-                    expr
+                    let binds = expr.Bindings |> Seq.map (fun mb -> ExpressionTransformer.VisitMemberBindingWrapper(this, mb))
+                    expr.Update(binds)
 
                 override this.VisitMethodCall(expr : MethodCallExpression) =
                     let o = this.Visit expr.Object
@@ -142,29 +138,25 @@
 
                 override this.VisitParameter(expr : ParameterExpression) =
                     defaultArg (transformer expr) (expr :> _)
-
+                    
                 override this.VisitRuntimeVariables(expr : RuntimeVariablesExpression) =
                     let vars = expr.Variables |> Seq.map this.VisitParameter |> Seq.cast<ParameterExpression>
                     let e = expr.Update(vars)
                     defaultArg (transformer e) (e :> _)
 
-                // cases
                 override this.VisitSwitch(expr : SwitchExpression) =
                     let value = this.Visit expr.SwitchValue
-                    let cases = expr.Cases
+                    let cases = expr.Cases |> Seq.map (fun sc -> ExpressionTransformer.VisitSwitchCaseWrapper(this, sc))
                     let defaultBody = this.Visit expr.DefaultBody
                     let e = expr.Update(value, cases, defaultBody)
                     defaultArg (transformer e) (e :> _)
 
                 override this.VisitSwitchCase(expr : SwitchCase) =
-                    let tests = this.Visit expr.TestValues
-                    let body = this.Visit expr.Body
-                    expr.Update(tests, body)
+                    ExpressionTransformer.VisitSwitchCaseWrapper(this, expr)
 
-                // handlers
                 override this.VisitTry(expr : TryExpression) =
                     let body = this.Visit expr.Body
-                    let handlers = expr.Handlers            
+                    let handlers = expr.Handlers |> Seq.map (fun handler -> ExpressionTransformer.VisitCatchBlockWrapper(this, handler))          
                     let finallyExpr = this.Visit expr.Finally
                     let fault = this.Visit expr.Fault
                     let e = expr.Update(body, handlers, finallyExpr, fault)
@@ -180,6 +172,23 @@
                     let e = expr.Update(expr')
                     defaultArg (transformer e) (e :> _)
 
+                static member private VisitElementInitWrapper(visitor : ExpressionVisitor, expr : ElementInit) =
+                    let args = visitor.Visit(expr.Arguments)
+                    expr.Update(args)
+
+                static member private VisitMemberBindingWrapper(visitor : ExpressionVisitor, expr : MemberBinding) =
+                    expr
+
+                static member private VisitSwitchCaseWrapper(visitor : ExpressionVisitor, expr : SwitchCase) =
+                    let tests = visitor.Visit expr.TestValues
+                    let body  = visitor.Visit expr.Body
+                    expr.Update(tests, body)
+
+                static member private VisitCatchBlockWrapper(visitor : ExpressionVisitor, expr : CatchBlock) =
+                    let var    = visitor.Visit expr.Variable :?> ParameterExpression
+                    let body   = visitor.Visit expr.Body
+                    let filter = visitor.Visit expr.Filter
+                    expr.Update(var, filter, body)
 
         let transform (transformer : Expression -> Expression option) =
             let t = new ExpressionTransformer(transformer)
