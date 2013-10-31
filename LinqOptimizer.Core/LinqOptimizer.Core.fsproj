@@ -39,6 +39,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="QueryExpr.fs" />
     <Compile Include="ParallelismHelpers.fs" />
+    <Compile Include="SortingHelpers.fs" />
     <Compile Include="GroupingHelpers.fs" />
     <Compile Include="ExpressionHelpers.fs" />
     <Compile Include="ReflectionHelpers.fs" />

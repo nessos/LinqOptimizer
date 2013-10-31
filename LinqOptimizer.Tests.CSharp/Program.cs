@@ -19,6 +19,16 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
+            Random random = new Random();
+            var nums = Enumerable.Range(1, 10000000).Select(_ => random.Next(1, 1000000)).ToArray();
+            var keys = nums.ToArray();
+
+
+            
+            //Console.WriteLine("CSharpParallelSort");
+            //Measure(() => CSharpParallelSort.QuicksortParallel(keys, nums));
+            Console.WriteLine("FSharpParallelSort");
+            Measure(() => ParallelSort.QuicksortParallel(keys, nums));
 
         }
 

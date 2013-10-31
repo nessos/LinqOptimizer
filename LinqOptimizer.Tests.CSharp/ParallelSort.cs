@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace LinqOptimizer.Tests
 {
 
-    public class ParallelSort
+    public class CSharpParallelSort
     {
         #region Public Static Methods
 
@@ -18,9 +18,9 @@ namespace LinqOptimizer.Tests
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="arr"></param>
-        public static void QuicksortSequential<T>(T[] arr) where T : IComparable<T>
+        public static void QuicksortSequential<Key, T>(Key[] keys, T[] arr) where Key : IComparable<Key>
         {
-            QuicksortSequential(arr, 0, arr.Length - 1);
+            QuicksortSequential(keys, arr, 0, arr.Length - 1);
         }
 
         /// <summary>
@@ -28,42 +28,39 @@ namespace LinqOptimizer.Tests
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="arr"></param>
-        public static void QuicksortParallel<T>(T[] arr) where T : IComparable<T>
+        public static void QuicksortParallel<Key, T>(Key[] keys, T[] arr) where Key : IComparable<Key>
         {
-            QuicksortParallel(arr, 0, arr.Length - 1);
+            QuicksortParallel(keys, arr, 0, arr.Length - 1);
         }
 
         #endregion
 
         #region Private Static Methods
 
-        private static void QuicksortSequential<T>(T[] arr, int left, int right)
-            where T : IComparable<T>
+        public static void QuicksortSequential<Key, T>(Key[] keys, T[] arr, int left, int right) where Key : IComparable<Key>
+            
         {
             if (right > left)
             {
-                int pivot = Partition(arr, left, right);
-                QuicksortSequential(arr, left, pivot - 1);
-                QuicksortSequential(arr, pivot + 1, right);
+                Array.Sort(keys, arr, left, right - left);
             }
         }
 
-        private static void QuicksortParallel<T>(T[] arr, int left, int right)
-            where T : IComparable<T>
+        public static void QuicksortParallel<Key, T>(Key[] keys, T[] arr, int left, int right) where Key : IComparable<Key>
         {
             const int SEQUENTIAL_THRESHOLD = 2048;
             if (right > left)
             {
                 if (right - left < SEQUENTIAL_THRESHOLD)
                 {
-                    QuicksortSequential(arr, left, right);
+                    QuicksortSequential(keys, arr, left, right);
                 }
                 else
                 {
-                    int pivot = Partition(arr, left, right);
-                    Parallel.Invoke(new Action[] { delegate {QuicksortParallel(arr, left, pivot - 1);},
-                                               delegate {QuicksortParallel(arr, pivot + 1, right);}
-                });
+                    int pivot = Partition(keys, arr, left, right);
+                    Parallel.Invoke(new Action[] { delegate { QuicksortParallel(keys, arr, left, pivot - 1); },
+                                                    delegate { QuicksortParallel(keys, arr, pivot + 1, right); }
+                                                 });
                 }
             }
         }
@@ -75,25 +72,27 @@ namespace LinqOptimizer.Tests
             arr[j] = tmp;
         }
 
-        private static int Partition<T>(T[] arr, int low, int high)
-            where T : IComparable<T>
+        public static int Partition<Key, T>(Key[] keys, T[] arr, int low, int high) where Key : IComparable<Key>
         {
             // Simple partitioning implementation
             int pivotPos = (high + low) / 2;
-            T pivot = arr[pivotPos];
+            var pivot = keys[pivotPos];
             Swap(arr, low, pivotPos);
+            Swap(keys, low, pivotPos);
 
             int left = low;
             for (int i = low + 1; i <= high; i++)
             {
-                if (arr[i].CompareTo(pivot) < 0)
+                if (keys[i].CompareTo(pivot) < 0)
                 {
                     left++;
                     Swap(arr, i, left);
+                    Swap(keys, i, left);
                 }
             }
 
             Swap(arr, low, left);
+            Swap(keys, low, left);
             return left;
         }
 
