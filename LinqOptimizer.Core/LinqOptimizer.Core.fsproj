@@ -45,6 +45,7 @@
     <Compile Include="ExpressionTransformer.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionTransformer.fs" />
+    <Compile Include="CSharpExpressionOptimizer.fs" />
     <Compile Include="FSharpExpressionTransformer.fs" />
     <Compile Include="ExtensionMethods.fs" />
   </ItemGroup>
