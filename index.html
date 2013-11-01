@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>LinqOptimizer by palladin</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>LinqOptimizer</h1>
+        <p>An automatic query optimizer for LINQ to Objects and PLINQ.</p>
+      </header>
+
+      <div id="banner">
+        <span id="logo"></span>
+
+        <a href="https://github.com/palladin/LinqOptimizer" class="button fork"><strong>View On GitHub</strong></a>
+        <div class="downloads">
+          <span>Downloads:</span>
+          <ul>
+            <li><a href="https://github.com/palladin/LinqOptimizer/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/palladin/LinqOptimizer/tarball/master" class="button">TAR</a></li>
+          </ul>
+        </div>
+      </div><!-- end banner -->
+
+    <div class="wrapper">
+      <nav>
+        <ul></ul>
+      </nav>
+      <section>
+        <h1>
+<a name="linqoptimizer" class="anchor" href="#linqoptimizer"><span class="octicon octicon-link"></span></a>LinqOptimizer</h1>
+
+<p>An automatic query optimizer for LINQ to Objects and PLINQ. 
+LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
+The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.</p>
+
+<h2>
+<a name="optimizations" class="anchor" href="#optimizations"><span class="octicon octicon-link"></span></a>Optimizations</h2>
+
+<ul>
+<li>Lambda inlining</li>
+<li>Loop fusion</li>
+<li>Nested loop generation</li>
+<li>Specialized strategies and algorithms</li>
+</ul><p>The expression</p>
+
+<div class="highlight highlight-csharp"><pre><span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">num</span> <span class="k">in</span> <span class="n">nums</span><span class="p">.</span><span class="n">AsQueryExpr</span><span class="p">()</span>
+             <span class="k">where</span> <span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span>
+             <span class="k">select</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">).</span><span class="n">Sum</span><span class="p">();</span>
+</pre></div>
+
+<p>will compile to</p>
+
+<div class="highlight highlight-csharp"><pre><span class="kt">int</span> <span class="n">sum</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">index</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">index</span> <span class="p">&lt;</span> <span class="n">nums</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span> <span class="n">index</span><span class="p">++)</span>
+<span class="p">{</span>
+   <span class="kt">int</span> <span class="n">num</span> <span class="p">=</span> <span class="n">nums</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+      <span class="n">sum</span> <span class="p">+=</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>and for the parallel case</p>
+
+<div class="highlight highlight-csharp"><pre><span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">num</span> <span class="k">in</span> <span class="n">nums</span><span class="p">.</span><span class="n">AsParallelQueryExpr</span><span class="p">()</span>
+             <span class="k">where</span> <span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span>
+             <span class="k">select</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">).</span><span class="n">Sum</span><span class="p">();</span>
+</pre></div>
+
+<p>will compile to a reduce-combine style straregy</p>
+
+<div class="highlight highlight-csharp"><pre><span class="n">Parallel</span><span class="p">.</span><span class="n">ReduceCombine</span><span class="p">(</span><span class="n">nums</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> 
+                          <span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> 
+                                       <span class="k">if</span> <span class="p">(</span><span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>  
+                                         <span class="k">return</span> <span class="n">acc</span> <span class="p">+</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">;</span> 
+                                       <span class="k">else</span>
+                                         <span class="k">return</span> <span class="n">acc</span><span class="p">;</span> 
+                          <span class="p">},</span> <span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">left</span> <span class="p">+</span> <span class="n">right</span><span class="p">);</span>
+</pre></div>
+
+<h2>
+<a name="future-work" class="anchor" href="#future-work"><span class="octicon octicon-link"></span></a>Future work</h2>
+
+<ul>
+<li>Many missing operators</li>
+<li>New specialized operators </li>
+<li>Even more optimizations</li>
+<li>DistributedLinq (Combining LinqOptimizer with MBrace)</li>
+</ul><h2>
+<a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References</h2>
+
+<p>LinqOptimizer draws heavy inspiration from </p>
+
+<ul>
+<li><a href="http://research.microsoft.com/pubs/173946/paper-pldi.pdf">Steno</a></li>
+<li><a href="http://clojure.org/reducers">Clojure - reducers</a></li>
+</ul>
+      </section>
+      <footer>
+        <p>Project maintained by <a href="https://github.com/palladin">palladin</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
