@@ -454,27 +454,28 @@
                 | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
-                    let methodName = match order with Ascending -> "OrderBy" | Descending -> "OrderByDescending"
-                    let orderByMethodInfo = typeof<ParallelEnumerable>.GetMethods()
+                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
+                    // generate sort 
+                    let sortMethodInfo = typeof<ParallelSort>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
-                                                                | MethodName methodName [|_; _|] -> true
+                                                                | MethodName "QuicksortParallel" [|_; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
-                    let asParallelMethodInfo = typeof<ParallelEnumerable>.GetMethods()
-                                                |> Array.find (fun methodInfo -> 
-                                                                match methodInfo with
-                                                                | MethodName "AsParallel" [|_|] -> true
-                                                                | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type|])
-                    let toListMethodInfo = typeof<ParallelEnumerable>.GetMethods()
-                                                |> Array.find (fun methodInfo -> 
-                                                                match methodInfo with
-                                                                | MethodName "ToList" [|_|] -> true
-                                                                | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type|])
-                    let orderByCallExpr = call toListMethodInfo null [call orderByMethodInfo null [call asParallelMethodInfo null [expr]; lambdaExpr]]
-                    compile (Source (orderByCallExpr, t)) context
+                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
+                    // reverse for descending 
+                    let reverseCallExpr : Expression = 
+                        match order with 
+                        | Ascending -> empty :> _
+                        | Descending -> 
+                            let reverseMethodInfo = typeof<Array>.GetMethods()
+                                                        |> Array.find (fun methodInfo -> 
+                                                                        match methodInfo with
+                                                                        | MethodName "Reverse" [|_|] -> true
+                                                                        | _ -> false) // TODO: reflection type checks
+                            call reverseMethodInfo  null [valueVarArrayExpr]
+                    let expr' = compile (Source (valueVarArrayExpr, t)) context
+                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; reverseCallExpr; expr']
                 | _ -> failwithf "Invalid state %A" queryExpr 
             match queryExpr with
             | Sum (queryExpr', t) ->

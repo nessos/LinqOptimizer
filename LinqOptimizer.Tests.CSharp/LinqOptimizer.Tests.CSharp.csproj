@@ -52,7 +52,6 @@
     <Compile Include="ParallelQueryTests.cs" />
     <Compile Include="QueryTests.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="ParallelSort.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

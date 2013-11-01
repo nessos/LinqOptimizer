@@ -40,7 +40,7 @@
             if right > left then
             
                 if right - left < 2048 then
-                    Array.Sort(keys, values, left, right - left)
+                    Array.Sort(keys, values, left, (right - left) + 1)
                 else
                     let pivot = partition keys values left right
                     Parallel.Invoke([| Action(fun () -> ParallelSort.QuicksortParallel(keys, values, left, pivot - 1)); 
