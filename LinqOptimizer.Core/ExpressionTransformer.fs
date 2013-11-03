@@ -13,6 +13,8 @@
         type private ExpressionTransformer (transformer : Expression -> Expression option) =
 
             inherit ExpressionVisitor() with
+                member private this.Transformer = transformer
+
                 override this.VisitBinary(expr : BinaryExpression) =
                     let l = this.Visit expr.Left
                     let r = this.Visit expr.Right
@@ -81,7 +83,7 @@
 
                 override this.VisitLambda<'T>(expr : Expression<'T>) =
                     let body = this.Visit expr.Body
-                    let par =  expr.Parameters |> Seq.map this.VisitParameter |> Seq.cast<ParameterExpression>
+                    let par =  expr.Parameters |> Seq.map (fun e -> ExpressionTransformer.VisitParameterWrapper(this,e)) |> Seq.cast<ParameterExpression>
                     let e = expr.Update(body, par)
                     defaultArg (transformer e) (e :> _)
 
@@ -139,10 +141,10 @@
                     defaultArg (transformer e) (e :> _)
 
                 override this.VisitParameter(expr : ParameterExpression) =
-                    defaultArg (transformer expr) (expr :> _)
+                    ExpressionTransformer.VisitParameterWrapper(this,expr)
                     
                 override this.VisitRuntimeVariables(expr : RuntimeVariablesExpression) =
-                    let vars = expr.Variables |> Seq.map this.VisitParameter |> Seq.cast<ParameterExpression>
+                    let vars = expr.Variables |> Seq.map (fun e -> ExpressionTransformer.VisitParameterWrapper(this,e)) |> Seq.cast<ParameterExpression>
                     let e = expr.Update(vars)
                     defaultArg (transformer e) (e :> _)
 
@@ -173,6 +175,10 @@
                     let expr' = this.Visit expr.Operand
                     let e = expr.Update(expr')
                     defaultArg (transformer e) (e :> _)
+
+
+                static member private VisitParameterWrapper(visitor : ExpressionTransformer, expr : ParameterExpression) =
+                    defaultArg (visitor.Transformer (expr :> _)) (expr :> _)
 
                 static member private VisitElementInitWrapper(visitor : ExpressionVisitor, expr : ElementInit) =
                     let args = visitor.Visit(expr.Arguments)

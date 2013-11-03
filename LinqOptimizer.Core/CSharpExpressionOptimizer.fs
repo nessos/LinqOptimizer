@@ -70,7 +70,7 @@
     
             | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
                 //RangeGenerator(startExpr, countExpr)
-                mkCall "Count" [constant(startExpr); constant(countExpr)]
+                mkCall "RangeGenerator" [constant(startExpr); constant(countExpr)]
             
             | _ when expr.Type.IsArray -> 
                 //Source (expr, expr.Type.GetElementType())
@@ -85,3 +85,6 @@
 
         let optimize (expr : Expression) : Expression =
             ExpressionTransformer.transform toQueryExprTransformer expr
+
+        let optimizeAsQueryExpr (expr : Expression) : QueryExpr =
+            optimize expr |> evalToQueryExpr
