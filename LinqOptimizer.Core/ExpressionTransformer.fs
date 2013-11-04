@@ -125,10 +125,13 @@
                     expr.Update(binds)
 
                 override this.VisitMethodCall(expr : MethodCallExpression) =
-                    let o = this.Visit expr.Object
-                    let args = this.Visit expr.Arguments
-                    let e = expr.Update(o, args)
-                    defaultArg (transformer e) (e :> _)
+                    match transformer expr with
+                    | None ->
+                        let o = this.Visit expr.Object
+                        let args = this.Visit expr.Arguments
+                        expr.Update(o, args) :> _
+                    | Some expr ->
+                        this.Visit expr
 
                 override this.VisitNew(expr : NewExpression) =
                     let args = this.Visit expr.Arguments
