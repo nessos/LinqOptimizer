@@ -45,6 +45,16 @@
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
 The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.</p>
 
+<p>The main idea is that we lift query sources into the world of Expression trees and
+after various tranformations-optimizations we compile them into IL for efficient execution.</p>
+
+<div class="highlight highlight-csharp"><pre><span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">num</span> <span class="k">in</span> <span class="n">nums</span><span class="p">.</span><span class="n">AsQueryExpr</span><span class="p">()</span> <span class="c1">// lift</span>
+             <span class="k">where</span> <span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span>
+             <span class="k">select</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">).</span><span class="n">Sum</span><span class="p">();</span>
+
+<span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">"Result: {0}"</span><span class="p">,</span> <span class="n">query</span><span class="p">.</span><span class="n">Run</span><span class="p">());</span> <span class="c1">// compile and execute</span>
+</pre></div>
+
 <h2>
 <a name="optimizations" class="anchor" href="#optimizations"><span class="octicon octicon-link"></span></a>Optimizations</h2>
 
@@ -96,6 +106,7 @@ The compiled code has fewer virtual calls, better data locality and speedups of 
 <li>Many missing operators</li>
 <li>New specialized operators </li>
 <li>Even more optimizations</li>
+<li>GPU backend</li>
 <li>DistributedLinq (Combining LinqOptimizer with MBrace)</li>
 </ul><h2>
 <a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References</h2>
