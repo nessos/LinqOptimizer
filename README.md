@@ -5,7 +5,7 @@ LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative 
 The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.
 
 The main idea is that we lift query sources into the world of Expression trees and
-after various tranformations-optimizations we compile them into IL for efficient execution.
+after various transformations-optimizations we compile them into IL for efficient execution.
 
 ```csharp
 var query = (from num in nums.AsQueryExpr() // lift
