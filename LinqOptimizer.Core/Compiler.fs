@@ -302,11 +302,12 @@
                 // Generate loop to extract keys
                 let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
                 // generate sort 
-                let sortMethodInfo = typeof<Array>.GetMethods()
+                let sortMethodInfo = typeof<Sort>.GetMethods()
                                             |> Array.find (fun methodInfo -> 
                                                             match methodInfo with
-                                                            | MethodName "Sort" [|_; _|] -> true
+                                                            | MethodName "QuicksortSequential" [|_; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
+                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
                 let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                 // reverse for descending 
                 let reverseCallExpr : Expression = 
@@ -456,7 +457,7 @@
                     let expr = compile queryExpr' context'
                     let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
                     // generate sort 
-                    let sortMethodInfo = typeof<ParallelSort>.GetMethods()
+                    let sortMethodInfo = typeof<Sort>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
                                                                 | MethodName "QuicksortParallel" [|_; _|] -> true

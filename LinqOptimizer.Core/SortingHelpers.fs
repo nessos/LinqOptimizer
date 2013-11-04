@@ -6,11 +6,13 @@
     open System.Linq
     open System.Threading.Tasks
 
-    type ParallelSort =
+    type Sort =
         
- 
+        static member QuicksortSequential(keys : 'Key[], values : 'Value[]) = 
+            Array.Sort(keys, values)
+
         static member QuicksortParallel(keys : 'Key[], values : 'Value[]) = 
-            ParallelSort.QuicksortParallel(keys, values, 0, keys.Length - 1)
+            Sort.QuicksortParallel(keys, values, 0, keys.Length - 1)
 
         static member QuicksortParallel<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], values : 'Value[], left : int, right : int) = 
             let swap (arr : 'T[]) i j =
@@ -43,8 +45,8 @@
                     Array.Sort(keys, values, left, (right - left) + 1)
                 else
                     let pivot = partition keys values left right
-                    Parallel.Invoke([| Action(fun () -> ParallelSort.QuicksortParallel(keys, values, left, pivot - 1)); 
-                                       Action(fun () -> ParallelSort.QuicksortParallel(keys, values, pivot + 1, right)) |])
+                    Parallel.Invoke([| Action(fun () -> Sort.QuicksortParallel(keys, values, left, pivot - 1)); 
+                                       Action(fun () -> Sort.QuicksortParallel(keys, values, pivot + 1, right)) |])
         
 
         
