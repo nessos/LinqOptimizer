@@ -4,6 +4,18 @@ An automatic query optimizer for LINQ to Objects and PLINQ.
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
 The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.
 
+The main idea is that we lift query sources into the world of Expression trees and
+after various tranformations-optimizations we compile them into IL for efficient execution.
+
+```csharp
+var query = (from num in nums.AsQueryExpr() // lift
+             where num % 2 == 0
+             select num * num).Sum();
+             
+Console.WriteLine("Result: {0}", query.Run()); // compile and execute
+```
+
+
 Optimizations
 -----------------------
 * Lambda inlining
