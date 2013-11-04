@@ -39,7 +39,8 @@ namespace LinqOptimizer.CSharp
 
         public static IQueryExpr<IEnumerable<R>> Select<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, R>> selector)
         {
-            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewTransform(selector, query.Expr, typeof(R)));
+            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectCSharp(query.Expr, selector));
+                //(QueryExpr.NewTransform(selector, query.Expr, typeof(R)));
         }
 
         public static IQueryExpr<IEnumerable<R>> Select<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, int, R>> selector)

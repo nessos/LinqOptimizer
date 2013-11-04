@@ -41,14 +41,22 @@ namespace LinqOptimizer.Core
                                                      resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr =
             match collectionSelector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQueryTransform ((paramExpr, CSharpExpressionTransformer.toQueryExpr bodyExpr), resultSelector, queryExpr, typeof<'R>)
+                NestedQueryTransform ((paramExpr, CSharpExpressionOptimizer.toQueryExpr bodyExpr), resultSelector, queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" collectionSelector
 
         static member SelectManyCSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
             match selector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQuery ((paramExpr, CSharpExpressionTransformer.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
+                NestedQuery ((paramExpr, CSharpExpressionOptimizer.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" selector
+        
+        static member SelectCSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, 'R>>) : QueryExpr = 
+            match selector with
+            | Lambda ([paramExpr], bodyExpr) ->
+                let body = CSharpExpressionOptimizer.optimize bodyExpr
+                Transform ((lambda [|paramExpr|] body) :?> LambdaExpression, queryExpr, typeof<'R>)
+            | _ -> failwithf "Invalid state %A" selector
+
 
         static member SelectManyFSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
             match selector with
