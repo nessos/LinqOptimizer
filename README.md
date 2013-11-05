@@ -62,7 +62,7 @@ Future work
 * New specialized operators 
 * Even more optimizations
 * GPU backend
-* DistributedLinq (Combining LinqOptimizer with MBrace)
+* DistributedLinq (Combining LinqOptimizer with [MBrace](http://www.m-brace.net))
 
 References
 ----------
