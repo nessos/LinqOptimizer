@@ -81,6 +81,9 @@ namespace LinqOptimizer.Core
                     Some (methodCallExpr.Object, methodCallExpr.Method, Seq.toList methodCallExpr.Arguments)
                 else None
 
+        let (|NotNull|_|) (expr : Expression) =
+            if expr <> null then Some expr else None
+
         let (|ExprType|) (expr : Expression) = ExprType expr.Type
 
         type internal Expression with

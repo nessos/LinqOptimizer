@@ -24,7 +24,18 @@ namespace LinqOptimizer.Tests
             //var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 10000000)).Select(x => x).ToArray();
             //var keys = nums.ToArray();    
 
-            var xs = Enumerable.Range(1, 10).AsQueryExpr().Select(x => Identity(Enumerable.Range(1, 2).Select(i => i * i))).Run();
+            //var xs = Enumerable.Range(1, 10).AsQueryExpr().Select(x => Identity(Enumerable.Range(1, x).Select(i => i * x))).Run();
+            //var xs = Enumerable.Range(1, 10).AsQueryExpr().Select(x => 1 + Enumerable.Range(1, 10).Sum() ).Run();
+
+            var xs = new int[] { 1, 1 };
+                //Enumerable.Range(1, 10);
+
+            var x = xs.AsQueryExpr()
+                    .SelectMany(m => Enumerable.Repeat(m, Enumerable.Range(1, 10).Sum()).Select(i => i * i))
+                    .Run();
+
+            //var tests = new QueryTests();
+            //tests.SelectMany();
 
         }
 

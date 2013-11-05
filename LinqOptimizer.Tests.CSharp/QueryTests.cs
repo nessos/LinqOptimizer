@@ -415,6 +415,38 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
+        public void NestedSelectTest()
+        {
+            Spec.ForAny<List<int>>(xs =>
+            {
+                var x = xs.AsQueryExpr()
+                        .Select(m => Enumerable.Repeat(m, 10).Select(i => i * i).Sum())
+                        .Run();
+
+                var y = xs
+                        .Select(m => Enumerable.Repeat(m, 10).Select(i => i * i).Sum());
+
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void NestedSelectManyTest()
+        {
+            Spec.ForAny<List<int>>(xs =>
+            {
+                var x = xs.AsQueryExpr()
+                        .SelectMany(m => Enumerable.Repeat(m, Enumerable.Range(1,10).Sum()).Select(i => i * i))
+                        .Run();
+
+                var y = xs
+                        .SelectMany(m => Enumerable.Repeat(m, Enumerable.Range(1, 10).Sum()).Select(i => i * i));
+
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
         public void RangeTest()
         {
             var result = Enumerable.Range(1, 10).AsQueryExpr();
