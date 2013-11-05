@@ -7,6 +7,7 @@ namespace LinqOptimizer.Core
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open System.Reflection.Emit
 
 
     type CoreExts =
@@ -29,6 +30,7 @@ namespace LinqOptimizer.Core
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToSequential queryExpr
             let func = Expression.Lambda<Func<'T>>(expr).Compile()
+            //let t = func.GetType().Assembly
             func
 
         static member Compile(queryExpr : QueryExpr) : Action =
