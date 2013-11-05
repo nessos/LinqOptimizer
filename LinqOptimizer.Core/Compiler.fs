@@ -291,7 +291,7 @@
                 let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                 let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
-            | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
+            | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExprs, queryExpr', t) ->
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
@@ -452,7 +452,7 @@
                     let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                     let expr' = compile (Source (groupByCallExpr, groupingType)) context
                     block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']
-                | OrderBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, order, queryExpr', t) ->
+                | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExpr, queryExpr', t) ->
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
                     let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr

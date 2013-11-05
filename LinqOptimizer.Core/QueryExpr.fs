@@ -34,7 +34,7 @@
         | Skip of Expression * QueryExpr * Type
         | ForEach of LambdaExpression * QueryExpr 
         | GroupBy of LambdaExpression * QueryExpr * Type
-        | OrderBy of LambdaExpression * Order * QueryExpr * Type
+        | OrderBy of (LambdaExpression * Order) list * QueryExpr * Type
         | ToList of QueryExpr
         | ToArray of QueryExpr
         | RangeGenerator of Expression * Expression
@@ -58,13 +58,14 @@
             | Skip (_, _, t) -> t
             | ForEach (_, _) -> typeof<Void>
             | GroupBy (_, _, t) -> t
-            | OrderBy (_, _, _, t) -> t
+            | OrderBy (_, _, t) -> t
             | ToList q -> q.Type
             | ToArray q -> q.Type
             | RangeGenerator _ -> typeof<int>
             | RepeatGenerator (_,t,_) -> t
             | ZipWith (_,_,f) -> f.ReturnType
-     
+
+        //static member 
 //        static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =
 //            if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 
 //                raise <| ArgumentOutOfRangeException("count")

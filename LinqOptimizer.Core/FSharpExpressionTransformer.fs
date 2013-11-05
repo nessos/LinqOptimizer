@@ -50,10 +50,10 @@
                 let query' = toQueryExpr expr'
                 let v = var "___x___" query'.Type
                 let f = Expression.Lambda(v,v)
-                OrderBy (f, Order.Ascending, query', query'.Type)
+                OrderBy ([f, Order.Ascending], query', query'.Type)
 
             | MethodCall (_, MethodName "SortBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
-                OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+                OrderBy ([f' :?> LambdaExpression, Order.Ascending], toQueryExpr expr', paramExpr.Type)
 
             | MethodCall (_, MethodName "Length" _, [expr']) -> 
                 let query' = toQueryExpr expr'
@@ -103,10 +103,10 @@
                 let query' = toQueryExpr expr'
                 let v = var "x" query'.Type
                 let f = Expression.Lambda(v,v)
-                OrderBy (f, Order.Ascending, query', query'.Type)
+                OrderBy ([f, Order.Ascending], query', query'.Type)
 
             | PipedMethodCall1(expr', MethodName "SortBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+                OrderBy ([f' :?> LambdaExpression, Order.Ascending], toQueryExpr expr', paramExpr.Type)
 
             | PipedMethodCall0(expr', MethodName "Length" _) ->
                 let query' = toQueryExpr expr'

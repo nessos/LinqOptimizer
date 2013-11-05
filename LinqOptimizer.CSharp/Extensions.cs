@@ -107,14 +107,21 @@ namespace LinqOptimizer.CSharp
             return new QueryExpr<IEnumerable<IGrouping<Key,T>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<Key,T>)));
         }
 
-        public static IQueryExpr<IEnumerable<T>> OrderBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        public static IQueryExpr<IOrderedEnumerable<T>> OrderBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
-        }  
-   
-        public static IQueryExpr<IEnumerable<T>> OrderByDescending<T,Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
+        }
+        public static IQueryExpr<IOrderedEnumerable<T>> OrderByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+        }
+        public static IQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        {
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
+        }
+        public static IQueryExpr<IOrderedEnumerable<T>> ThenByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        {
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
         }
         public static IQueryExpr<List<T>> ToList<T>(this IQueryExpr<IEnumerable<T>> query)
         {

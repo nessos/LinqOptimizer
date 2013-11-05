@@ -41,7 +41,7 @@
                 GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
     
             | MethodCall (_, MethodName "OrderBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
-                OrderBy (f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+                OrderBy ([f' :?> LambdaExpression,  Order.Ascending], toQueryExpr expr', paramExpr.Type)
     
             | MethodCall (_, MethodName "Count" _,  [expr']) -> 
                 let query' = toQueryExpr expr'
