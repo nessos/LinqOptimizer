@@ -49,9 +49,12 @@
     
             | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
                 RangeGenerator(optimize startExpr, optimize countExpr)
-            
+
+            | MethodCall (_, MethodName "Sum" _,  [expr']) -> 
+                let query' = toQueryExpr expr'
+                Sum(query', query'.Type)
+
             | NotNull expr -> 
-                let expr = optimize expr
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())
                 else
@@ -62,57 +65,70 @@
         and private transformer (expr : Expression) : Expression option =
             match expr with
             | MethodCall (_, MethodName "Select" _, [expr'; Lambda (param, bodyExpr) as f']) -> 
-                let query = Transform (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_; _], bodyExpr) as f']) -> 
-                let query = TransformIndexed (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
-                let query = Filter (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
-                let q = Compiler.compileToSequential query
-                Some q
-
-            | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr; indexExpr], _) as f']) -> 
-                let query = FilterIndexed (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, MethodName "Take" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
-                let queryExpr = toQueryExpr expr'
-                let query = Take (countExpr, queryExpr, queryExpr.Type)
-                (Compiler.compileToSequential >> Some) query
-                
-            | MethodCall (_, MethodName "Skip" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
-                let queryExpr = toQueryExpr expr'
-                let query = Skip (countExpr, queryExpr, queryExpr.Type)
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, (MethodName "SelectMany" [|_; _|] as m), [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
-                let query = NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, MethodName "GroupBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
-                let query = GroupBy (optimize f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, MethodName "OrderBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
-                let query = OrderBy (optimize f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
-                (Compiler.compileToSequential >> Some) query
-
-            | MethodCall (_, MethodName "Count" _,  [expr']) -> 
+//                let query = Transform (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+//                (Compiler.compileToSequential >> Some) query
                 let query = toQueryExpr expr
-                //let query = Count (query', query'.Type)
-                let q = Compiler.compileToSequential query
-                Some q
-
-            | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
-                let query = RangeGenerator(optimize startExpr, optimize countExpr)
                 (Compiler.compileToSequential >> Some) query
-
+            | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_; _], bodyExpr) as f']) -> 
+//                let query = TransformIndexed (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
+//                let query = Filter (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+//                let q = Compiler.compileToSequential query
+//                Some q
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr; indexExpr], _) as f']) -> 
+//                let query = FilterIndexed (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "Take" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
+//                let queryExpr = toQueryExpr expr'
+//                let query = Take (countExpr, queryExpr, queryExpr.Type)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "Skip" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
+//                let queryExpr = toQueryExpr expr'
+//                let query = Skip (countExpr, queryExpr, queryExpr.Type)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, (MethodName "SelectMany" [|_; _|] as m), [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
+//                let query = NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "GroupBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
+//                let query = GroupBy (optimize f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "OrderBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
+//                let query = OrderBy (optimize f' :?> LambdaExpression, Order.Ascending, toQueryExpr expr', paramExpr.Type)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "Count" _,  [expr']) -> 
+//                let query' = toQueryExpr expr'
+//                let query = Count (query', query'.Type)
+//                let q = Compiler.compileToSequential query
+//                Some q
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
+            | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
+//                let query = RangeGenerator(optimize startExpr, optimize countExpr)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
+                (Compiler.compileToSequential >> Some) query
             | MethodCall (_, MethodName "Sum" _, [expr']) ->
-                let query' = toQueryExpr expr'
-                let query = Sum (query', query'.Type)
+//                let query' = toQueryExpr expr'
+//                let query = Sum (query', query'.Type)
+//                (Compiler.compileToSequential >> Some) query
+                let query = toQueryExpr expr
                 (Compiler.compileToSequential >> Some) query
 
 //            | NotNull expr when expr.Type.IsArray -> 

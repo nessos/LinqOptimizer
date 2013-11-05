@@ -33,21 +33,23 @@ namespace LinqOptimizer.Tests
             //        .SelectMany(m => Enumerable.Repeat(m, Enumerable.Range(1, 10).Sum()).Select(i => i * i))
             //        .Run();
 
-            var n = int.Parse(Console.ReadLine());
 
-            Measure(() => Console.WriteLine(STotientLinq(n)));
-            Measure(() => Console.WriteLine(STotientOpt(n)));
-            Measure(() => Console.WriteLine(STotientHand(n)));
+            Measure(() => Console.WriteLine(STotientOpt(5)));
+
+            //var n = int.Parse(Console.ReadLine());
+            //Measure(() => Console.WriteLine(STotientLinq(n)));
+            //Measure(() => Console.WriteLine(STotientOpt(n)));
+            //Measure(() => Console.WriteLine(STotientHand(n)));
 
             //var tests = new QueryTests();
-            //tests.SelectMany();
+            //tests.GroupBy();
 
         }
 
         static int STotientLinq(int n)
         {
             return Enumerable.Range(0, n)
-                    .Select(nn => Enumerable.Range(1, nn).Where(k => gcd(k) == 1).Count())
+                    .Select(nn => Enumerable.Range(1, nn).Where(k => gcd(nn,k) == 1).Count())
                     .Sum();
         }
 
@@ -57,7 +59,7 @@ namespace LinqOptimizer.Tests
             //Expression<Func<int,bool>> f = Expression.Lambda<Func<int,bool>>(Expression.Equal(Expression.Call(mi, Expression.Constant(Expression.Parameter(typeof(int),"k"))), Expression.Constant(1)), Expression.Parameter(typeof(int), "k"));
 
             return Enumerable.Range(0, n).AsQueryExpr()
-                    .Select(nn => Enumerable.Range(1, nn).Where(k => gcd(k) == 1).Count())
+                    .Select(nn => Enumerable.Range(1, nn).Where(k => gcd(nn,k) == 1).Count())
                     .Sum()
                     .Run();
         }
@@ -68,9 +70,9 @@ namespace LinqOptimizer.Tests
             for (int nn = 0; nn < n; nn++)
             {
                 var count = 0;
-                for (int k = 1; k < nn; k++)
+                for (int k = 1; k <= nn; k++)
                 {
-                    if (gcd(k) == 1)
+                    if (gcd(nn,k) == 1)
                         count += 1;
                 }
                 sum += count;
@@ -85,15 +87,14 @@ namespace LinqOptimizer.Tests
         [System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.NoInlining)]
         static int gcd(int a, int b)
         {
-            //int Remainder;
-            //while (b != 0)
-            //{
-            //    Remainder = a % b;
-            //    a = b;
-            //    b = Remainder;
-            //}
-            //return a;
-            return 42;
+            int Remainder;
+            while (b != 0)
+            {
+                Remainder = a % b;
+                a = b;
+                b = Remainder;
+            }
+            return a;
         }
 
         //static int gcd(int a, int b)

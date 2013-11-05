@@ -30,8 +30,17 @@ namespace LinqOptimizer.Core
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToSequential queryExpr
             let func = Expression.Lambda<Func<'T>>(expr).Compile()
-            //let t = func.GetType().Assembly
             func
+//            let asmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName("LinqOptAsm_" + Guid.NewGuid().ToString("N")), AssemblyBuilderAccess.Run)
+//            let moduleBuilder = asmBuilder.DefineDynamicModule("Module")
+//            let typeBuilder = moduleBuilder.DefineType("LinqOptTy_" + Guid.NewGuid().ToString("N"), TypeAttributes.Public)
+//            let methodBuilder = typeBuilder.DefineMethod("LinqOptMethod", MethodAttributes.Public ||| MethodAttributes.Static)
+//            expr.CompileToMethod(methodBuilder)
+//            let ty = typeBuilder.CreateType()
+//            let d = ty.GetMethod("LinqOptMethod")
+//            let f = Func<'T>(fun c -> d.Invoke(null, [||]) :?> 'T)
+//
+//            f
 
         static member Compile(queryExpr : QueryExpr) : Action =
             let expr = Compiler.compileToSequential queryExpr
