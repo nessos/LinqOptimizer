@@ -87,14 +87,15 @@
                 Extensions.Select(
                     Extensions.GroupBy(queryExpr, keySelector),
                     (fun (grp : IGrouping<'Key, 'T>) -> (grp.Key, (grp :> IEnumerable<'T>))))
-                
-        static member sort<'T>(queryExpr : IQueryExpr<IEnumerable<'T>>) =
-            Extensions.OrderBy(queryExpr, fun i -> i)
-
+        
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                Extensions.OrderBy(queryExpr, keySelector)
+                new QueryExpr<IEnumerable<'T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, queryExpr.Expr, typeof<'T>));
                 
+        static member sort<'T>(queryExpr : IQueryExpr<IEnumerable<'T>>) =
+            Query.sortBy (fun i -> i) queryExpr
+
+
 //        static member sortByDescending<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
 //            fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
 //                Extensions.OrderByDescending(queryExpr, keySelector)

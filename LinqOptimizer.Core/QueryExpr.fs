@@ -65,7 +65,12 @@
             | RepeatGenerator (_,t,_) -> t
             | ZipWith (_,_,f) -> f.ReturnType
 
-        //static member 
+        static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr, t : Type) = 
+            match queryExpr with
+            | OrderBy (keySelectorOrderPairs, queryExpr', t) ->
+                OrderBy ((keySelector, order) :: keySelectorOrderPairs, queryExpr', t)
+            | _ -> OrderBy ([keySelector, order], queryExpr, t)
+            
 //        static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =
 //            if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 
 //                raise <| ArgumentOutOfRangeException("count")

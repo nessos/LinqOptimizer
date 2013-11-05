@@ -175,12 +175,12 @@ namespace LinqOptimizer.Tests
             {
                 var x = (from num in xs.AsParallelQueryExpr()
                          orderby num
-                         select num)
+                         select num * 2)
                         .Run();
 
                 var y = from num in xs.AsParallel()
                         orderby num
-                        select num;
+                        select num * 2;
 
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
@@ -193,12 +193,12 @@ namespace LinqOptimizer.Tests
             {
                 var x = (from num in xs.AsParallelQueryExpr()
                          orderby num descending 
-                         select num)
+                         select num * 2)
                         .Run();
 
                 var y = from num in xs.AsParallel()
                         orderby num descending
-                        select num;
+                        select num * 2;
 
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();

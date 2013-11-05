@@ -47,14 +47,12 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
             Random random = new Random();
-            var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 10000000)).Select(x => new DateTime(x)).ToArray();
+            var nums = Enumerable.Range(1, 100).Select(_ => random.Next(1, 100)).Select(x => new DateTime(x)).ToArray();
             var keys = nums.ToArray();
-
-            
 
             //Measure(() => nums.OrderBy(x => x.Year).ThenBy(x => x.Month).ToList());
             //Measure(() => nums.AsQueryExpr().OrderBy(x => new Pair<int, int>(x.Year, x.Month)).Run());
-            Measure(() => nums.AsQueryExpr().OrderBy(x => Tuple.Create(x.Year, x.Month)).Run());
+            //Measure(() => nums.AsQueryExpr().OrderBy(x => x.Year).Run());
             
         }
 

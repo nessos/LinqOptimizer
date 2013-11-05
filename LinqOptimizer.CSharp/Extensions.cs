@@ -109,19 +109,19 @@ namespace LinqOptimizer.CSharp
 
         public static IQueryExpr<IOrderedEnumerable<T>> OrderBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
         }
         public static IQueryExpr<IOrderedEnumerable<T>> OrderByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
         }
         public static IQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
         }
         public static IQueryExpr<IOrderedEnumerable<T>> ThenByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+            return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
         }
         public static IQueryExpr<List<T>> ToList<T>(this IQueryExpr<IEnumerable<T>> query)
         {
