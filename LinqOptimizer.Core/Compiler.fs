@@ -307,7 +307,7 @@
                                                             match methodInfo with
                                                             | MethodName "QuicksortSequential" [|_; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
-                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
                 let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                 // reverse for descending 
                 let reverseCallExpr : Expression = 
