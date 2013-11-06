@@ -13,7 +13,7 @@ using LinqOptimizer.CSharp;
 
 namespace LinqOptimizer.Tests
 {
-    class Program
+    public class Program
     {
         static IEnumerable<int> Identity(IEnumerable<int> x) { return x; }
 
@@ -33,17 +33,16 @@ namespace LinqOptimizer.Tests
             //        .SelectMany(m => Enumerable.Repeat(m, Enumerable.Range(1, 10).Sum()).Select(i => i * i))
             //        .Run();
 
+            //Measure(() => Console.WriteLine(STotientOpt(5)));
 
-            Measure(() => Console.WriteLine(STotientOpt(5)));
-
-            //var n = int.Parse(Console.ReadLine());
-            //Measure(() => Console.WriteLine(STotientLinq(n)));
-            //Measure(() => Console.WriteLine(STotientOpt(n)));
-            //Measure(() => Console.WriteLine(STotientHand(n)));
+            var n = int.Parse(Console.ReadLine());
+            Measure(() => Console.WriteLine(STotientLinq(n)));
+            Measure(() => Console.WriteLine(STotientOpt(n)));
+            Measure(() => Console.WriteLine(STotientHand(n)));
 
             //var tests = new QueryTests();
             //tests.GroupBy();
-
+        
         }
 
         static int STotientLinq(int n)
@@ -80,20 +79,20 @@ namespace LinqOptimizer.Tests
             return sum;
         }
 
-        [System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.NoInlining)]
-        static int gcd(int a) { return 42; }
+        //[System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.NoInlining)]
+        //static int gcd(int a) { return 42; }
 
-
-        [System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.NoInlining)]
-        static int gcd(int a, int b)
+        //[System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.NoInlining)]
+        public static int gcd(int a, int b)
         {
-            int Remainder;
-            while (b != 0)
-            {
-                Remainder = a % b;
-                a = b;
-                b = Remainder;
-            }
+            //int Remainder;
+            //while (b != 0)
+            //{
+            //    Remainder = a % b;
+            //    a = b;
+            //    b = Remainder;
+            //}
+            //return a;
             return a;
         }
 

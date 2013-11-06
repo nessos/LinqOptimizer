@@ -29,23 +29,13 @@ namespace LinqOptimizer.Core
 
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToSequential queryExpr
-            let func = Expression.Lambda<Func<'T>>(expr).Compile()
-            func
-//            let asmBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(AssemblyName("LinqOptAsm_" + Guid.NewGuid().ToString("N")), AssemblyBuilderAccess.Run)
-//            let moduleBuilder = asmBuilder.DefineDynamicModule("Module")
-//            let typeBuilder = moduleBuilder.DefineType("LinqOptTy_" + Guid.NewGuid().ToString("N"), TypeAttributes.Public)
-//            let methodBuilder = typeBuilder.DefineMethod("LinqOptMethod", MethodAttributes.Public ||| MethodAttributes.Static)
-//            expr.CompileToMethod(methodBuilder)
-//            let ty = typeBuilder.CreateType()
-//            let d = ty.GetMethod("LinqOptMethod")
-//            let f = Func<'T>(fun c -> d.Invoke(null, [||]) :?> 'T)
-//
-//            f
+            let func = Expression.Lambda<Func<'T>>(expr)
+            Session.Compile(func)
 
         static member Compile(queryExpr : QueryExpr) : Action =
             let expr = Compiler.compileToSequential queryExpr
-            let action = Expression.Lambda<Action>(expr).Compile()
-            action
+            let action = Expression.Lambda<Action>(expr)
+            Session.Compile(action)
 
         static member SelectManyCSharp<'T, 'Col, 'R>(queryExpr : QueryExpr, 
                                                      collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
