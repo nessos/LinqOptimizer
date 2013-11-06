@@ -8,7 +8,9 @@
     open System.Reflection
     open System.Collections.Concurrent
 
-    type ConstSubstVarVisitor () =
+    // Lift constants and member access into parameters
+    // due to the live-object limitation.
+    type ConstantLiftingTransformer () =
         inherit ExpressionVisitor() with
             let mutable x = 0
             let getName () = 

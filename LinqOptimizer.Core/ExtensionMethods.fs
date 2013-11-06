@@ -30,7 +30,7 @@ namespace LinqOptimizer.Core
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToSequential queryExpr
 
-            let csv = ConstSubstVarVisitor()
+            let csv = ConstantLiftingTransformer()
             let expr' = csv.Visit(expr)
             let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
 
@@ -46,7 +46,7 @@ namespace LinqOptimizer.Core
         static member Compile(queryExpr : QueryExpr) : Action =
             let expr = Compiler.compileToSequential queryExpr
 
-            let csv = ConstSubstVarVisitor()
+            let csv = ConstantLiftingTransformer()
             let expr' = csv.Visit(expr)
             let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
 
