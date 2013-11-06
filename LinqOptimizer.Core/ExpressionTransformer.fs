@@ -8,6 +8,33 @@
     open System.Reflection
     open System.Collections.Concurrent
 
+    type ConstSubstVarVisitor () =
+        inherit ExpressionVisitor() with
+            let mutable x = 0
+            let getName () = 
+                x <- x + 1
+                sprintf "___param%d___" x
+
+            let x = Dictionary<ParameterExpression, obj>()
+
+            member this.Environment with get () = x
+
+            override this.VisitConstant(expr : ConstantExpression) =
+                let p = Expression.Parameter(expr.Type, getName()) 
+                this.Environment.Add(p, expr.Value)
+                p :> _
+
+            override this.VisitMember(expr : MemberExpression) =
+                if expr.Expression :? ConstantExpression then
+                    let p = Expression.Parameter(expr.Type, getName()) 
+                    let value = (expr.Expression :?> ConstantExpression).Value
+                    let fi = expr.Member :?> FieldInfo
+                    let value = fi.GetValue(value)
+                    this.Environment.Add(p, value)
+                    p :> _
+                else
+                    expr :> _
+
     module internal ExpressionTransformer =
 
         type private ExpressionTransformer (transformer : Expression -> Expression option) =

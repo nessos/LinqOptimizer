@@ -31,7 +31,7 @@ namespace LinqOptimizer.Core
         let label (labelTarget : LabelTarget) = Expression.Label(labelTarget) 
         let goto (labelTarget : LabelTarget) = Expression.Goto(labelTarget)
 
-        let constant (value : obj) = Expression.Constant(value)
+        let constant (value : obj) : Expression = Expression.Constant(value) :> _
          
         let ``new`` (t : Type) = Expression.New(t)
         let call (methodInfo : MethodInfo) (instance : Expression) 

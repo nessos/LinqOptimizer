@@ -35,13 +35,13 @@ namespace LinqOptimizer.Tests
 
             //Measure(() => Console.WriteLine(STotientOpt(5)));
 
-            var n = int.Parse(Console.ReadLine());
-            Measure(() => Console.WriteLine(STotientLinq(n)));
-            Measure(() => Console.WriteLine(STotientOpt(n)));
-            Measure(() => Console.WriteLine(STotientHand(n)));
+            //var n = int.Parse(Console.ReadLine());
+            //Measure(() => Console.WriteLine(STotientLinq(n)));
+            //Measure(() => Console.WriteLine(STotientOpt(n)));
+            //Measure(() => Console.WriteLine(STotientHand(n)));
 
-            //var tests = new QueryTests();
-            //tests.GroupBy();
+            var tests = new QueryTests();
+            tests.NestedRangeInvalidArgTest();
         
         }
 

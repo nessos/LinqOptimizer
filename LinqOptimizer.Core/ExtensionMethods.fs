@@ -29,13 +29,35 @@ namespace LinqOptimizer.Core
 
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToSequential queryExpr
-            let func = Expression.Lambda<Func<'T>>(expr)
-            Session.Compile(func)
+
+            let csv = ConstSubstVarVisitor()
+            let expr' = csv.Visit(expr)
+            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
+
+            let func = Expression.Lambda(expr', pms)
+            let mi = Session.Compile(func)
+            Func<'T>(fun () -> 
+                try
+                    mi.Invoke(null, objs) :?> 'T
+                with :? TargetInvocationException as ex ->
+                    raise ex.InnerException 
+                )
 
         static member Compile(queryExpr : QueryExpr) : Action =
             let expr = Compiler.compileToSequential queryExpr
-            let action = Expression.Lambda<Action>(expr)
-            Session.Compile(action)
+
+            let csv = ConstSubstVarVisitor()
+            let expr' = csv.Visit(expr)
+            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
+
+            let func = Expression.Lambda(expr', pms)
+            let mi = Session.Compile(func)
+            Action(fun () -> 
+                try
+                    mi.Invoke(null, objs) :?> unit
+                with :? TargetInvocationException as ex ->
+                    raise ex.InnerException 
+                )
 
         static member SelectManyCSharp<'T, 'Col, 'R>(queryExpr : QueryExpr, 
                                                      collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 

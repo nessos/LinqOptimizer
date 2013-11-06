@@ -10,9 +10,9 @@
 
     type internal Session =
         
-        static member private GetNewMethodName ()   =  "LinqOptMethod"
-        static member private GetNewTypeName ()     =  "LinqOptTy_" + Guid.NewGuid().ToString("N")
-        static member private GetNewAssemblyName () =  "LinqOptAsm_" + Guid.NewGuid().ToString("N")
+        static member private GetNewMethodName ()   = "LinqOptMethod"
+        static member private GetNewTypeName ()     = "LinqOptTy_" + Guid.NewGuid().ToString("N")
+        static member private GetNewAssemblyName () = "LinqOptAsm_" + Guid.NewGuid().ToString("N")
         static member private ModuleName            = "Module"
 
         static member private ModuleBuilder 
@@ -21,7 +21,7 @@
                         let moduleBuilder = asmBuilder.DefineDynamicModule(Session.ModuleName)
                         moduleBuilder )
 
-        static member private CompileToMethod(expr : Expression<'T>) =
+        static member private CompileToMethod(expr : LambdaExpression) =
             let methodName = Session.GetNewMethodName()
             let typeBuilder = Session.ModuleBuilder.Value.DefineType(Session.GetNewTypeName(), TypeAttributes.Public)
             let methodBuilder = typeBuilder.DefineMethod(methodName, MethodAttributes.Public ||| MethodAttributes.Static)
@@ -30,10 +30,10 @@
             let methodInfo = ty.GetMethod(methodName)
             methodInfo
 
-        static member Compile (expr : Expression<Func<'T>>) = 
+        static member Compile (expr : LambdaExpression) = 
             let mi = Session.CompileToMethod(expr)
-            Func<'T>(fun () -> mi.Invoke(null, Array.empty) :?> 'T)
+            mi
 
-        static member Compile (expr : Expression<Action>) : Action =
-            let mi = Session.CompileToMethod(expr)
-            Action(fun () -> mi.Invoke(null, Array.empty) :?> unit)
+//        static member Compile (expr : Expression<Action>) : Action =
+//            let mi = Session.CompileToMethod(expr)
+//            Action(fun () -> mi.Invoke(null, Array.empty) :?> unit)
