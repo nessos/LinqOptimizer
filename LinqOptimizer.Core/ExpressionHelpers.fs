@@ -67,6 +67,9 @@ namespace LinqOptimizer.Core
             Expression.ArrayIndex(arrayExpr, indexExpr)
         let arrayLength arrayExpr = Expression.ArrayLength(arrayExpr)
 
+        let isPrimitive (expr : ConstantExpression) =
+            expr.Type.IsPrimitive || expr.Type = typeof<string> 
+
         // Expression Active Patterns
         let (|Lambda|_|) (expr : Expression) = 
             if expr :? LambdaExpression then 

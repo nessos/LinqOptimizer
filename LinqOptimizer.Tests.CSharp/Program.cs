@@ -35,13 +35,13 @@ namespace LinqOptimizer.Tests
 
             //Measure(() => Console.WriteLine(STotientOpt(5)));
 
-            //var n = int.Parse(Console.ReadLine());
-            //Measure(() => Console.WriteLine(STotientLinq(n)));
-            //Measure(() => Console.WriteLine(STotientOpt(n)));
-            //Measure(() => Console.WriteLine(STotientHand(n)));
+            var n = int.Parse(Console.ReadLine());
+            Measure(() => Console.WriteLine(STotientLinq(n)));
+            Measure(() => Console.WriteLine(STotientOpt(n)));
+            Measure(() => Console.WriteLine(STotientHand(n)));
 
-            var tests = new QueryTests();
-            tests.NestedRangeInvalidArgTest();
+            //var tests = new QueryTests();
+            //tests.NestedRangeInvalidArgTest();
         
         }
 
@@ -85,14 +85,13 @@ namespace LinqOptimizer.Tests
         //[System.Runtime.CompilerServices.MethodImpl(MethodImplOptions.NoInlining)]
         public static int gcd(int a, int b)
         {
-            //int Remainder;
-            //while (b != 0)
-            //{
-            //    Remainder = a % b;
-            //    a = b;
-            //    b = Remainder;
-            //}
-            //return a;
+            int Remainder;
+            while (b != 0)
+            {
+                Remainder = a % b;
+                a = b;
+                b = Remainder;
+            }
             return a;
         }
 

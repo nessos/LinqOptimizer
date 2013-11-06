@@ -22,9 +22,12 @@
             member this.Environment with get () = x
 
             override this.VisitConstant(expr : ConstantExpression) =
-                let p = Expression.Parameter(expr.Type, getName()) 
-                this.Environment.Add(p, expr.Value)
-                p :> _
+                if not <| isPrimitive expr && expr.Value <> null then
+                    let p = Expression.Parameter(expr.Type, getName()) 
+                    this.Environment.Add(p, expr.Value)
+                    p :> _
+                else 
+                    expr :> _
 
             override this.VisitMember(expr : MemberExpression) =
                 if expr.Expression :? ConstantExpression then
