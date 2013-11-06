@@ -347,25 +347,6 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
-        public void ThenBy()
-        {
-            Spec.ForAny<DateTime[]>(ds =>
-            {
-                var x = (ds.AsQueryExpr()
-                         .OrderBy(d => d.Year)
-                         .ThenBy(d => d.Month)
-                         .Select(d => d.ToString())).Run();
-
-                var y = ds.OrderBy(d => d.Year)
-                          .ThenBy(d => d.Month)
-                          .Select(d => d.ToString());
-
-                return x.SequenceEqual(y);
-            }).QuickCheckThrowOnFailure();
-        }
-
-
-        [Test]
         public void OrderByDescending()
         {
             Spec.ForAny<int[]>(xs =>
@@ -383,23 +364,41 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
-        [Test]
-        public void ThenByDescending()
-        {
-            Spec.ForAny<DateTime[]>(ds =>
-            {
-                var x = (ds.AsQueryExpr()
-                         .OrderByDescending(d => d.Year)
-                         .ThenByDescending(d => d.Month)
-                         .Select(d => d.ToString())).Run();
+        //[Test]
+        //public void ThenBy()
+        //{
+        //    Spec.ForAny<DateTime[]>(ds =>
+        //    {
+        //        var x = (ds.AsQueryExpr()
+        //                 .OrderBy(d => d.Year)
+        //                 .ThenBy(d => d.Month)
+        //                 .Select(d => d.ToString())).Run();
 
-                var y = ds.OrderByDescending(d => d.Year)
-                          .ThenByDescending(d => d.Month)
-                          .Select(d => d.ToString());
+        //        var y = ds.OrderBy(d => d.Year)
+        //                  .ThenBy(d => d.Month)
+        //                  .Select(d => d.ToString());
 
-                return x.SequenceEqual(y);
-            }).QuickCheckThrowOnFailure();
-        }
+        //        return x.SequenceEqual(y);
+        //    }).QuickCheckThrowOnFailure();
+        //}
+
+        //[Test]
+        //public void ThenByDescending()
+        //{
+        //    Spec.ForAny<DateTime[]>(ds =>
+        //    {
+        //        var x = (ds.AsQueryExpr()
+        //                 .OrderByDescending(d => d.Year)
+        //                 .ThenByDescending(d => d.Month)
+        //                 .Select(d => d.ToString())).Run();
+
+        //        var y = ds.OrderByDescending(d => d.Year)
+        //                  .ThenByDescending(d => d.Month)
+        //                  .Select(d => d.ToString());
+
+        //        return x.SequenceEqual(y);
+        //    }).QuickCheckThrowOnFailure();
+        //}
 
         [Test]
         public void Count()
