@@ -83,8 +83,20 @@ namespace LinqOptimizer.Core
 
         static member CompileToParallel<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToParallel queryExpr
-            let func = Expression.Lambda<Func<'T>>(expr).Compile()
-            func
+
+            let csv = ConstantLiftingTransformer()
+            let expr' = csv.Visit(expr)
+            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
+
+            let func = Expression.Lambda(expr', pms)
+            let mi = Session.Compile(func)
+            Func<'T>(fun () -> 
+                try
+                    mi.Invoke(null, objs) :?> 'T
+                with :? TargetInvocationException as ex ->
+                    raise ex.InnerException 
+                )
+
 
 //    // LINQ-C# friendly extension methods 
 //    [<AutoOpen>]
