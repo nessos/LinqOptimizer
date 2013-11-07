@@ -90,7 +90,8 @@
         
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : IQueryExpr<IEnumerable<'T>>) ->
-                new QueryExpr<IEnumerable<'T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, queryExpr.Expr, typeof<'T>));
+                let keySelector =  keySelector :> LambdaExpression
+                new QueryExpr<IEnumerable<'T>>(QueryExpr.OrderBy([keySelector, Order.Ascending], queryExpr.Expr, typeof<'T>));
                 
         static member sort<'T>(queryExpr : IQueryExpr<IEnumerable<'T>>) =
             Query.sortBy (fun i -> i) queryExpr

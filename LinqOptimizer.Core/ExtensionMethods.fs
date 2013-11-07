@@ -7,6 +7,7 @@ namespace LinqOptimizer.Core
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open System.Reflection.Emit
 
 
     type CoreExts =
@@ -28,26 +29,50 @@ namespace LinqOptimizer.Core
 
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
             let expr = Compiler.compileToSequential queryExpr
-            let func = Expression.Lambda<Func<'T>>(expr).Compile()
-            func
+
+            let csv = ConstantLiftingTransformer()
+            let expr' = csv.Visit(expr)
+            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
+
+            let func = Expression.Lambda(expr', pms)
+            let mi = Session.Compile(func)
+            Func<'T>(fun () -> 
+                try
+                    mi.Invoke(null, objs) :?> 'T
+                with :? TargetInvocationException as ex ->
+                    raise ex.InnerException 
+                )
 
         static member Compile(queryExpr : QueryExpr) : Action =
             let expr = Compiler.compileToSequential queryExpr
-            let action = Expression.Lambda<Action>(expr).Compile()
-            action
+
+            let csv = ConstantLiftingTransformer()
+            let expr' = csv.Visit(expr)
+            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
+
+            let func = Expression.Lambda(expr', pms)
+            let mi = Session.Compile(func)
+            Action(fun () -> 
+                try
+                    mi.Invoke(null, objs) :?> unit
+                with :? TargetInvocationException as ex ->
+                    raise ex.InnerException 
+                )
 
         static member SelectManyCSharp<'T, 'Col, 'R>(queryExpr : QueryExpr, 
                                                      collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
                                                      resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr =
+            let selector = CSharpExpressionOptimizer.Optimize collectionSelector
             match collectionSelector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQueryTransform ((paramExpr, CSharpExpressionTransformer.toQueryExpr bodyExpr), resultSelector, queryExpr, typeof<'R>)
+                NestedQueryTransform ((paramExpr, CSharpExpressionOptimizer.ToQueryExpr bodyExpr), CSharpExpressionOptimizer.Optimize resultSelector :?> _, queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" collectionSelector
 
         static member SelectManyCSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
+            let selector = CSharpExpressionOptimizer.Optimize selector
             match selector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQuery ((paramExpr, CSharpExpressionTransformer.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
+                NestedQuery ((paramExpr, CSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" selector
 
         static member SelectManyFSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 

@@ -200,8 +200,9 @@
                                         constant (int64 Int32.MaxValue))
                         Expression.Or(left, right)
                     let exceptionExpr = 
-                        Expression.Block(Expression.Throw(constant(ArgumentOutOfRangeException("count"))), 
-                                         constant Unchecked.defaultof<IEnumerable<int>>)
+                        let exc = Expression.New(typeof<ArgumentOutOfRangeException>.GetConstructor([|typeof<string>|]), constant "count")
+                        Expression.Block(Expression.Throw(exc), 
+                            constant Unchecked.defaultof<IEnumerable<int>>)
 
                     let startExpr = Expression.Subtract(start , constant 1)
                     let endExpr = Expression.Add(start, countVarExpr)
@@ -220,8 +221,9 @@
                     let countVarInitExpr = assign countVarExpr countExpr
                     let countCheckExpr = Expression.LessThan(countVarExpr, constant 0)
                     let exceptionExpr = 
-                        Expression.Block(Expression.Throw(constant(ArgumentOutOfRangeException("count"))), 
-                                         constant null)
+                        let exc = Expression.New(typeof<ArgumentOutOfRangeException>.GetConstructor([|typeof<string>|]), constant "count")
+                        Expression.Block(Expression.Throw(exc), 
+                            constant null)
 
                     let endExpr = countExpr
                     let indexVarExpr = var "___index___" typeof<int>

@@ -31,7 +31,7 @@ namespace LinqOptimizer.Core
         let label (labelTarget : LabelTarget) = Expression.Label(labelTarget) 
         let goto (labelTarget : LabelTarget) = Expression.Goto(labelTarget)
 
-        let constant (value : obj) = Expression.Constant(value)
+        let constant (value : obj) : Expression = Expression.Constant(value) :> _
          
         let ``new`` (t : Type) = Expression.New(t)
         let call (methodInfo : MethodInfo) (instance : Expression) 
@@ -67,6 +67,9 @@ namespace LinqOptimizer.Core
             Expression.ArrayIndex(arrayExpr, indexExpr)
         let arrayLength arrayExpr = Expression.ArrayLength(arrayExpr)
 
+        let isPrimitive (expr : ConstantExpression) =
+            expr.Type.IsPrimitive || expr.Type = typeof<string> 
+
         // Expression Active Patterns
         let (|Lambda|_|) (expr : Expression) = 
             if expr :? LambdaExpression then 
@@ -75,11 +78,14 @@ namespace LinqOptimizer.Core
             else None
 
         let (|MethodCall|_|) (expr : Expression) =
-            if (expr.NodeType = ExpressionType.Call && (expr :? MethodCallExpression)) 
+            if expr <> null && (expr.NodeType = ExpressionType.Call && (expr :? MethodCallExpression)) 
                 then 
                     let methodCallExpr = expr :?> MethodCallExpression
                     Some (methodCallExpr.Object, methodCallExpr.Method, Seq.toList methodCallExpr.Arguments)
                 else None
+
+        let (|NotNull|_|) (expr : Expression) =
+            if expr <> null then Some expr else None
 
         let (|ExprType|) (expr : Expression) = ExprType expr.Type
 
