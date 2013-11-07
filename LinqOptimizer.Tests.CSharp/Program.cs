@@ -21,9 +21,14 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
             Random random = new Random();
-            var nums = Enumerable.Range(1, 10).Select(_ => random.Next(1, 10)).Select(x => x).ToArray();
-            var keys = nums.ToArray();
+            var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 100000000)).Select(x => x).ToArray();
+            //var keys = nums.ToArray();
 
+            Measure(() => nums.AsParallel().OrderBy(x => x).ToList());
+
+            //Measure(() => Array.Sort(nums));
+            //Measure(() => nums.AsQueryExpr().OrderBy(x => x).Run());
+            //Measure(() => nums.AsParallelQueryExpr().OrderBy(x => x).Run());
             
         }
 

@@ -8,13 +8,18 @@
 
     type Sort =
         
-        static member QuicksortSequential(keys : 'Key[], values : 'Value[]) = 
+        static member SequentialSort(keys : 'Key[], values : 'Value[], order : Order) = 
             Array.Sort(keys, values)
+            match order with
+            | Descending -> 
+                Array.Reverse(values)
+            | _ -> ()
 
-        static member QuicksortParallel(keys : 'Key[], values : 'Value[]) = 
-            Sort.QuicksortParallel(keys, values, 0, keys.Length - 1)
+        static member ParallelSort(keys : 'Key[], values : 'Value[], order : Order) = 
+            Sort.ParallelSort(keys, values, 0, keys.Length - 1, order)
 
-        static member QuicksortParallel<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], values : 'Value[], left : int, right : int) = 
+
+        static member ParallelSort<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], values : 'Value[], left : int, right : int, order : Order) = 
             let swap (arr : 'T[]) i j =
                 let tmp = arr.[i]
                 arr.[i] <- arr.[j]
@@ -43,10 +48,14 @@
             
                 if right - left < 2048 then
                     Array.Sort(keys, values, left, (right - left) + 1)
+                    match order with
+                    | Descending -> 
+                        Array.Reverse(values)
+                    | _ -> ()
                 else
                     let pivot = partition keys values left right
-                    Parallel.Invoke([| Action(fun () -> Sort.QuicksortParallel(keys, values, left, pivot - 1)); 
-                                       Action(fun () -> Sort.QuicksortParallel(keys, values, pivot + 1, right)) |])
+                    Parallel.Invoke([| Action(fun () -> Sort.ParallelSort(keys, values, left, pivot - 1, order)); 
+                                       Action(fun () -> Sort.ParallelSort(keys, values, pivot + 1, right, order)) |])
         
 
         

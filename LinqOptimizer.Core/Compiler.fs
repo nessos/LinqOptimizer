@@ -305,23 +305,12 @@
                 let sortMethodInfo = typeof<Sort>.GetMethods()
                                             |> Array.find (fun methodInfo -> 
                                                             match methodInfo with
-                                                            | MethodName "QuicksortSequential" [|_; _|] -> true
+                                                            | MethodName "SequentialSort" [|_; _; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
                                             |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
-                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
-                // reverse for descending 
-                let reverseCallExpr : Expression = 
-                    match order with 
-                    | Ascending -> empty :> _
-                    | Descending -> 
-                        let reverseMethodInfo = typeof<Array>.GetMethods()
-                                                    |> Array.find (fun methodInfo -> 
-                                                                    match methodInfo with
-                                                                    | MethodName "Reverse" [|_|] -> true
-                                                                    | _ -> false) // TODO: reflection type checks
-                        call reverseMethodInfo  null [valueVarArrayExpr]
+                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
                 let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, t)) context
-                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; reverseCallExpr; expr']
+                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; expr']
             | _ -> failwithf "Invalid state %A" queryExpr 
 
         let rec compileToSequential (queryExpr : QueryExpr) : Expression = 
@@ -460,23 +449,12 @@
                     let sortMethodInfo = typeof<Sort>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
-                                                                | MethodName "QuicksortParallel" [|_; _|] -> true
+                                                                | MethodName "ParallelSort" [|_; _; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
-                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
-                    // reverse for descending 
-                    let reverseCallExpr : Expression = 
-                        match order with 
-                        | Ascending -> empty :> _
-                        | Descending -> 
-                            let reverseMethodInfo = typeof<Array>.GetMethods()
-                                                        |> Array.find (fun methodInfo -> 
-                                                                        match methodInfo with
-                                                                        | MethodName "Reverse" [|_|] -> true
-                                                                        | _ -> false) // TODO: reflection type checks
-                            call reverseMethodInfo  null [valueVarArrayExpr]
+                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
                     let expr' = compile (Source (valueVarArrayExpr, t)) context
-                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; reverseCallExpr; expr']
+                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; expr']
                 | _ -> failwithf "Invalid state %A" queryExpr 
             match queryExpr with
             | Sum (queryExpr', t) ->
