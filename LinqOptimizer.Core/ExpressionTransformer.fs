@@ -38,7 +38,8 @@
                     this.Environment.Add(p, value)
                     p :> _
                 else
-                    expr :> _
+                    expr.Update(this.Visit expr.Expression) :> _
+
 
     module internal ExpressionTransformer =
 
