@@ -55,6 +55,17 @@ after various transformations-optimizations we compile them into IL for efficien
 <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">"Result: {0}"</span><span class="p">,</span> <span class="n">query</span><span class="p">.</span><span class="n">Run</span><span class="p">());</span> <span class="c1">// compile and execute</span>
 </pre></div>
 
+<p>for F# we support functional pipelines </p>
+
+<div class="highlight highlight-fsharp"><pre><span class="k">let</span> <span class="n">query</span> <span class="o">=</span> <span class="n">nums</span>
+            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">ofSeq</span>
+            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">filter</span> <span class="o">(</span><span class="k">fun</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="n">num</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">=</span> <span class="mi">0</span><span class="o">)</span>
+            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">map</span> <span class="o">(</span><span class="k">fun</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="o">)</span>
+            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">sum</span>
+
+<span class="n">printfn</span> <span class="s2">"Result: %d"</span> <span class="o">&lt;|</span> <span class="nn">Query</span><span class="p">.</span><span class="n">run</span> <span class="n">query</span> <span class="c1">// compile and execute</span>
+</pre></div>
+
 <h2>
 <a name="optimizations" class="anchor" href="#optimizations"><span class="octicon octicon-link"></span></a>Optimizations</h2>
 
