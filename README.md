@@ -15,7 +15,7 @@ var query = (from num in nums.AsQueryExpr() // lift
 Console.WriteLine("Result: {0}", query.Run()); // compile and execute
 ```
 
-for F# we support functional pipelines 
+For F# we support functional pipelines and support for F# style LINQ queries is in development.
 ```fsharp
 let query = nums
             |> Query.ofSeq
