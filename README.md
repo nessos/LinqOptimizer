@@ -15,6 +15,16 @@ var query = (from num in nums.AsQueryExpr() // lift
 Console.WriteLine("Result: {0}", query.Run()); // compile and execute
 ```
 
+for F# we support functional pipelines 
+```fsharp
+let query = nums
+            |> Query.ofSeq
+            |> Query.filter (fun num -> num % 2 = 0)
+            |> Query.map (fun num -> num * num)
+            |> Query.sum
+             
+printfn "Result: %d" <| Query.run query // compile and execute
+```
 
 Optimizations
 -----------------------
