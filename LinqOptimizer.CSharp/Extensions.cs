@@ -17,7 +17,7 @@ namespace LinqOptimizer.CSharp
             return new QueryExpr<IEnumerable<T>>(CoreExts.AsQueryExpr(source, typeof(T)));
         }
 
-        public static Func<T> Compile<T>(this IQueryExpr<T> query) 
+        public static Func<T> Compile<T>(this IQueryExpr<T> query)
         {
             return CoreExts.Compile<T>(query.Expr);
         }
@@ -37,30 +37,34 @@ namespace LinqOptimizer.CSharp
             query.Compile().Invoke();
         }
 
-        public static IQueryExpr<IEnumerable<R>> Select<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, R>> selector)
+        public static IQueryExpr<IEnumerable<R>> Select<T, R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, R>> selector)
         {
-            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectCSharp(query.Expr, selector));
-                //(QueryExpr.NewTransform(selector, query.Expr, typeof(R)));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
+            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewTransform(f, query.Expr, typeof(R)));
         }
 
-        public static IQueryExpr<IEnumerable<R>> Select<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, int, R>> selector)
+        public static IQueryExpr<IEnumerable<R>> Select<T, R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, int, R>> selector)
         {
-            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewTransformIndexed(selector, query.Expr, typeof(T)));
-        }
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
+            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewTransformIndexed(f, query.Expr, typeof(R)));
+        } 
 
         public static IQueryExpr<IEnumerable<T>> Where<T>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, bool>> predicate)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewFilter(predicate, query.Expr, typeof(T)));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
+            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewFilter(f, query.Expr, typeof(T)));
         }
-        
-        public static IQueryExpr<IEnumerable<T>> Where<T>(this IQueryExpr<IEnumerable<T>> query , Expression<Func<T, int, bool>> predicate) 
+
+        public static IQueryExpr<IEnumerable<T>> Where<T>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, int, bool>> predicate)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewFilterIndexed(predicate, query.Expr, typeof(T)));
-        }
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
+            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewFilterIndexed(f, query.Expr, typeof(T)));
+        } 
 
         public static IQueryExpr<Acc> Aggregate<T,Acc>(this IQueryExpr<IEnumerable<T>> query, Acc seed, Expression<Func<Acc, T, Acc>> func)
         {
-            return new QueryExpr<Acc>(QueryExpr.NewAggregate(Tuple.Create((object) seed, typeof(Acc)), func, query.Expr));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(func);
+            return new QueryExpr<Acc>(QueryExpr.NewAggregate(Tuple.Create((object) seed, typeof(Acc)), f, query.Expr));
         }
 
         public static IQueryExpr<double> Sum(this IQueryExpr<IEnumerable<double>> query)
@@ -100,23 +104,28 @@ namespace LinqOptimizer.CSharp
 
         public static IQueryExpr ForEach<T>(this IQueryExpr<IEnumerable<T>> query, Expression<Action<T>> action)
         {
-            return new QueryExprVoid(QueryExpr.NewForEach(action, query.Expr));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(action);
+            return new QueryExprVoid(QueryExpr.NewForEach(f, query.Expr));
         }
 
         public static IQueryExpr<IEnumerable<IGrouping<Key, T>>> GroupBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IEnumerable<IGrouping<Key,T>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<Key,T>)));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
+            return new QueryExpr<IEnumerable<IGrouping<Key,T>>>(QueryExpr.NewGroupBy(f, query.Expr, typeof(IGrouping<Key,T>)));
         }
 
         public static IQueryExpr<IEnumerable<T>> OrderBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
+            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewOrderBy(f, Order.Ascending, query.Expr, typeof(T)));
         }  
    
         public static IQueryExpr<IEnumerable<T>> OrderByDescending<T,Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
+            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewOrderBy(f, Order.Descending, query.Expr, typeof(T)));
         }
+
         public static IQueryExpr<List<T>> ToList<T>(this IQueryExpr<IEnumerable<T>> query)
         {
             return new QueryExpr<List<T>>(QueryExpr.NewToList(query.Expr));

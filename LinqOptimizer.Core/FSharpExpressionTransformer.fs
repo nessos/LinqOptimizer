@@ -133,7 +133,3 @@
                     Source (expr, expr.Type.GetElementType())
                 else
                     Source (expr, expr.Type.GetGenericArguments().[0])
-
-
-//            | MethodCall (_, MethodName "ToArray" _, [expr']) -> 
-//                ToArray(toQueryExpr expr')

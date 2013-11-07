@@ -10,8 +10,7 @@
 
     // C#/Linq call patterns
     // TODO: expr type checks
-    module internal CSharpExpressionOptimizer =
-
+    module private ExpressionOptimizer =
         let rec toQueryExpr (expr : Expression) : QueryExpr =
             match expr with
             | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_], bodyExpr) as f']) -> 
@@ -84,3 +83,9 @@
         and private opt = ExpressionTransformer.transform transformer
         
         and optimize (expr : Expression) : Expression = opt expr
+
+    type CSharpExpressionOptimizer =
+        static member Optimize(expr : Expression) : Expression =
+            ExpressionOptimizer.optimize(expr)
+        static member ToQueryExpr(expr : Expression) : QueryExpr =
+            ExpressionOptimizer.toQueryExpr(expr)
