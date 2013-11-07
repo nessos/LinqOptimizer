@@ -8,6 +8,26 @@ open FsCheck
 open NUnit.Framework
 open LinqOptimizer.FSharp
 
+type TestInput<'T> =
+    | List of               'T list
+    | Array of              'T []
+    | Resize of ResizeArray<'T>
+    | Sequence of           'T list
+
+    static member RunTest<'T> (testF : seq<'T> -> bool) (input : TestInput<'T>) =
+        match input with
+        | List xs       -> testF xs
+        | Array xs      -> testF xs
+        | Resize xs     -> testF xs  
+        | Sequence xs   -> testF (Seq.map id xs)
+
+    static member RunTestFunc<'T> (testF : Func<IEnumerable<'T>,bool>, input : TestInput<'T>) =
+        match input with
+        | List xs       -> testF.Invoke xs
+        | Array xs      -> testF.Invoke xs
+        | Resize xs     -> testF.Invoke xs  
+        | Sequence xs   -> testF.Invoke (Seq.map id xs)
+
 [<TestFixture>]
 type ``F# Query tests`` () =
     
@@ -15,11 +35,13 @@ type ``F# Query tests`` () =
 
     [<Test>]
     member __.``map`` () =
-        fun (xs : int list) -> 
-            let x = xs |> Query.ofSeq |> Query.map (fun n -> n * 2) |> Query.run
-            let y = xs |> Seq.map (fun n -> n * 2)
+        let test (xs : seq<'T>) =
+            printf "%A" typeof<'T>
+            let x = xs |> Query.ofSeq |> Query.map (fun n -> string n) |> Query.run
+            let y = xs |> Seq.map (fun n -> string n)
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
+        
 
     [<Test>]
     member __.``filter`` () =

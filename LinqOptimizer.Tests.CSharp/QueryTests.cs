@@ -14,11 +14,15 @@ namespace LinqOptimizer.Tests
         [Test]
         public void Select()
         {
-            Spec.ForAny<int[]>(xs => {
-                var x = xs.AsQueryExpr().Select(n => n * 2).Run();
-                var y = xs.Select(n => n * 2);
+            Func<IEnumerable<object>, bool> f = xs => {
+                var x = xs.AsQueryExpr().Select(n => n.ToString()).Run();
+                var y = xs.Select(n => n.ToString());
                 return Enumerable.SequenceEqual(x, y);
-            }).QuickCheckThrowOnFailure();
+            };
+
+            Spec.ForAny<TestInput<object>>(xs =>
+                    TestInput<object>.RunTestFunc<object>(f, xs))
+                .QuickCheckThrowOnFailure();
         }
 
         [Test]

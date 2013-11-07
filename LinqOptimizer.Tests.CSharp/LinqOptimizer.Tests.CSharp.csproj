@@ -69,6 +69,10 @@
       <Project>{e606c2c2-c219-4e51-b928-5b192e283a54}</Project>
       <Name>LinqOptimizer.CSharp</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LinqOptimizer.Tests.FSharp\LinqOptimizer.Tests.FSharp.fsproj">
+      <Project>{38a228d2-764c-4103-9ac2-58452630cba2}</Project>
+      <Name>LinqOptimizer.Tests.FSharp</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
