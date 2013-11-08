@@ -10,7 +10,7 @@ module Program =
     let main argv = 
         
         let test = new ``F# Query tests``()
-        let t = test.map()
+        let t = test.filter()
 
         
 //        let xs = 
