@@ -14,7 +14,7 @@
        
     open LinqOptimizer.Base
 
-    type QueryBuilder () =
+    type private QueryBuilder () =
         
         member __.Quote (expr : Expr<'T>) = expr
         member __.Source(source:IEnumerable<'T>) : IQueryExpr<IEnumerable<'T>> = raise <| NotImplementedException()
@@ -33,7 +33,7 @@
 
         member __.Run (expr : Expr<'T>) = expr
 
-    module QueryBuilderCompiler =
+    module private QueryBuilderCompiler =
         
         let toExpression (expr : Expr) : Expression =
             Linq.RuntimeHelpers.LeafExpressionConverter.QuotationToExpression(expr)

@@ -57,11 +57,6 @@
       <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\LinqOptimizer.CSharp\LinqOptimizer.CSharp.csproj">
-      <Name>LinqOptimizer.CSharp</Name>
-      <Project>{e606c2c2-c219-4e51-b928-5b192e283a54}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

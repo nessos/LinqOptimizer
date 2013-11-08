@@ -10,9 +10,9 @@
 
     // C#/Linq call patterns
     // TODO: expr type checks
-    module private ExpressionOptimizer =
+    module private CSharpExpressionOptimizerHelpers =
         let rec toQueryExpr (expr : Expression) : QueryExpr =
-            match expr with
+            match expr with 
             | MethodCall (_, MethodName "Select" _, [expr'; Lambda ([_], bodyExpr) as f']) -> 
                 Transform (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
     
@@ -34,7 +34,7 @@
                 Skip (countExpr, queryExpr, queryExpr.Type)
     
             | MethodCall (_, (MethodName "SelectMany" [|_; _|] as m), [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
-                NestedQuery ((paramExpr, toQueryExpr bodyExpr), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+                NestedQuery ((paramExpr, toQueryExpr (optimize bodyExpr)), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
     
             | MethodCall (_, MethodName "GroupBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
                 GroupBy (optimize f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
@@ -86,6 +86,6 @@
 
     type CSharpExpressionOptimizer =
         static member Optimize(expr : Expression) : Expression =
-            ExpressionOptimizer.optimize(expr)
+            CSharpExpressionOptimizerHelpers.optimize(expr)
         static member ToQueryExpr(expr : Expression) : QueryExpr =
-            ExpressionOptimizer.toQueryExpr(expr)
+            CSharpExpressionOptimizerHelpers.toQueryExpr(expr)

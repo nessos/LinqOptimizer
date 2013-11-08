@@ -78,7 +78,7 @@ namespace LinqOptimizer.Core
         static member SelectManyFSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
             match selector with
             | Lambda ([paramExpr], bodyExpr) ->
-                NestedQuery ((paramExpr, FSharpExpressionTransformer.toQueryExpr bodyExpr), queryExpr, typeof<'R>)
+                NestedQuery ((paramExpr, FSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr, typeof<'R>)
             | _ -> failwithf "Invalid state %A" selector
 
         static member CompileToParallel<'T>(queryExpr : QueryExpr) : Func<'T> =

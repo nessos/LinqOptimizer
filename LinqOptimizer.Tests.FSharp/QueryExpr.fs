@@ -36,7 +36,6 @@ type ``F# Query tests`` () =
     [<Test>]
     member __.``map`` () =
         let test (xs : seq<'T>) =
-            printf "%A" typeof<'T>
             let x = xs |> Query.ofSeq |> Query.map (fun n -> string n) |> Query.run
             let y = xs |> Seq.map (fun n -> string n)
             equal x y
