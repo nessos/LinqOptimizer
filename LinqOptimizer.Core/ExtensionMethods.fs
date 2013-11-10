@@ -23,7 +23,7 @@ namespace LinqOptimizer.Core
             | s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
                 let element = t.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
                 let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                RepeatGenerator(element, ty ,constant count)
+                RepeatGenerator(constant element, ty ,constant count)
             | _ -> 
                 Source (constant enumerable, ty)
 

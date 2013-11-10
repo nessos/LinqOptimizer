@@ -38,7 +38,7 @@
         | ToList of QueryExpr
         | ToArray of QueryExpr
         | RangeGenerator of Expression * Expression
-        | RepeatGenerator of obj * Type * Expression
+        | RepeatGenerator of Expression * Type * Expression
         | ZipWith of (Expression * Type) * (Expression * Type) * LambdaExpression
         with
 

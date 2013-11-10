@@ -216,7 +216,7 @@
                         ifThenElse countCheckExpr exceptionExpr 
                             (loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel)
                     block (countVarExpr :: currVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; currVarInitExpr; loopExpr; context.ReturnExpr ]
-            | RepeatGenerator(element, t, countExpr) ->
+            | RepeatGenerator(elementExpr, t, countExpr) ->
                     let countVarExpr = var "___count___" typeof<int>
                     let countVarInitExpr = assign countVarExpr countExpr
                     let countCheckExpr = Expression.LessThan(countVarExpr, constant 0)
@@ -229,7 +229,7 @@
                     let indexVarExpr = var "___index___" typeof<int>
                     let indexVarInitExpr = assign indexVarExpr countExpr
                     let elemVarExpr = var "___elem___" t
-                    let elemVarInitExpr = assign elemVarExpr (cast (constant element) t)
+                    let elemVarInitExpr = assign elemVarExpr (cast elementExpr t)
                     let checkExpr = lessThan indexVarExpr (constant 0)
                     let incCurrExpr = subAssign indexVarExpr (constant 1) 
                     let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
