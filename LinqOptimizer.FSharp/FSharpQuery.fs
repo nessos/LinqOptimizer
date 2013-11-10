@@ -58,8 +58,9 @@
             QueryExpr<int>(Count(queryExpr.Expr, typeof<'T>)) :> IQueryExpr<int> 
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, seq<'R>>>) =
-            fun (queryExpr : IQueryExpr<seq<'T>>) ->
-                QueryExpr<seq<'R>>(CoreExts.SelectManyFSharp<'T, 'R>(queryExpr.Expr, selector)) :> IQueryExpr<seq<'R>>
+            fun (queryExpr : IQueryExpr<seq<'T>>) -> 
+                let paramExpr, bodyExpr = selector.Parameters.Single(), selector.Body
+                QueryExpr<seq<'R>>(NestedQuery ((paramExpr, FSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr.Expr, typeof<'R>)) :> IQueryExpr<_>
 
         static member take<'T>(n : int) =
             fun (query : IQueryExpr<seq<'T>>) ->
