@@ -14,17 +14,17 @@ namespace LinqOptimizer.CSharp
     {
         public static IQueryExpr<IEnumerable<T>> AsQueryExpr<T>(this IEnumerable<T> source)
         {
-            return new QueryExpr<IEnumerable<T>>(CoreExts.AsQueryExpr(source, typeof(T)));
+            return new QueryExpr<IEnumerable<T>>(CoreHelpers.AsQueryExpr(source, typeof(T)));
         }
 
         public static Func<T> Compile<T>(this IQueryExpr<T> query) 
         {
-            return CoreExts.Compile<T>(query.Expr);
+            return CoreHelpers.Compile<T>(query.Expr);
         }
 
         public static Action Compile(this IQueryExpr queryExpr)
         {
-            return CoreExts.Compile(queryExpr.Expr);
+            return CoreHelpers.Compile(queryExpr.Expr);
         }
 
         public static T Run<T>(this IQueryExpr<T> query)
@@ -84,12 +84,21 @@ namespace LinqOptimizer.CSharp
 
         public static IQueryExpr<IEnumerable<R>> SelectMany<T,Col,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<Col>>> collectionSelector, Expression<Func<T, Col, R>> resultSelector)
         {
-            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, Col, R>(query.Expr, collectionSelector, resultSelector));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(collectionSelector);
+            var paramExpr = f.Parameters.Single();
+            var bodyExpr = f.Body;
+            var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
+            var result = (LambdaExpression)CSharpExpressionOptimizer.Optimize(resultSelector);
+            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr, typeof(R)));
         }
 
         public static IQueryExpr<IEnumerable<R>> SelectMany<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<R>>> selector )
         {
-            return new QueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, R>(query.Expr, selector));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
+            var paramExpr = f.Parameters.Single();
+            var bodyExpr = f.Body;
+            var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
+            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQuery(nested, query.Expr, typeof(R)));
         }
 
         public static IQueryExpr<IEnumerable<T>> Take<T>(this IQueryExpr<IEnumerable<T>> query, int n)

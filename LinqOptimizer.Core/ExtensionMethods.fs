@@ -10,7 +10,7 @@ namespace LinqOptimizer.Core
     open System.Reflection.Emit
 
 
-    type CoreExts =
+    type CoreHelpers =
         static member AsQueryExpr(enumerable : IEnumerable, ty : Type) : QueryExpr = 
             // Hack to optimize Enumerable.Range and Enumerable.Repeat calls
             // TODO : check Mono generated types
@@ -42,29 +42,13 @@ namespace LinqOptimizer.Core
                 with :? TargetInvocationException as ex -> raise ex.InnerException 
 
         static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
-            let mi, objs = CoreExts.Compile(queryExpr, Compiler.compileToSequential)
-            Func<'T>(CoreExts.WrapInvocation(mi, objs))
+            let mi, objs = CoreHelpers.Compile(queryExpr, Compiler.compileToSequential)
+            Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
 
         static member Compile(queryExpr : QueryExpr) : Action =
-            let mi, objs = CoreExts.Compile(queryExpr, Compiler.compileToSequential)
-            Action(CoreExts.WrapInvocation(mi, objs))
+            let mi, objs = CoreHelpers.Compile(queryExpr, Compiler.compileToSequential)
+            Action(CoreHelpers.WrapInvocation(mi, objs))
 
         static member CompileToParallel<'T>(queryExpr : QueryExpr) : Func<'T> =
-            let mi, objs = CoreExts.Compile(queryExpr, Compiler.compileToParallel)
-            Func<'T>(CoreExts.WrapInvocation(mi, objs))
-
-        static member SelectManyCSharp<'T, 'Col, 'R>(queryExpr : QueryExpr, 
-                                                     collectionSelector : Expression<Func<'T, IEnumerable<'Col>>>, 
-                                                     resultSelector : Expression<Func<'T, 'Col, 'R>>) : QueryExpr =
-            let selector = CSharpExpressionOptimizer.Optimize collectionSelector
-            match collectionSelector with
-            | Lambda ([paramExpr], bodyExpr) ->
-                NestedQueryTransform ((paramExpr, CSharpExpressionOptimizer.ToQueryExpr bodyExpr), CSharpExpressionOptimizer.Optimize resultSelector :?> _, queryExpr, typeof<'R>)
-            | _ -> failwithf "Invalid state %A" collectionSelector
-
-        static member SelectManyCSharp<'T, 'R>(queryExpr : QueryExpr, selector : Expression<Func<'T, IEnumerable<'R>>>) : QueryExpr = 
-            let selector = CSharpExpressionOptimizer.Optimize selector
-            match selector with
-            | Lambda ([paramExpr], bodyExpr) ->
-                NestedQuery ((paramExpr, CSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr, typeof<'R>)
-            | _ -> failwithf "Invalid state %A" selector
+            let mi, objs = CoreHelpers.Compile(queryExpr, Compiler.compileToParallel)
+            Func<'T>(CoreHelpers.WrapInvocation(mi, objs))

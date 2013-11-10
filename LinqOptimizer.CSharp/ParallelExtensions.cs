@@ -18,7 +18,7 @@ namespace LinqOptimizer.CSharp
 
         public static Func<T> Compile<T>(this IParallelQueryExpr<T> query)
         {
-            return CoreExts.CompileToParallel<T>(query.Expr);
+            return CoreHelpers.CompileToParallel<T>(query.Expr);
         }
 
         public static T Run<T>(this IParallelQueryExpr<T> query)
@@ -50,12 +50,21 @@ namespace LinqOptimizer.CSharp
 
         public static IParallelQueryExpr<IEnumerable<R>> SelectMany<T, Col, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<Col>>> collectionSelector, Expression<Func<T, Col, R>> resultSelector)
         {
-            return new ParallelQueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, Col, R>(query.Expr, collectionSelector, resultSelector));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(collectionSelector);
+            var paramExpr = f.Parameters.Single();
+            var bodyExpr = f.Body;
+            var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
+            var result = (LambdaExpression)CSharpExpressionOptimizer.Optimize(resultSelector);
+            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr, typeof(R)));
         }
 
         public static IParallelQueryExpr<IEnumerable<R>> SelectMany<T, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<R>>> selector)
         {
-            return new ParallelQueryExpr<IEnumerable<R>>(CoreExts.SelectManyCSharp<T, R>(query.Expr, selector));
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
+            var paramExpr = f.Parameters.Single();
+            var bodyExpr = f.Body;
+            var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
+            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQuery(nested, query.Expr, typeof(R)));
         }
 
         public static IParallelQueryExpr<IEnumerable<IGrouping<Key, T>>> GroupBy<T, Key>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)

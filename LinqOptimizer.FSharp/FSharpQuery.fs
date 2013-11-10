@@ -11,13 +11,13 @@
 
     type Query =
         static member ofSeq (source : seq<'T>) =
-            QueryExpr<seq<'T>>(CoreExts.AsQueryExpr(source, typeof<'T>)) :> IQueryExpr<_>
+            QueryExpr<seq<'T>>(CoreHelpers.AsQueryExpr(source, typeof<'T>)) :> IQueryExpr<_>
 
         static member compile<'T>(query : IQueryExpr<'T>) = 
-            CoreExts.Compile<'T>(query.Expr).Invoke
+            CoreHelpers.Compile<'T>(query.Expr).Invoke
 
         static member compile(query : IQueryExpr)  =
-            CoreExts.Compile(query.Expr).Invoke
+            CoreHelpers.Compile(query.Expr).Invoke
 
         static member run (source : IQueryExpr<'T>) : 'T =
             (Query.compile source)()
@@ -98,7 +98,7 @@
              new ParallelQueryExpr<seq<'T>>(QueryExpr.Source(Expression.Constant(source), typeof<'T>)) :> IParallelQueryExpr<_>
 
         static member compile<'T>(query : IParallelQueryExpr<'T>) =
-            CoreExts.CompileToParallel<'T>(query.Expr).Invoke
+            CoreHelpers.CompileToParallel<'T>(query.Expr).Invoke
 
         static member run<'T>(query : IParallelQueryExpr<'T>) : 'T =
             (ParallelQuery.compile query)()
