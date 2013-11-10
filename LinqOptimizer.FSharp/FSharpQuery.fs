@@ -59,6 +59,7 @@
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, seq<'R>>>) =
             fun (queryExpr : IQueryExpr<seq<'T>>) -> 
+                let selector = FSharpExpressionOptimizer.Optimize(selector) :?> LambdaExpression
                 let paramExpr, bodyExpr = selector.Parameters.Single(), selector.Body
                 QueryExpr<seq<'R>>(NestedQuery ((paramExpr, FSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr.Expr, typeof<'R>)) :> IQueryExpr<_>
 
