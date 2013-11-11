@@ -44,15 +44,15 @@ type ``F# Query tests`` () =
 
     [<Test>]
     member __.``filter`` () =
-        fun (xs : int list) -> 
-            let x = xs |> Query.ofSeq |> Query.filter (fun n -> n % 2 = 0) |> Query.run
-            let y = xs |> Seq.filter (fun n -> n % 2 = 0)
+        let test (xs : seq<'T>) =
+            let x = xs |> Query.ofSeq |> Query.filter (fun n -> hash n % 2 = 0) |> Query.run
+            let y = xs |> Seq.filter (fun n -> hash n % 2 = 0)
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
 
     [<Test>]
     member __.``pipelined`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<int>) =
             let x = xs |> Query.ofSeq 
                        |> Query.filter (fun n -> n % 2 = 0) 
                        |> Query.map (fun n -> n * 2)
@@ -63,27 +63,27 @@ type ``F# Query tests`` () =
                        |> Seq.map (fun n -> n * 2)
                        |> Seq.map (fun n -> string n)
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
 
     [<Test>]
     member __.``sum int`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<int>) =
             let x = xs |> Query.ofSeq |> Query.map (fun x -> x * x) |> Query.sum |> Query.run
             let y = xs |> Seq.map (fun x -> x * x) |> Seq.sum
             x = y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
 
     [<Test>]
     member __.``sum double`` () =
-        fun (xs : float list) -> 
+        let test (xs : seq<float>) =
             let x = xs |> Query.ofSeq |> Query.map (fun x -> x * x) |> Query.sum |> Query.run
             let y = xs |> Seq.map (fun x -> x * x) |> Seq.sum
             (Double.IsNaN x && Double.IsNaN y) || x = y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest<float> test)
 
     [<Test>]
     member __.``fold`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<int>) =
             let x = xs |> Query.ofSeq 
                        |> Query.map (fun x -> x * x) 
                        |> Query.fold (fun acc x -> acc + x) 0
@@ -91,31 +91,33 @@ type ``F# Query tests`` () =
             let y = xs |> Seq.map (fun x -> x * x) 
                        |> Seq.fold (fun acc x -> acc + x) 0
             x = y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
 
     [<Test>]
     member __.``collect`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<'T>) =
             let x = xs |> Query.ofSeq 
                        |> Query.collect (fun n -> Seq.map (fun n' -> n' * n) xs)
                        |> Query.run
             let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
+        Check.QuickThrowOnFailure (TestInput.RunTest<float> test)
 
     [<Test>]
     member __.``collect (nested pipe)`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<'T>) =
             let x = xs |> Query.ofSeq 
                        |> Query.collect (fun n -> xs |> Seq.map (fun n' -> n' * n) )
                        |> Query.run
             let y = xs |> Seq.collect (fun n -> Seq.map (fun n' -> n' * n) xs )
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
+        Check.QuickThrowOnFailure (TestInput.RunTest<float> test)
          
     [<Test>]
     member __.``collect (nested groupBy)`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<int>) =
             let x = xs |> Query.ofSeq 
                        |> Query.collect (fun n -> xs |> Seq.groupBy (fun x -> x))
                        |> Query.map (fun (_,x)  -> x |> Seq.sum)
@@ -123,7 +125,7 @@ type ``F# Query tests`` () =
             let y = xs |> Seq.collect (fun n ->  xs |> Seq.groupBy (fun x -> x))
                        |> Seq.map (fun (_,x)  -> x |> Seq.sum)
             equal x y
-        |> Check.QuickThrowOnFailure 
+        Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
            
     [<Test>]
     member __.``take`` () =
@@ -154,7 +156,7 @@ type ``F# Query tests`` () =
 
     [<Test>]
     member __.``iter`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<int>) =
             let x = ResizeArray<int>()
             let y = ResizeArray<int>()
             xs |> Query.ofSeq 
@@ -163,11 +165,11 @@ type ``F# Query tests`` () =
 
             xs |> Seq.iter (fun i -> y.Add i)
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
 
     [<Test>]
     member __.``groupBy`` () =
-        fun (xs : int list) -> 
+        let test (xs : seq<int>) =
             let x = xs |> Query.ofSeq 
                        |> Query.groupBy (fun x -> x)
                        |> Query.map (fun (_,x) -> Seq.sum x)
@@ -176,7 +178,7 @@ type ``F# Query tests`` () =
                        |> Seq.map (fun (_,x) -> Seq.sum x)
                        
             equal x y
-        |> Check.QuickThrowOnFailure
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
 
     [<Test>]
     member __.``sort`` () =
