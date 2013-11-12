@@ -35,9 +35,9 @@ type ``F# Query tests`` () =
 
     [<Test>]
     member __.``map`` () =
-        let test (xs : seq<'T>) =
-            let x = xs |> Query.ofSeq |> Query.map (fun n -> string n) |> Query.run
-            let y = xs |> Seq.map (fun n -> string n)
+        let test (xs : seq<int>) =
+            let x = xs |> Query.ofSeq |> Query.map (fun n -> 2 * n) |> Query.run
+            let y = xs |> Seq.map (fun n -> 2 * n)
             equal x y
         Check.QuickThrowOnFailure (TestInput.RunTest test)
         

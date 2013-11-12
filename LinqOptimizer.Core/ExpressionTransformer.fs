@@ -32,9 +32,20 @@
             override this.VisitMember(expr : MemberExpression) =
                 if expr.Expression :? ConstantExpression then
                     let p = Expression.Parameter(expr.Type, getName()) 
-                    let value = (expr.Expression :?> ConstantExpression).Value
-                    let fi = expr.Member :?> FieldInfo
-                    let value = fi.GetValue(value)
+                    let obj = (expr.Expression :?> ConstantExpression).Value
+                    
+                    let value = 
+                        match expr.Member.MemberType with
+                        | MemberTypes.Field ->
+                            let fi = expr.Member :?> FieldInfo
+                            fi.GetValue(obj)
+                        | MemberTypes.Property ->
+                            let pi = expr.Member :?> PropertyInfo
+                            let indexed = pi.GetIndexParameters() |> Seq.cast<obj> |> Seq.toArray
+                            pi.GetValue(obj, indexed)
+                        | _ -> 
+                            failwithf "Internal error : Accessing non Field or Property from MemberExpression %A" expr
+                                                
                     this.Environment.Add(p, value)
                     p :> _
                 else
