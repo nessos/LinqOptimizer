@@ -27,7 +27,7 @@
         | FilterIndexed of LambdaExpression * QueryExpr 
         | NestedQuery of (ParameterExpression * QueryExpr) * QueryExpr 
         | NestedQueryTransform of (ParameterExpression * QueryExpr) * LambdaExpression * QueryExpr 
-        | Aggregate of (obj *  Type) * LambdaExpression * QueryExpr
+        | Aggregate of Expression * LambdaExpression * QueryExpr
         | Sum of QueryExpr 
         | Count of QueryExpr 
         | Take of Expression * QueryExpr 
@@ -38,8 +38,8 @@
         | ToList of QueryExpr
         | ToArray of QueryExpr
         | RangeGenerator of Expression * Expression
-        | RepeatGenerator of Expression * Type * Expression
-        | ZipWith of (Expression * Type) * (Expression * Type) * LambdaExpression
+        | RepeatGenerator of Expression * Expression
+//        | ZipWith of (Expression * Type) * (Expression * Type) * LambdaExpression
         with
 
         member self.Type = 
@@ -51,7 +51,7 @@
             | FilterIndexed (_, q) -> q.Type
             | NestedQuery ((_, q), _) -> q.Type
             | NestedQueryTransform ((_, q), _, _) -> q.Type
-            | Aggregate ((_, t), _, _) -> t
+            | Aggregate (seed, _, _) -> seed.Type
             | Sum (q) -> q.Type
             | Count (q) -> q.Type
             | Take (_, q) -> q.Type
@@ -62,8 +62,8 @@
             | ToList q -> q.Type
             | ToArray q -> q.Type
             | RangeGenerator _ -> typeof<int>
-            | RepeatGenerator (_,t,_) -> t
-            | ZipWith (_,_,f) -> f.ReturnType
+            | RepeatGenerator (objExpr,_) -> objExpr.Type
+//            | ZipWith (_,_,f) -> f.ReturnType
 
         static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr) = 
             match queryExpr with

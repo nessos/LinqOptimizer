@@ -64,7 +64,7 @@ namespace LinqOptimizer.CSharp
         public static IQueryExpr<Acc> Aggregate<T,Acc>(this IQueryExpr<IEnumerable<T>> query, Acc seed, Expression<Func<Acc, T, Acc>> func)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(func);
-            return new QueryExpr<Acc>(QueryExpr.NewAggregate(Tuple.Create((object) seed, typeof(Acc)), f, query.Expr));
+            return new QueryExpr<Acc>(QueryExpr.NewAggregate(Expression.Constant(seed), f, query.Expr));
         }
 
         public static IQueryExpr<double> Sum(this IQueryExpr<IEnumerable<double>> query)

@@ -46,7 +46,7 @@
         static member fold(func : Expression<Func<'Acc, 'T, 'Acc>>) =
             fun (seed : 'Acc) (query : IQueryExpr<seq<'T>>) ->
                 let f = FSharpExpressionOptimizer.Optimize(func) :?> LambdaExpression
-                QueryExpr<'Acc>(Aggregate((seed :> obj, typeof<'Acc>), f, query.Expr)) :> IQueryExpr<'Acc> 
+                QueryExpr<'Acc>(Aggregate(Expression.Constant(seed) , f, query.Expr)) :> IQueryExpr<'Acc> 
 
         static member sum (source : IQueryExpr<seq<double>>) =
             QueryExpr<double>(Sum(source.Expr)) :> IQueryExpr<double> 
