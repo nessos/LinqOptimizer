@@ -6,11 +6,12 @@ namespace LinqOptimizer.Tests
 open LinqOptimizer.FSharp
 
 module Program = 
+
     [<EntryPoint>]
     let main argv = 
         
         let test = new ``F# Query tests``()
-        let t = test.mapi()
+        let t = test.sort()
 
 //        let a = ref 42
 //
@@ -19,8 +20,6 @@ module Program =
 //            |> Query.ofSeq
 //            |> Query.map (fun x -> ())
 //            |> Query.run
-           
-        
            
             
         0 // return an integer exit code

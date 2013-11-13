@@ -116,11 +116,11 @@
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
             PQuery.where predicate
 
-        static member sum(query : IParallelQueryExpr<int>) =
+        static member sum(query : IParallelQueryExpr<seq<int>>) =
             new ParallelQueryExpr<int>(QueryExpr.Sum(query.Expr, typeof<int>)) :> IParallelQueryExpr<_>
 
-        static member sum(query : IParallelQueryExpr<double>) =
-            new ParallelQueryExpr<double>(QueryExpr.Sum(query.Expr, typeof<double>)) :> IParallelQueryExpr<_>
+        static member sum(query : IParallelQueryExpr<seq<float>>) =
+            new ParallelQueryExpr<float>(QueryExpr.Sum(query.Expr, typeof<double>)) :> IParallelQueryExpr<_>
 
         static member collect<'T,'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
             fun (query : IParallelQueryExpr<seq<'T>>) ->
