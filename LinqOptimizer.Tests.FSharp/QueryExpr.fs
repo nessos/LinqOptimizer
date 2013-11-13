@@ -209,3 +209,25 @@ type ``F# Query tests`` () =
             let y = xs |> Seq.toArray
             equal x y
         |> Check.QuickThrowOnFailure
+
+    [<Test>]
+    member __.``length`` () =
+        let test (xs : seq<obj>) =
+            let x = xs |> Query.ofSeq 
+                       |> Query.length
+                       |> Query.run
+            let y = xs |> Seq.length
+
+            x = y
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+    [<Test>]
+    member __.``mapi`` () =
+        let test (xs : seq<obj>) =
+            let x = xs |> Query.ofSeq 
+                       |> Query.mapi (fun _ i -> i)
+                       |> Query.run
+            let y = xs |> Seq.mapi (fun i _ -> i)
+
+            equal x y
+        Check.QuickThrowOnFailure (TestInput.RunTest test)
