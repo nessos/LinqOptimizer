@@ -236,5 +236,38 @@ namespace LinqOptimizer.Tests
                 return x == y;
             }).QuickCheckThrowOnFailure();
         }
+
+        [Test]
+        public void ToList()
+        {
+            Spec.ForAny<int[]>(xs =>
+            {
+                var x = xs.AsParallelQueryExpr()
+                        .ToList()
+                        .Run();
+
+                var y = xs.AsParallel()
+                        .ToList();
+
+                return x.OrderBy(i => i).SequenceEqual(y.OrderBy(i => i));
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void ToArray()
+        {
+            Spec.ForAny<List<int>>(xs =>
+            {
+                var x = xs.AsParallelQueryExpr()
+                        .ToArray()
+                        .Run();
+
+                var y = xs.AsParallel()
+                        .ToArray();
+
+                return x.OrderBy(i => i).SequenceEqual(y.OrderBy(i => i));
+            }).QuickCheckThrowOnFailure();
+        }
+
     }
 }

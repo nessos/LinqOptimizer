@@ -101,5 +101,15 @@ namespace LinqOptimizer.CSharp
         {
             return new ParallelQueryExpr<int>(QueryExpr.NewCount(query.Expr));
         }
+
+        public static IParallelQueryExpr<List<T>> ToList<T>(this IParallelQueryExpr<IEnumerable<T>> query)
+        {
+            return new ParallelQueryExpr<List<T>>(QueryExpr.NewToList(query.Expr));
+        }
+
+        public static IParallelQueryExpr<T[]> ToArray<T>(this IParallelQueryExpr<IEnumerable<T>> query)
+        {
+            return new ParallelQueryExpr<T[]>(QueryExpr.NewToArray(query.Expr));
+        }
     }
 }

@@ -202,13 +202,13 @@
 
         [<Test>]
         member __.``toArray`` () =
-            fun (xs : int list, n) -> 
+            let test (xs : seq<'T>) =
                 let x = xs |> Query.ofSeq 
                            |> Query.toArray
                            |> Query.run
                 let y = xs |> Seq.toArray
                 equal x y
-            |> Check.QuickThrowOnFailure
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
         member __.``length`` () =

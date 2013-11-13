@@ -141,3 +141,9 @@
                 
         static member sort<'T>(query : IParallelQueryExpr<seq<'T>>) =
             PQuery.sortBy (fun i -> i) query
+
+        static member length(queryExpr : IParallelQueryExpr<seq<'T>>) =
+            ParallelQueryExpr<int>(Count(queryExpr.Expr)) :> IParallelQueryExpr<int> 
+
+        static member toArray(query : IParallelQueryExpr<seq<'T>>) =
+            ParallelQueryExpr<'T []>(ToArray(query.Expr))

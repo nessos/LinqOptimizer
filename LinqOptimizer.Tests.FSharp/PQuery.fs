@@ -125,3 +125,13 @@
                 let y = xs |> Seq.sortBy (fun x -> -x)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``toArray`` () =
+            let test (xs : seq<DateTime>) =
+                let x = xs |> PQuery.ofSeq 
+                           |> PQuery.toArray
+                           |> PQuery.run
+                let y = xs |> Seq.toArray
+                equal (Seq.sort x) (Seq.sort y)
+            Check.QuickThrowOnFailure (TestInput.RunTest test) 

@@ -369,7 +369,7 @@
                 let expr = compileToSeqPipeline queryExpr context
                 expr
 
-        let compileToParallel (queryExpr : QueryExpr) : Expression =
+        let rec compileToParallel (queryExpr : QueryExpr) : Expression =
             let toParallelListContext (queryExpr : QueryExpr) = 
                 let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
@@ -490,6 +490,15 @@
                                 VarExprs = [finalVarExpr]; Exprs = [] }
                 let expr = compile queryExpr' context
                 expr 
+            | ToArray queryExpr' ->
+                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let expr = compileToParallel (ToList queryExpr') 
+                let expr' = call (listType.GetMethod "ToArray") expr []
+                expr' 
+            | ToList queryExpr' ->
+                let context = toParallelListContext queryExpr'
+                let expr = compile queryExpr' context
+                expr
             | queryExpr' ->
                 let context = toParallelListContext queryExpr'
                 let expr = compile queryExpr context

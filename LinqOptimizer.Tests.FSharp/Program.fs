@@ -10,8 +10,13 @@ module Program =
     [<EntryPoint>]
     let main argv = 
         
-        let test = new ``F# Query tests``()
-        let t = test.sort()
+//        let test = new ``F# Parallel Query tests``()
+//        let t = test.toArray()
+        let xs = [true; false]
+
+        let x = xs |> PQuery.ofSeq 
+                   |> PQuery.toArray
+                   |> PQuery.run
 
 //        let a = ref 42
 //
