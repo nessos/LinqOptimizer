@@ -93,7 +93,7 @@
         static member toArray(query : IQueryExpr<seq<'T>>) =
             new QueryExpr<'T []>(ToArray(query.Expr))
 
-    type ParallelQuery =
+    type PQuery =
         static member ofSeq(source : seq<'T>) = 
              new ParallelQueryExpr<seq<'T>>(QueryExpr.Source(Expression.Constant(source), typeof<'T>)) :> IParallelQueryExpr<_>
 
@@ -101,7 +101,7 @@
             CoreHelpers.CompileToParallel<'T>(query.Expr).Invoke
 
         static member run<'T>(query : IParallelQueryExpr<'T>) : 'T =
-            (ParallelQuery.compile query)()
+            (PQuery.compile query)()
 
         static member map<'T, 'R>(selector : Expression<Func<'T, 'R>>) =
             fun (query : IParallelQueryExpr<seq<'T>>) ->
@@ -114,6 +114,6 @@
                 new ParallelQueryExpr<seq<'T>>(QueryExpr.Filter(f, query.Expr, typeof<'T>)) :> IParallelQueryExpr<_>
 
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
-            ParallelQuery.where predicate
+            PQuery.where predicate
 
 
