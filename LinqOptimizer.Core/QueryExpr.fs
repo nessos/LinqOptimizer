@@ -21,20 +21,20 @@
     type Order = Ascending | Descending
     and QueryExpr = 
         | Source of Expression * Type
-        | Transform of LambdaExpression * QueryExpr * Type
-        | TransformIndexed of LambdaExpression * QueryExpr * Type
-        | Filter of LambdaExpression * QueryExpr * Type
-        | FilterIndexed of LambdaExpression * QueryExpr * Type
-        | NestedQuery of (ParameterExpression * QueryExpr) * QueryExpr * Type
-        | NestedQueryTransform of (ParameterExpression * QueryExpr) * LambdaExpression * QueryExpr * Type
+        | Transform of LambdaExpression * QueryExpr 
+        | TransformIndexed of LambdaExpression * QueryExpr 
+        | Filter of LambdaExpression * QueryExpr 
+        | FilterIndexed of LambdaExpression * QueryExpr 
+        | NestedQuery of (ParameterExpression * QueryExpr) * QueryExpr 
+        | NestedQueryTransform of (ParameterExpression * QueryExpr) * LambdaExpression * QueryExpr 
         | Aggregate of (obj *  Type) * LambdaExpression * QueryExpr
-        | Sum of QueryExpr * Type 
-        | Count of QueryExpr * Type
-        | Take of Expression * QueryExpr * Type
-        | Skip of Expression * QueryExpr * Type
+        | Sum of QueryExpr 
+        | Count of QueryExpr 
+        | Take of Expression * QueryExpr 
+        | Skip of Expression * QueryExpr 
         | ForEach of LambdaExpression * QueryExpr 
         | GroupBy of LambdaExpression * QueryExpr * Type
-        | OrderBy of (LambdaExpression * Order) list * QueryExpr * Type
+        | OrderBy of (LambdaExpression * Order) list * QueryExpr 
         | ToList of QueryExpr
         | ToArray of QueryExpr
         | RangeGenerator of Expression * Expression
@@ -45,31 +45,31 @@
         member self.Type = 
             match self with
             | Source (_, t) -> t
-            | Transform (_, _, t) -> t
-            | TransformIndexed (_, _, t) -> t
-            | Filter (_, _, t) -> t
-            | FilterIndexed (_, _, t) -> t
-            | NestedQuery (_, _, t) -> t 
-            | NestedQueryTransform (_, _, _, t) -> t
+            | Transform (lambda, _) -> lambda.Body.Type
+            | TransformIndexed (lambda, _) -> lambda.Body.Type
+            | Filter (_, q) -> q.Type
+            | FilterIndexed (_, q) -> q.Type
+            | NestedQuery ((_, q), _) -> q.Type
+            | NestedQueryTransform ((_, q), _, _) -> q.Type
             | Aggregate ((_, t), _, _) -> t
-            | Sum (_, t) -> t
-            | Count (_, t) -> t
-            | Take (_, _, t) -> t
-            | Skip (_, _, t) -> t
+            | Sum (q) -> q.Type
+            | Count (q) -> q.Type
+            | Take (_, q) -> q.Type
+            | Skip (_, q) -> q.Type
             | ForEach (_, _) -> typeof<Void>
             | GroupBy (_, _, t) -> t
-            | OrderBy (_, _, t) -> t
+            | OrderBy (_, q) -> q.Type
             | ToList q -> q.Type
             | ToArray q -> q.Type
             | RangeGenerator _ -> typeof<int>
             | RepeatGenerator (_,t,_) -> t
             | ZipWith (_,_,f) -> f.ReturnType
 
-        static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr, t : Type) = 
+        static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr) = 
             match queryExpr with
-            | OrderBy (keySelectorOrderPairs, queryExpr', t) ->
-                OrderBy ((keySelector, order) :: keySelectorOrderPairs, queryExpr', t)
-            | _ -> OrderBy ([keySelector, order], queryExpr, t)
+            | OrderBy (keySelectorOrderPairs, queryExpr') ->
+                OrderBy ((keySelector, order) :: keySelectorOrderPairs, queryExpr')
+            | _ -> OrderBy ([keySelector, order], queryExpr)
             
 //        static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =
 //            if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 

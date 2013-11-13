@@ -28,17 +28,17 @@
         static member map<'T,'R> (projection : Expression<Func<'T,'R>>) = 
             fun (query : IQueryExpr<seq<'T>>) -> 
                 let f = FSharpExpressionOptimizer.Optimize(projection) :?> LambdaExpression
-                QueryExpr<seq<'R>>(Transform(f, query.Expr, typeof<'R>)) :> IQueryExpr<seq<'R>> 
+                QueryExpr<seq<'R>>(Transform(f, query.Expr)) :> IQueryExpr<seq<'R>> 
 
         static member mapi<'T, 'R>(selector : Expression<Func<'T, int, 'R>>) =
             fun (query : IQueryExpr<seq<'T>>) -> 
                 let f = FSharpExpressionOptimizer.Optimize(selector) :?> LambdaExpression
-                QueryExpr<seq<'R>>(TransformIndexed(f, query.Expr, typeof<'R>)) :> IQueryExpr<seq<'R>> 
+                QueryExpr<seq<'R>>(TransformIndexed(f, query.Expr)) :> IQueryExpr<seq<'R>> 
 
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
             fun (query : IQueryExpr<seq<'T>>) ->
                 let f = FSharpExpressionOptimizer.Optimize(predicate) :?> LambdaExpression
-                QueryExpr<seq<'T>>(Filter(f, query.Expr, typeof<'T>)) :> IQueryExpr<seq<'T>> 
+                QueryExpr<seq<'T>>(Filter(f, query.Expr)) :> IQueryExpr<seq<'T>> 
 
         static member where<'T>(predicate : Expression<Func<'T, bool>>) =
             Query.filter predicate
@@ -49,27 +49,27 @@
                 QueryExpr<'Acc>(Aggregate((seed :> obj, typeof<'Acc>), f, query.Expr)) :> IQueryExpr<'Acc> 
 
         static member sum (source : IQueryExpr<seq<double>>) =
-            QueryExpr<double>(Sum(source.Expr, typeof<double>)) :> IQueryExpr<double> 
+            QueryExpr<double>(Sum(source.Expr)) :> IQueryExpr<double> 
 
         static member sum (source : IQueryExpr<seq<int>>) =
-            QueryExpr<int>(Sum(source.Expr, typeof<int>)) :> IQueryExpr<int> 
+            QueryExpr<int>(Sum(source.Expr)) :> IQueryExpr<int> 
 
         static member length(queryExpr : IQueryExpr<seq<'T>>) =
-            QueryExpr<int>(Count(queryExpr.Expr, typeof<'T>)) :> IQueryExpr<int> 
+            QueryExpr<int>(Count(queryExpr.Expr)) :> IQueryExpr<int> 
 
         static member collect<'T, 'R>(selector : Expression<Func<'T, seq<'R>>>) =
             fun (queryExpr : IQueryExpr<seq<'T>>) -> 
                 let selector = FSharpExpressionOptimizer.Optimize(selector) :?> LambdaExpression
                 let paramExpr, bodyExpr = selector.Parameters.Single(), selector.Body
-                QueryExpr<seq<'R>>(NestedQuery ((paramExpr, FSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr.Expr, typeof<'R>)) :> IQueryExpr<_>
+                QueryExpr<seq<'R>>(NestedQuery ((paramExpr, FSharpExpressionOptimizer.ToQueryExpr bodyExpr), queryExpr.Expr)) :> IQueryExpr<_>
 
         static member take<'T>(n : int) =
             fun (query : IQueryExpr<seq<'T>>) ->
-                QueryExpr<seq<'T>>(Take(Expression.Constant n, query.Expr, typeof<'T>)) :> IQueryExpr<seq<'T>> 
+                QueryExpr<seq<'T>>(Take(Expression.Constant n, query.Expr)) :> IQueryExpr<seq<'T>> 
 
         static member skip<'T>(n : int) =
             fun (query : IQueryExpr<seq<'T>>) ->
-                QueryExpr<seq<'T>>(Skip(Expression.Constant n, query.Expr, typeof<'T>)) :> IQueryExpr<seq<'T>> 
+                QueryExpr<seq<'T>>(Skip(Expression.Constant n, query.Expr)) :> IQueryExpr<seq<'T>> 
 
         static member iter<'T>(action : Expression<Action<'T>>) =
             fun (query : IQueryExpr<seq<'T>>) ->
@@ -85,7 +85,7 @@
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (queryExpr : IQueryExpr<seq<'T>>) ->
                 let f =  FSharpExpressionOptimizer.Optimize(keySelector) :?> LambdaExpression
-                new QueryExpr<seq<'T>>(QueryExpr.OrderBy([f, Order.Ascending], queryExpr.Expr, typeof<'T>)) :> IQueryExpr<_>
+                new QueryExpr<seq<'T>>(QueryExpr.OrderBy([f, Order.Ascending], queryExpr.Expr)) :> IQueryExpr<_>
                 
         static member sort<'T>(query : IQueryExpr<seq<'T>>) =
             Query.sortBy (fun i -> i) query
@@ -106,12 +106,12 @@
         static member map<'T, 'R>(selector : Expression<Func<'T, 'R>>) =
             fun (query : IParallelQueryExpr<seq<'T>>) ->
                 let f = FSharpExpressionOptimizer.Optimize(selector) :?> LambdaExpression
-                new ParallelQueryExpr<seq<'R>>(QueryExpr.Transform(f, query.Expr, typeof<'R>)) :> IParallelQueryExpr<_>
+                new ParallelQueryExpr<seq<'R>>(QueryExpr.Transform(f, query.Expr)) :> IParallelQueryExpr<_>
 
         static member where<'T>(predicate : Expression<Func<'T, bool>>) =
             fun (query : IParallelQueryExpr<seq<'T>>) ->
                 let f = FSharpExpressionOptimizer.Optimize(predicate) :?> LambdaExpression
-                new ParallelQueryExpr<seq<'T>>(QueryExpr.Filter(f, query.Expr, typeof<'T>)) :> IParallelQueryExpr<_>
+                new ParallelQueryExpr<seq<'T>>(QueryExpr.Filter(f, query.Expr)) :> IParallelQueryExpr<_>
 
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
             ParallelQuery.where predicate

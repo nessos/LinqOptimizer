@@ -29,23 +29,23 @@ namespace LinqOptimizer.CSharp
         public static IParallelQueryExpr<IEnumerable<R>> Select<T, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, R>> selector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewTransform(f, query.Expr, typeof(R)));
+            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewTransform(f, query.Expr));
         }
 
         public static IParallelQueryExpr<IEnumerable<T>> Where<T>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, bool>> predicate)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
-            return new ParallelQueryExpr<IEnumerable<T>>(QueryExpr.NewFilter(f, query.Expr, typeof(T)));
+            return new ParallelQueryExpr<IEnumerable<T>>(QueryExpr.NewFilter(f, query.Expr));
         }
 
         public static IParallelQueryExpr<double> Sum(this IParallelQueryExpr<IEnumerable<double>> query)
         {
-            return new ParallelQueryExpr<double>(QueryExpr.NewSum(query.Expr, typeof(double)));
+            return new ParallelQueryExpr<double>(QueryExpr.NewSum(query.Expr));
         }
 
         public static IParallelQueryExpr<int> Sum(this IParallelQueryExpr<IEnumerable<int>> query)
         {
-            return new ParallelQueryExpr<int>(QueryExpr.NewSum(query.Expr, typeof(int)));
+            return new ParallelQueryExpr<int>(QueryExpr.NewSum(query.Expr));
         }
 
         public static IParallelQueryExpr<IEnumerable<R>> SelectMany<T, Col, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<Col>>> collectionSelector, Expression<Func<T, Col, R>> resultSelector)
@@ -55,7 +55,7 @@ namespace LinqOptimizer.CSharp
             var bodyExpr = f.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
             var result = (LambdaExpression)CSharpExpressionOptimizer.Optimize(resultSelector);
-            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr, typeof(R)));
+            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr));
         }
 
         public static IParallelQueryExpr<IEnumerable<R>> SelectMany<T, R>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<R>>> selector)
@@ -64,7 +64,7 @@ namespace LinqOptimizer.CSharp
             var paramExpr = f.Parameters.Single();
             var bodyExpr = f.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQuery(nested, query.Expr, typeof(R)));
+            return new ParallelQueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQuery(nested, query.Expr));
         }
 
         public static IParallelQueryExpr<IEnumerable<IGrouping<Key, T>>> GroupBy<T, Key>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
@@ -76,13 +76,13 @@ namespace LinqOptimizer.CSharp
         public static IParallelQueryExpr<IEnumerable<T>> OrderBy<T, Key>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new ParallelQueryExpr<IEnumerable<T>>(QueryExpr.AddOrderBy(f, Order.Ascending, query.Expr, typeof(T)));
+            return new ParallelQueryExpr<IEnumerable<T>>(QueryExpr.AddOrderBy(f, Order.Ascending, query.Expr));
         }
 
         public static IParallelQueryExpr<IEnumerable<T>> OrderByDescending<T, Key>(this IParallelQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new ParallelQueryExpr<IEnumerable<T>>(QueryExpr.AddOrderBy(f, Order.Descending, query.Expr, typeof(T)));
+            return new ParallelQueryExpr<IEnumerable<T>>(QueryExpr.AddOrderBy(f, Order.Descending, query.Expr));
         }
 
         public static IParallelQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IParallelQueryExpr<IOrderedEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
@@ -95,6 +95,11 @@ namespace LinqOptimizer.CSharp
         {
             throw new NotImplementedException();
             //return new ParallelQueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+        }
+
+        public static IParallelQueryExpr<int> Count<T>(this IParallelQueryExpr<IEnumerable<T>> query)
+        {
+            return new ParallelQueryExpr<int>(QueryExpr.NewCount(query.Expr));
         }
     }
 }

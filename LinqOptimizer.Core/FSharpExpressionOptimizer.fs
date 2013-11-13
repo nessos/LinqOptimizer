@@ -27,37 +27,37 @@
         let rec toQueryExpr (expr : Expression) : QueryExpr =
             match expr with
             | MethodCall (_, MethodName "Map" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([_], bodyExpr) as f']) ; expr']) -> 
-                Transform (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+                Transform (optimize f' :?> LambdaExpression, toQueryExpr expr')
             
             | MethodCall (_, MethodName "Filter" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], _) as f']) ; expr']) -> 
-                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr')
             
             | MethodCall (_, MethodName "Where" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], _) as f']) ; expr']) -> 
-                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr')
             
             | MethodCall (_, MethodName "Take" _, [countExpr; expr' ]) when countExpr.Type = typeof<int> -> 
                 let queryExpr = toQueryExpr expr'
-                Take (optimize countExpr, queryExpr, queryExpr.Type)
+                Take (optimize countExpr, queryExpr)
             
             | MethodCall (_, MethodName "Skip" _, [countExpr; expr' ]) when countExpr.Type = typeof<int> -> 
                 let queryExpr = toQueryExpr expr'
-                Skip (optimize countExpr, queryExpr, queryExpr.Type)
+                Skip (optimize countExpr, queryExpr)
 
             | MethodCall (_, (MethodName "Collect" [|_; _|] as m), [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
-                NestedQuery ((paramExpr, toQueryExpr (optimize bodyExpr)), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+                NestedQuery ((paramExpr, toQueryExpr (optimize bodyExpr)), toQueryExpr expr')
 
             | MethodCall (_, MethodName "Sort" _, [expr']) -> 
                 let query' = toQueryExpr expr'
                 let v = var "___x___" query'.Type
                 let f = Expression.Lambda(v,v)
-                OrderBy ([f, Order.Ascending], query', query'.Type)
+                OrderBy ([f, Order.Ascending], query')
 
             | MethodCall (_, MethodName "SortBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
-                OrderBy ([optimize f' :?> LambdaExpression, Order.Ascending], toQueryExpr expr', paramExpr.Type)
+                OrderBy ([optimize f' :?> LambdaExpression, Order.Ascending], toQueryExpr expr')
 
             | MethodCall (_, MethodName "Length" _, [expr']) -> 
                 let query' = toQueryExpr expr'
-                Count (query', query'.Type)
+                Count (query')
 
             | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
                 let query' = GroupBy (optimize f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
@@ -73,44 +73,44 @@
                 let ci = tupleTy.GetConstructor([|paramExpr.Type; seqTy|])
                 let body = Expression.New(ci, [ Expression.Property(grp, "Key") :> Expression; Expression.Convert(grp, seqTy) :> Expression ]) :> Expression
                 let project = Expression.Lambda(body,[grp])
-                Transform(project, query', tupleTy)
+                Transform(project, query')
 
             //
             // Pipe (|>) optimizations
             //
 
             | PipedMethodCall1(expr', MethodName "Map" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                Transform (optimize f' :?> LambdaExpression, toQueryExpr expr', bodyExpr.Type)
+                Transform (optimize f' :?> LambdaExpression, toQueryExpr expr')
 
             | PipedMethodCall1(expr', MethodName "Filter" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr')
 
             | PipedMethodCall1(expr', MethodName "Where" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr', paramExpr.Type)
+                Filter (optimize f' :?> LambdaExpression, toQueryExpr expr')
 
             | PipedMethodCall1(expr', MethodName "Take" _, countExpr) ->
                 let queryExpr = toQueryExpr expr'
-                Take (optimize countExpr, queryExpr, queryExpr.Type)
+                Take (optimize countExpr, queryExpr)
 
             | PipedMethodCall1(expr', MethodName "Skip" _, countExpr) ->
                 let queryExpr = toQueryExpr expr'
-                Skip (optimize countExpr, queryExpr, queryExpr.Type)
+                Skip (optimize countExpr, queryExpr)
 
             | PipedMethodCall1(expr', (MethodName "Collect" [|_; _|] as m), (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                NestedQuery ((paramExpr, toQueryExpr (optimize bodyExpr)), toQueryExpr expr', m.ReturnType.GetGenericArguments().[0])
+                NestedQuery ((paramExpr, toQueryExpr (optimize bodyExpr)), toQueryExpr expr')
 
             | PipedMethodCall0(expr', MethodName "Sort" _) ->
                 let query' = toQueryExpr expr'
                 let v = var "x" query'.Type
                 let f = Expression.Lambda(v,v)
-                OrderBy ([f, Order.Ascending], query', query'.Type)
+                OrderBy ([f, Order.Ascending], query')
 
             | PipedMethodCall1(expr', MethodName "SortBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                OrderBy ([optimize f' :?> LambdaExpression, Order.Ascending], toQueryExpr expr', paramExpr.Type)
+                OrderBy ([optimize f' :?> LambdaExpression, Order.Ascending], toQueryExpr expr')
 
             | PipedMethodCall0(expr', MethodName "Length" _) ->
                 let query' = toQueryExpr expr'
-                Count (query', query'.Type)
+                Count (query')
 
             | PipedMethodCall1(expr', MethodName "GroupBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
                 let query' = GroupBy (optimize f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
@@ -126,7 +126,7 @@
                 let ci = tupleTy.GetConstructor([|paramExpr.Type; seqTy|])
                 let body = Expression.New(ci, [ Expression.Property(grp, "Key") :> Expression; Expression.Convert(grp, seqTy) :> Expression ]) :> Expression
                 let project = Expression.Lambda(body,[grp])
-                Transform(project, query', tupleTy)
+                Transform(project, query')
 
             | NotNull expr -> 
                 if expr.Type.IsArray then
