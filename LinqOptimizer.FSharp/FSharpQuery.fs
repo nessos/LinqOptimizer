@@ -116,4 +116,28 @@
         static member filter<'T>(predicate : Expression<Func<'T, bool>>) =
             PQuery.where predicate
 
+        static member sum(query : IParallelQueryExpr<int>) =
+            new ParallelQueryExpr<int>(QueryExpr.Sum(query.Expr, typeof<int>)) :> IParallelQueryExpr<_>
 
+        static member sum(query : IParallelQueryExpr<double>) =
+            new ParallelQueryExpr<double>(QueryExpr.Sum(query.Expr, typeof<double>)) :> IParallelQueryExpr<_>
+
+        static member collect<'T,'R>(selector : Expression<Func<'T, IEnumerable<'R>>>) =
+            fun (query : IParallelQueryExpr<seq<'T>>) ->
+                let selector = FSharpExpressionOptimizer.Optimize(selector) :?> LambdaExpression
+                let paramExpr, bodyExpr = selector.Parameters.Single(), selector.Body
+                ParallelQueryExpr<seq<'R>>(NestedQuery ((paramExpr, FSharpExpressionOptimizer.ToQueryExpr bodyExpr), query.Expr, typeof<'R>)) :> IParallelQueryExpr<_>
+
+        static member groupBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
+            fun (query : IParallelQueryExpr<seq<'T>>) ->
+                let f = FSharpExpressionOptimizer.Optimize(keySelector) :?> LambdaExpression
+                let groupBy = ParallelQueryExpr<seq<IGrouping<'Key,'T>>>(GroupBy(f, query.Expr, typeof<IGrouping<'Key,'T>>)) :> IParallelQueryExpr<_>
+                PQuery.map (fun (grp : IGrouping<'Key, 'T>) -> (grp.Key, (grp :> seq<'T>))) groupBy
+
+        static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
+            fun (queryExpr : IParallelQueryExpr<seq<'T>>) ->
+                let f =  FSharpExpressionOptimizer.Optimize(keySelector) :?> LambdaExpression
+                new ParallelQueryExpr<seq<'T>>(QueryExpr.OrderBy([f, Order.Ascending], queryExpr.Expr, typeof<'T>)) :> IParallelQueryExpr<_>
+                
+        static member sort<'T>(query : IParallelQueryExpr<seq<'T>>) =
+            PQuery.sortBy (fun i -> i) query
