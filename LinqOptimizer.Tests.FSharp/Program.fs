@@ -9,16 +9,16 @@ module Program =
     [<EntryPoint>]
     let main argv = 
         
-//        let test = new ``F# Query tests``()
-//        let t = test.map()
+        let test = new ``F# Query tests``()
+        let t = test.mapi()
 
-        let a = ref 42
-
-        let xs = 
-            [1..10]
-            |> Query.ofSeq
-            |> Query.map (fun x -> ())
-            |> Query.run
+//        let a = ref 42
+//
+//        let xs = 
+//            [1..10]
+//            |> Query.ofSeq
+//            |> Query.map (fun x -> ())
+//            |> Query.run
            
         
            
