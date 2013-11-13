@@ -65,7 +65,7 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
-        public void Sum()
+        public void SumInt()
         {
             Spec.ForAny<int[]>(xs =>
             {
@@ -75,6 +75,20 @@ namespace LinqOptimizer.Tests
                          select n * 2).Sum();
 
                 return x == y;
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void SumDouble()
+        {
+            Spec.ForAny<double[]>(xs =>
+            {
+                var x = (from n in xs.AsParallelQueryExpr()
+                         select n * 2).Sum().Run();
+                var y = (from n in xs.AsParallel()
+                         select n * 2).Sum();
+
+                return (Double.IsNaN(x) && Double.IsNaN(y)) || x == y;
             }).QuickCheckThrowOnFailure();
         }
 
@@ -201,6 +215,25 @@ namespace LinqOptimizer.Tests
                         select num * 2;
 
                 return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+
+        [Test]
+        public void Count()
+        {
+            Spec.ForAny<int[]>(xs =>
+            {
+                var x = xs.AsParallelQueryExpr()
+                        .Select(i => i)
+                        .Count()
+                        .Run();
+
+                var y = xs.AsParallel()
+                        .Select(i => i)
+                        .Count();
+
+                return x == y;
             }).QuickCheckThrowOnFailure();
         }
     }
