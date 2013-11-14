@@ -10,7 +10,7 @@ using LinqOptimizer.Core;
 namespace LinqOptimizer.CSharp
 {
     /// <summary>
-    /// Provides a set of static (Shared in Visual Basic) methods for querying objects that implement IQueryExpr.
+    /// Provides a set of static methods for querying objects that implement IQueryExpr.
     /// </summary>
     public static class Extensions
     {
@@ -30,9 +30,9 @@ namespace LinqOptimizer.CSharp
         /// </summary>
         /// <param name="query">The query to compile</param>
         /// <returns>A Func containing optimized code.</returns>
-        public static Func<T> Compile<T>(this IQueryExpr<T> query) 
+        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query) 
         {
-            return CoreHelpers.Compile<T>(query.Expr);
+            return CoreHelpers.Compile<TQuery>(query.Expr);
         }
 
         /// <summary>
@@ -50,9 +50,9 @@ namespace LinqOptimizer.CSharp
         /// </summary>
         /// <param name="query">The query to run.</param>
         /// <returns>The result of the query.</returns>
-        public static T Run<T>(this IQueryExpr<T> query)
+        public static TQuery Run<TQuery>(this IQueryExpr<TQuery> query)
         {
-            return query.Compile<T>().Invoke();
+            return query.Compile<TQuery>().Invoke();
         }
 
         /// <summary>
