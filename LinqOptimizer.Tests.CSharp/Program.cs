@@ -16,8 +16,6 @@ namespace LinqOptimizer.Tests
     class Program
     {
 
-
-
         public static void Main(string[] args)
         {
             Random random = new Random();
