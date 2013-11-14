@@ -6,12 +6,19 @@ using LinqOptimizer.Core;
 
 namespace LinqOptimizer.Base
 {
+    /// <summary>
+    ///  This class represents an optimized query.
+    /// </summary>
     public interface IQueryExpr
     {
         QueryExpr Expr { get; }
     }
 
-    public interface IQueryExpr<out T> : IQueryExpr { }
+    /// <summary>
+    /// This class represents an optimized query.
+    /// </summary>
+    /// <typeparam name="TQuery">The type of the query.</typeparam>
+    public interface IQueryExpr<out TQuery> : IQueryExpr { }
 
     public class QueryExprVoid : IQueryExpr
     {
