@@ -9,152 +9,308 @@ using LinqOptimizer.Core;
 
 namespace LinqOptimizer.CSharp
 {
-
+    /// <summary>
+    /// Provides a set of static (Shared in Visual Basic) methods for querying objects that implement IQueryExpr.
+    /// </summary>
     public static class Extensions
     {
-        public static IQueryExpr<IEnumerable<T>> AsQueryExpr<T>(this IEnumerable<T> source)
-        {
-            return new QueryExpr<IEnumerable<T>>(CoreHelpers.AsQueryExpr(source, typeof(T)));
+        /// <summary>
+        /// Enables the optimization of a query.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+        /// <param name="source">An IEnumerable to convert to an IQueryExpr.</param>
+        /// <returns>A query that returns the elements of the source sequence.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> AsQueryExpr<TSource>(this IEnumerable<TSource> source)
+        { 
+            return new QueryExpr<IEnumerable<TSource>>(CoreHelpers.AsQueryExpr(source, typeof(TSource)));
         }
 
+        /// <summary>
+        /// Compiles a query to optimized code that can by invoked using a Func.
+        /// </summary>
+        /// <param name="query">The query to compile</param>
+        /// <returns>A Func containing optimized code.</returns>
         public static Func<T> Compile<T>(this IQueryExpr<T> query) 
         {
             return CoreHelpers.Compile<T>(query.Expr);
         }
 
+        /// <summary>
+        /// Compiles a query to optimized code that can by invoked using a Func.
+        /// </summary>
+        /// <param name="query">The query to compile</param>
+        /// <returns>A Func containing optimized code.</returns>
         public static Action Compile(this IQueryExpr queryExpr)
         {
             return CoreHelpers.Compile(queryExpr.Expr);
         }
 
+        /// <summary>
+        /// Compiles a query to optimized code, runs the code and returns the result.
+        /// </summary>
+        /// <param name="query">The query to run.</param>
+        /// <returns>The result of the query.</returns>
         public static T Run<T>(this IQueryExpr<T> query)
         {
             return query.Compile<T>().Invoke();
         }
 
+        /// <summary>
+        /// Compiles a query to optimized code, runs the code and returns the result.
+        /// </summary>
+        /// <param name="query">The query to run.</param>
+        /// <returns>The result of the query.</returns>
         public static void Run(this IQueryExpr query)
         {
             query.Compile().Invoke();
         }
 
-        public static IQueryExpr<IEnumerable<R>> Select<T, R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, R>> selector)
+        /// <summary>
+        /// Creates a new query that projects each element of a sequence into a new form.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of the query.</typeparam>
+        /// <typeparam name="TResult">The type of the value returned by selector.</typeparam>
+        /// <param name="query">A query whose values to invoke a transform function on.</param>
+        /// <param name="selector">A transform function to apply to each element.</param>
+        /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
+        public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TResult>> selector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewTransform(f, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransform(f, query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<R>> Select<T, R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, int, R>> selector)
-        {
+        /// <summary>
+        /// Creates a new query that projects each element of a sequence into a new form by incorporating the element's index.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TResult">The type of the value returned by selector.</typeparam>
+        /// <param name="query">A query whose values to invoke a transform function on.</param>
+        /// <param name="selector">A transform function to apply to each source element; the second parameter of the function represents the index of the source element.</param>
+        /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
+        public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, TResult>> selector)
+        { 
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewTransformIndexed(f, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransformIndexed(f, query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<T>> Where<T>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, bool>> predicate)
+        /// <summary>
+        /// Creates a new query that filters a sequence of values based on a predicate.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">An query whose values to filter.</param>
+        /// <param name="predicate">A function to test each element for a condition.</param>
+        /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> Where<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewFilter(f, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilter(f, query.Expr));
         }
         
-        public static IQueryExpr<IEnumerable<T>> Where<T>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, int, bool>> predicate)
+        /// <summary>
+        /// Creates a new query that filters a sequence of values based on a predicate. Each element's index is used in the logic of the predicate function.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of query.</typeparam>
+        /// <param name="query">An query whose values to filter.</param>
+        /// <param name="predicate">A function to test each source element for a condition; the second parameter of the function represents the index of the source element.</param>
+        /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> Where<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, bool>> predicate)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewFilterIndexed(f, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilterIndexed(f, query.Expr));
         }
 
-        public static IQueryExpr<Acc> Aggregate<T,Acc>(this IQueryExpr<IEnumerable<T>> query, Acc seed, Expression<Func<Acc, T, Acc>> func)
+        /// <summary>
+        /// Creates a new query tha tapplies an accumulator function over a sequence. The specified seed value is used as the initial accumulator value.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TAcc">The type of the accumulator value.</typeparam>
+        /// <param name="query">An query whose values are used to aggregate over.</param>
+        /// <param name="seed">The initial accumulator value.</param>
+        /// <param name="func">An accumulator function to be invoked on each element.</param>
+        /// <returns>A query that returns the final accumulator value.</returns>
+        public static IQueryExpr<TAcc> Aggregate<TSource,TAcc>(this IQueryExpr<IEnumerable<TSource>> query, TAcc seed, Expression<Func<TAcc, TSource, TAcc>> func)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(func);
-            return new QueryExpr<Acc>(QueryExpr.NewAggregate(Expression.Constant(seed), f, query.Expr));
+            return new QueryExpr<TAcc>(QueryExpr.NewAggregate(Expression.Constant(seed), f, query.Expr));
         }
 
+        /// <summary>
+        /// Creates a new query that computes the sum of a sequence of Double values.
+        /// </summary>
+        /// <param name="query">A query whose sequence of Double values to calculate the sum of.</param>
+        /// <returns>A query that returns the sum of the values in the sequence.</returns>
         public static IQueryExpr<double> Sum(this IQueryExpr<IEnumerable<double>> query)
         {
             return new QueryExpr<double>(QueryExpr.NewSum(query.Expr));
         }
 
+        /// <summary>
+        /// Creates a new query that computes the sum of a sequence of int values.
+        /// </summary>
+        /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
+        /// <returns>A query that returns the sum of the values in the sequence.</returns>
         public static IQueryExpr<int> Sum(this IQueryExpr<IEnumerable<int>> query)
         {
             return new QueryExpr<int>(QueryExpr.NewSum(query.Expr));
         }
 
-        public static IQueryExpr<int> Count<T>(this IQueryExpr<IEnumerable<T>> query)
+        /// <summary>
+        /// Creates a new query that returns the number of elements in a sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">A query whose elements will be count.</param>
+        /// <returns>A query that returns the number of elements in the input sequence.</returns>
+        public static IQueryExpr<int> Count<TSource>(this IQueryExpr<IEnumerable<TSource>> query)
         {
             return new QueryExpr<int>(QueryExpr.NewCount(query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<R>> SelectMany<T,Col,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<Col>>> collectionSelector, Expression<Func<T, Col, R>> resultSelector)
+        /// <summary>
+        /// Creates a new query that projects each element of a sequence to an IEnumerable and flattens the resulting sequences into one sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TResult">The type of the elements of the sequence returned by selector.</typeparam>
+        /// <param name="query">A query whose values to project.</param>
+        /// <param name="selector">A transform function to apply to each element.</param>
+        /// <returns>A query whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.</returns>
+        public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource,TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TResult>>> selector )
+        {
+            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
+            var paramExpr = f.Parameters.Single();
+            var bodyExpr = f.Body;
+            var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQuery(nested, query.Expr));
+        }
+
+        /// <summary>
+        /// Creates a query that projects each element of a sequence to an IEnumerable, flattens the resulting sequences into one sequence, and invokes a result selector function on each element therein.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TCol">The type of the intermediate elements collected by collectionSelector.</typeparam>
+        /// <typeparam name="TResult">The type of the elements of the sequence returned by selector.</typeparam>
+        /// <param name="query">A query whose values to project.</param>
+        /// <param name="collectionSelector">A transform function to apply to each element of the input sequence.</param>
+        /// <param name="resultSelector">A transform function to apply to each element of the intermediate sequence.</param>
+        /// <returns>A query whose elements are the result of invoking the one-to-many transform function on each element of the input sequence and the result selector function on each element therein.</returns>
+        public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource,TCol,TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TCol>>> collectionSelector, Expression<Func<TSource, TCol, TResult>> resultSelector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(collectionSelector);
             var paramExpr = f.Parameters.Single();
             var bodyExpr = f.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
             var result = (LambdaExpression)CSharpExpressionOptimizer.Optimize(resultSelector);
-            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<R>> SelectMany<T,R>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, IEnumerable<R>>> selector )
+        /// <summary>
+        /// Creates a query that returns a specified number of contiguous elements from the start of a sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to return elements from.</param>
+        /// <param name="count">The number of elements to return.</param>
+        /// <returns>A query that returns a sequence containing the specified number of elements from the start of the input sequence.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> Take<TSource>(this IQueryExpr<IEnumerable<TSource>> query, int count)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            var paramExpr = f.Parameters.Single();
-            var bodyExpr = f.Body;
-            var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            return new QueryExpr<IEnumerable<R>>(QueryExpr.NewNestedQuery(nested, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTake(Expression.Constant(count), query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<T>> Take<T>(this IQueryExpr<IEnumerable<T>> query, int n)
+        /// <summary>
+        /// A query that bypasses a specified number of elements in a sequence and then returns the remaining elements.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">A query to return elements from.</param>
+        /// <param name="count">The number of elements to skip before returning the remaining elements.</param>
+        /// <returns>A query that returns a sequence containing the elements that occur after the specified index in the input sequence.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> Skip<TSource>(this IQueryExpr<IEnumerable<TSource>> query, int count)
         {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewTake(Expression.Constant(n), query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewSkip(Expression.Constant(count), query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<T>> Skip<T>(this IQueryExpr<IEnumerable<T>> query, int n)
-        {
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.NewSkip(Expression.Constant(n), query.Expr));
-        }
-
-        public static IQueryExpr ForEach<T>(this IQueryExpr<IEnumerable<T>> query, Expression<Action<T>> action)
+        /// <summary>
+        /// A query that performs the specified action on each element of the source query.
+        /// </summary>
+        /// <param name="query">An query to return elements from.</param>
+        /// <param name="action">The Action delegate to perform on each element of the query.</param>
+        /// <returns>A query that performs the action on each element.</returns>
+        public static IQueryExpr ForEach<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Action<TSource>> action)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(action);
             return new QueryExprVoid(QueryExpr.NewForEach(f, query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<IGrouping<Key, T>>> GroupBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        /// <summary>
+        /// A query that groups the elements of a sequence according to a specified key selector function.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose elements to group.</param>
+        /// <param name="keySelector">A function to extract the key for each element.</param>
+        /// <returns>A query where each IGrouping<TKey, TElement> element contains a sequence of objects and a key.</returns>
+        public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new QueryExpr<IEnumerable<IGrouping<Key,T>>>(QueryExpr.NewGroupBy(f, query.Expr, typeof(IGrouping<Key,T>)));
+            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(f, query.Expr, typeof(IGrouping<TKey,TSource>)));
         }
 
-        public static IQueryExpr<IEnumerable<T>> OrderBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        /// <summary>
+        /// Creates a query that sorts the elements of a sequence in ascending order according to a key.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose values to order.</param>
+        /// <param name="keySelector">A function to extract a key from an element.</param>
+        /// <returns>A query whose elements are sorted according to a key.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> OrderBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.AddOrderBy(f, Order.Ascending, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(f, Order.Ascending, query.Expr));
         }
 
-        public static IQueryExpr<IEnumerable<T>> OrderByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        /// <summary>
+        /// Creates a query that sorts the elements of a sequence in descending order according to a key.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose values to order.</param>
+        /// <param name="keySelector">A function to extract a key from an element.</param>
+        /// <returns>A query whose elements are sorted in descending according to a key.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> OrderByDescending<TSource, Key>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, Key>> keySelector)
         {
             var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-
-            return new QueryExpr<IEnumerable<T>>(QueryExpr.AddOrderBy(f, Order.Descending, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(f, Order.Descending, query.Expr));
         }
 
-        public static IQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        /// <summary>
+        /// A query that returns a List from an sequence of values.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to create a List from.</param>
+        /// <returns>A query that contains elements from the input sequence in a List form.</returns>
+        public static IQueryExpr<List<TSource>> ToList<TSource>(this IQueryExpr<IEnumerable<TSource>> query)
         {
-            throw new NotImplementedException();
-            //return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
-        }
-        public static IQueryExpr<IOrderedEnumerable<T>> ThenByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
-        {
-            throw new NotImplementedException();
-            //return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+            return new QueryExpr<List<TSource>>(QueryExpr.NewToList(query.Expr));
         }
 
-        public static IQueryExpr<List<T>> ToList<T>(this IQueryExpr<IEnumerable<T>> query)
-        {
-            return new QueryExpr<List<T>>(QueryExpr.NewToList(query.Expr));
-        }
-
+        /// <summary>
+        /// A query that returns an array from an sequence of values.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to create an array from.</param>
+        /// <returns>A query that contains elements from the input sequence in an array form.</returns>
         public static IQueryExpr<T[]> ToArray<T>(this IQueryExpr<IEnumerable<T>> query)
         {
             return new QueryExpr<T[]>(QueryExpr.NewToArray(query.Expr));
         }
+
+        //public static IQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        //{
+        //    throw new NotImplementedException();
+        //    //return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
+        //}
+        //public static IQueryExpr<IOrderedEnumerable<T>> ThenByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
+        //{
+        //    throw new NotImplementedException();
+        //    //return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
+        //}
     }
 }
