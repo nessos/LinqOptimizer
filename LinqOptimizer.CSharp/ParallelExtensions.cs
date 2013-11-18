@@ -32,7 +32,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A Func containing optimized code.</returns>
         public static Func<TQuery> Compile<TQuery>(this IParallelQueryExpr<TQuery> query)
         {
-            return CoreHelpers.CompileToParallel<TQuery>(query.Expr);
+            return CoreHelpers.CompileToParallel<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
 
         /// <summary>

@@ -41,14 +41,14 @@ namespace LinqOptimizer.Core
                 try mi.Invoke(null, args) :?> 'T
                 with :? TargetInvocationException as ex -> raise ex.InnerException 
 
-        static member Compile<'T>(queryExpr : QueryExpr) : Func<'T> =
-            let mi, objs = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr CSharpExpressionOptimizer.Optimize )
+        static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
+            let mi, objs = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
             Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
 
-        static member Compile(queryExpr : QueryExpr) : Action =
-            let mi, objs = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr CSharpExpressionOptimizer.Optimize )
+        static member Compile(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Action =
+            let mi, objs = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
             Action(CoreHelpers.WrapInvocation(mi, objs))
 
-        static member CompileToParallel<'T>(queryExpr : QueryExpr) : Func<'T> =
-            let mi, objs = CoreHelpers.Compile(queryExpr,  fun expr -> Compiler.compileToParallel expr CSharpExpressionOptimizer.Optimize )
+        static member CompileToParallel<'T>(queryExpr : QueryExpr,  optimize : Func<Expression,Expression>) : Func<'T> =
+            let mi, objs = CoreHelpers.Compile(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
             Func<'T>(CoreHelpers.WrapInvocation(mi, objs))

@@ -32,7 +32,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A Func containing optimized code.</returns>
         public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query) 
         {
-            return CoreHelpers.Compile<TQuery>(query.Expr);
+            return CoreHelpers.Compile<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A Func containing optimized code.</returns>
         public static Action Compile(this IQueryExpr queryExpr)
         {
-            return CoreHelpers.Compile(queryExpr.Expr);
+            return CoreHelpers.Compile(queryExpr.Expr, CSharpExpressionOptimizer.Optimize);
         }
 
         /// <summary>
