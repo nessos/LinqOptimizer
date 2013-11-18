@@ -56,7 +56,7 @@
                                                     loop (block [] [addAssign indexVarExpr (constant 1); brachExpr]) loopBreak loopContinue]
                 (keyVarArrayExpr, valueVarArrayExpr, loopExpr)
             
-        let rec compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) : Expression =
+        let rec compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) (optimize : Expression -> Expression) : Expression =
             match queryExpr with
             | Source (ExprType (Array (_, 1)) as expr, t) ->
                     let indexVarExpr = var "___index___" typeof<int>
@@ -95,6 +95,338 @@
                     let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = tryfinally (loop (block [] [brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel) (call (typeof<IDisposable>.GetMethod("Dispose")) disposableVarExpr [])
                     block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
+            | RangeGenerator(start, countExpr) ->
+                    // count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue
+                    let countVarExpr = var "___count___" typeof<int>
+                    let countVarInitExpr = assign countVarExpr countExpr
+                    let countCheckExpr = 
+                        let left = Expression.LessThan(countVarExpr, constant 0)
+                        let right = Expression.GreaterThan(
+                                        Expression.Subtract(
+                                            Expression.Add(cast start typeof<int64>, cast countVarExpr typeof<int64>),
+                                            constant 1L),
+                                        constant (int64 Int32.MaxValue))
+                        Expression.Or(left, right)
+                    let exceptionExpr = 
+                        let exc = Expression.New(typeof<ArgumentOutOfRangeException>.GetConstructor([|typeof<string>|]), constant "count")
+                        Expression.Block(Expression.Throw(exc), 
+                            constant Unchecked.defaultof<IEnumerable<int>>)
+
+                    let startExpr = Expression.Subtract(start , constant 1)
+                    let endExpr = Expression.Add(start, countVarExpr)
+                    let currVarExpr = var "___curr___" typeof<int>
+                    let currVarInitExpr = assign currVarExpr startExpr
+                    let checkExpr = equal currVarExpr endExpr
+                    let incCurrExpr = addAssign currVarExpr (constant 1)
+                    let exprs' = assign context.CurrentVarExpr currVarExpr :: context.Exprs
+                    let branchExpr = ifThenElse checkExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let loopExpr = 
+                        ifThenElse countCheckExpr exceptionExpr 
+                            (loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel)
+                    block (countVarExpr :: currVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; currVarInitExpr; loopExpr; context.ReturnExpr ]
+            | RepeatGenerator(elementExpr, countExpr) ->
+                    let t = elementExpr.Type
+                    let countVarExpr = var "___count___" typeof<int>
+                    let countVarInitExpr = assign countVarExpr countExpr
+                    let countCheckExpr = Expression.LessThan(countVarExpr, constant 0)
+                    let exceptionExpr = 
+                        let exc = Expression.New(typeof<ArgumentOutOfRangeException>.GetConstructor([|typeof<string>|]), constant "count")
+                        Expression.Block(Expression.Throw(exc), 
+                            constant null)
+
+                    let endExpr = countExpr
+                    let indexVarExpr = var "___index___" typeof<int>
+                    let indexVarInitExpr = assign indexVarExpr countExpr
+                    let elemVarExpr = var "___elem___" t
+                    let elemVarInitExpr = assign elemVarExpr elementExpr
+                    let checkExpr = lessThan indexVarExpr (constant 0)
+                    let incCurrExpr = subAssign indexVarExpr (constant 1) 
+                    let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
+                    let branchExpr = ifThenElse checkExpr (``break`` context.BreakLabel) (block [] exprs')
+                    let loopExpr = 
+                        ifThenElse countCheckExpr  exceptionExpr 
+                            (loop (block [] [incCurrExpr; branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel)
+                    block (countVarExpr :: indexVarExpr :: elemVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; elemVarInitExpr; indexVarInitExpr; loopExpr; context.ReturnExpr ]
+            | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | TransformIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let exprs' = addAssign indexExpr (constant 1) :: assign context.CurrentVarExpr bodyExpr :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = paramExpr :: indexExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | Filter (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let exprs' = ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | FilterIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let exprs' = addAssign indexExpr (constant 1) :: ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = indexExpr :: paramExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | Take (countExpr, queryExpr') ->
+                let countVarExpr = var "___takeCount___" typeof<int> //special "local" variable for Take
+                let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | Skip (countExpr, queryExpr') ->
+                let countVarExpr = var "___skipCount___" typeof<int> //special "local" variable for Skip
+                let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
+                let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                    InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                    VarExprs = []; Exprs = context.Exprs }
+
+                let expr = compileToSeqPipeline nestedQueryExpr context' optimize
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] } optimize
+            | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let context' = { CurrentVarExpr = valueExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                    InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                    VarExprs = []; Exprs = assign colExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
+
+                let expr = compileToSeqPipeline nestedQueryExpr context' optimize
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] } optimize
+            | GroupBy (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
+                let bodyExpr = optimize bodyExpr
+                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
+                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                let expr = compileToSeqPipeline queryExpr' context' optimize
+                // Generate loop to extract keys
+                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
+                // generare grouping
+                let groupByMethodInfo = typeof<Grouping>.GetMethods()
+                                            |> Array.find (fun methodInfo -> 
+                                                            match methodInfo with
+                                                            | MethodName "GroupBy" [|_; _|] -> true
+                                                            | _ -> false) // TODO: reflection type checks
+                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
+                let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
+                let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context optimize
+                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
+            | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExprs, queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
+                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+                let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                let expr = compileToSeqPipeline queryExpr' context' optimize
+                // Generate loop to extract keys
+                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
+                // generate sort 
+                let sortMethodInfo = typeof<Sort>.GetMethods()
+                                            |> Array.find (fun methodInfo -> 
+                                                            match methodInfo with
+                                                            | MethodName "SequentialSort" [|_; _; _|] -> true
+                                                            | _ -> false) // TODO: reflection type checks
+                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
+                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
+                let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, queryExpr'.Type)) context optimize
+                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; expr']
+            | _ -> failwithf "Invalid state %A" queryExpr 
+
+        let rec compileToSequential (queryExpr : QueryExpr) (optimize : Expression -> Expression) : Expression = 
+            match queryExpr with
+            | Sum (queryExpr') ->
+                let t = queryExpr'.Type
+                let finalVarExpr = var "___final___" t
+                let accVarExpr = var "___acc___" t
+                let initExpr = assign accVarExpr (``default`` t)
+                let accExpr = addAssign accVarExpr finalVarExpr
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
+                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+                let expr = compileToSeqPipeline queryExpr' context optimize
+                expr 
+            | Count (queryExpr') ->
+                let t = queryExpr'.Type
+                let accVarExpr = var "___cnt___" typeof<int>
+                let initExpr = assign accVarExpr (constant 0)
+                let accExpr = addAssign accVarExpr (constant 1)
+                let tmpVarExpr = var "___tmp___" t
+                let context = { CurrentVarExpr = tmpVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
+                                VarExprs = [tmpVarExpr; accVarExpr]; Exprs = [] }
+                let expr = compileToSeqPipeline queryExpr' context optimize
+                expr 
+            | Aggregate (seed, Lambda ([accVarExpr; varExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let initExpr = assign accVarExpr seed
+                let accExpr = assign accVarExpr bodyExpr
+                let context = { CurrentVarExpr = varExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
+                                VarExprs = [varExpr; accVarExpr]; Exprs = [] }
+                let expr = compileToSeqPipeline queryExpr' context optimize
+                expr
+            | ForEach (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let context = { CurrentVarExpr = paramExpr; AccVarExpr = var "___empty___" typeof<unit>; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [assign paramExpr (``default`` paramExpr.Type)]; 
+                                AccExpr = bodyExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                VarExprs = [paramExpr]; Exprs = [] }
+                let expr = compileToSeqPipeline queryExpr' context optimize
+                expr
+            | ToArray queryExpr' ->
+                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let expr = compileToSequential (ToList queryExpr') optimize
+                let expr' = call (listType.GetMethod "ToArray") expr []
+                expr' 
+            | ToList queryExpr' ->
+                let context = toListContext queryExpr'
+                let expr = compileToSeqPipeline queryExpr' context optimize
+                expr
+            | queryExpr' ->
+                let context = toListContext queryExpr'
+                let expr = compileToSeqPipeline queryExpr context optimize
+                expr
+
+        let rec compileToParallel (queryExpr : QueryExpr) (optimize : Expression -> Expression) : Expression =
+            let toParallelListContext (queryExpr : QueryExpr) = 
+                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
+                let initExpr, accExpr = lambda [||] (``new`` listType), block [] [call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]; accVarExpr]
+                let leftVarExpr, rightVarExpr = var "___left___" listType, var "___right___" listType
+                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [call (listType.GetMethod("AddRange")) leftVarExpr [rightVarExpr]; leftVarExpr])
+                let returnExpr = lambda [|accVarExpr|] accVarExpr
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
+                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                context
+            let rec compile queryExpr context =
+                match queryExpr with
+                | Source (ExprType (Array (_, 1)) as expr, t) | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
+                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "ReduceCombine" [|ParamType (Named (TypeCheck interfaceListTypeDef _, [|_|])); _; _; _; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
+                    let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
+                                            (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
+                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
+                    call aggregateMethodInfo null [expr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
+                | Source (expr, t) ->
+                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "ReduceCombine" [| ParamType (Named (TypeCheck partitionerTypeDef _, [|_|])); _; _; _; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
+                    let partitionerCreateMethodInfo = typeof<Partitioner>.GetMethods()
+                                                        |> Array.find (fun methodInfo -> 
+                                                                        match methodInfo with
+                                                                        | MethodName "Create" [|_|] -> true
+                                                                        | _ -> false) // TODO: reflection type checks
+                                                        |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type|])
+                    let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
+                                            (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
+                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
+                    let partitionerCallExpr = call partitionerCreateMethodInfo  null [expr]
+                    call aggregateMethodInfo null [partitionerCallExpr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
+                | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                    let bodyExpr = optimize bodyExpr
+                    let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
+                    compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
+                | Filter (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                    let bodyExpr = optimize bodyExpr
+                    let exprs' = ifThen (notExpr bodyExpr) (goto context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                    compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
+                | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
+                    let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                        VarExprs = []; Exprs = context.Exprs }
+
+                    let expr = compileToSeqPipeline nestedQueryExpr context' optimize
+                    compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
+                | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr') ->
+                    let bodyExpr = optimize bodyExpr
+                    let context' = { CurrentVarExpr = valueExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                        InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
+                                        VarExprs = []; Exprs = assign colExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
+
+                    let expr = compileToSeqPipeline nestedQueryExpr context' optimize
+                    compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
+                | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
+                    let bodyExpr = optimize bodyExpr
+                    let context' = toParallelListContext queryExpr'
+                    let expr = compile queryExpr' context'
+                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
+                    let groupByMethodInfo = typeof<Grouping>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "ParallelGroupBy" [|_; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
+                    let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
+                    let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
+                    let expr' = compile (Source (groupByCallExpr, groupingType)) context
+                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']
+                | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExpr, queryExpr') ->
+                    let bodyExpr = optimize bodyExpr
+                    let context' = toParallelListContext queryExpr'
+                    let expr = compile queryExpr' context'
+                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
+                    // generate sort 
+                    let sortMethodInfo = typeof<Sort>.GetMethods()
+                                                |> Array.find (fun methodInfo -> 
+                                                                match methodInfo with
+                                                                | MethodName "ParallelSort" [|_; _; _|] -> true
+                                                                | _ -> false) // TODO: reflection type checks
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
+                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
+                    let expr' = compile (Source (valueVarArrayExpr, queryExpr'.Type)) context
+                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; expr']
+                | _ -> failwithf "Invalid state %A" queryExpr 
+            match queryExpr with
+            | Sum (queryExpr') ->
+                let t = queryExpr'.Type
+                let finalVarExpr = var "___final___" t
+                let accVarExpr = var "___acc___" t
+                let initExpr = lambda [||] (``default`` t)
+                let accExpr = addAssign accVarExpr finalVarExpr
+                let leftVarExpr, rightVarExpr = var "___left___" t, var "___right___" t
+                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [addAssign leftVarExpr rightVarExpr; leftVarExpr])
+                let returnExpr = lambda [|accVarExpr|] accVarExpr
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
+                                VarExprs = [finalVarExpr]; Exprs = [] }
+                let expr = compile queryExpr' context
+                expr 
+            | Count (queryExpr') ->
+                let t = queryExpr'.Type
+                let finalVarExpr = var "___final___" t
+                let accVarExpr = var "___acc___" typeof<int>
+                let initExpr = lambda [||] (``default`` typeof<int>)
+                let accExpr = addAssign accVarExpr (constant 1)
+                let leftVarExpr, rightVarExpr = var "___left___" t, var "___right___" t
+                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [addAssign leftVarExpr rightVarExpr; leftVarExpr])
+                let returnExpr = lambda [|accVarExpr|] accVarExpr
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
+                                VarExprs = [finalVarExpr]; Exprs = [] }
+                let expr = compile queryExpr' context
+                expr 
+            | ToArray queryExpr' ->
+                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let expr = compileToParallel (ToList queryExpr') optimize
+                let expr' = call (listType.GetMethod "ToArray") expr []
+                expr' 
+            | ToList queryExpr' ->
+                let context = toParallelListContext queryExpr'
+                let expr = compile queryExpr' context
+                expr
+            | queryExpr' ->
+                let context = toParallelListContext queryExpr'
+                let expr = compile queryExpr context
+                expr
+
+
 //            | ZipWith((ExprType (Array (_, 1)) as expr1, t1),(ExprType (Array (_, 1)) as expr2,t2), (Lambda ([param1Expr; param2Expr], bodyExpr) as func)) ->
 //                    let indexVarExpr = var "___index___" typeof<int>
 //                    let indexAssignExpr = assign indexVarExpr (constant -1) 
@@ -186,320 +518,3 @@
 //                        enumerator2VarExpr :: disposable2VarExpr :: context.VarExprs
 //                    block vars 
 //                        [block [] context.InitExprs; enumerator1AssignExpr; disposable1AssignExpr; enumerator2AssignExpr; disposable2AssignExpr; loopExpr; context.ReturnExpr]
-            | RangeGenerator(start, countExpr) ->
-                    
-                    // count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue
-                    let countVarExpr = var "___count___" typeof<int>
-                    let countVarInitExpr = assign countVarExpr countExpr
-                    let countCheckExpr = 
-                        let left = Expression.LessThan(countVarExpr, constant 0)
-                        let right = Expression.GreaterThan(
-                                        Expression.Subtract(
-                                            Expression.Add(cast start typeof<int64>, cast countVarExpr typeof<int64>),
-                                            constant 1L),
-                                        constant (int64 Int32.MaxValue))
-                        Expression.Or(left, right)
-                    let exceptionExpr = 
-                        let exc = Expression.New(typeof<ArgumentOutOfRangeException>.GetConstructor([|typeof<string>|]), constant "count")
-                        Expression.Block(Expression.Throw(exc), 
-                            constant Unchecked.defaultof<IEnumerable<int>>)
-
-                    let startExpr = Expression.Subtract(start , constant 1)
-                    let endExpr = Expression.Add(start, countVarExpr)
-                    let currVarExpr = var "___curr___" typeof<int>
-                    let currVarInitExpr = assign currVarExpr startExpr
-                    let checkExpr = equal currVarExpr endExpr
-                    let incCurrExpr = addAssign currVarExpr (constant 1)
-                    let exprs' = assign context.CurrentVarExpr currVarExpr :: context.Exprs
-                    let branchExpr = ifThenElse checkExpr (``break`` context.BreakLabel) (block [] exprs')
-                    let loopExpr = 
-                        ifThenElse countCheckExpr exceptionExpr 
-                            (loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel)
-                    block (countVarExpr :: currVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; currVarInitExpr; loopExpr; context.ReturnExpr ]
-            | RepeatGenerator(elementExpr, countExpr) ->
-                    let t = elementExpr.Type
-                    let countVarExpr = var "___count___" typeof<int>
-                    let countVarInitExpr = assign countVarExpr countExpr
-                    let countCheckExpr = Expression.LessThan(countVarExpr, constant 0)
-                    let exceptionExpr = 
-                        let exc = Expression.New(typeof<ArgumentOutOfRangeException>.GetConstructor([|typeof<string>|]), constant "count")
-                        Expression.Block(Expression.Throw(exc), 
-                            constant null)
-
-                    let endExpr = countExpr
-                    let indexVarExpr = var "___index___" typeof<int>
-                    let indexVarInitExpr = assign indexVarExpr countExpr
-                    let elemVarExpr = var "___elem___" t
-                    let elemVarInitExpr = assign elemVarExpr elementExpr
-                    let checkExpr = lessThan indexVarExpr (constant 0)
-                    let incCurrExpr = subAssign indexVarExpr (constant 1) 
-                    let exprs' = assign context.CurrentVarExpr elemVarExpr :: context.Exprs
-                    let branchExpr = ifThenElse checkExpr (``break`` context.BreakLabel) (block [] exprs')
-                    let loopExpr = 
-                        ifThenElse countCheckExpr  exceptionExpr 
-                            (loop (block [] [incCurrExpr; branchExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel)
-                    block (countVarExpr :: indexVarExpr :: elemVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; elemVarInitExpr; indexVarInitExpr; loopExpr; context.ReturnExpr ]
-            | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
-                let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
-            | TransformIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr') ->
-                let exprs' = addAssign indexExpr (constant 1) :: assign context.CurrentVarExpr bodyExpr :: context.Exprs
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = paramExpr :: indexExpr :: context.VarExprs; Exprs = exprs' }
-            | Filter (Lambda ([paramExpr], bodyExpr), queryExpr') ->
-                let exprs' = ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
-            | FilterIndexed (Lambda ([paramExpr; indexExpr], bodyExpr), queryExpr') ->
-                let exprs' = addAssign indexExpr (constant 1) :: ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = indexExpr :: paramExpr :: context.VarExprs; Exprs = exprs' }
-            | Take (countExpr, queryExpr') ->
-                let countVarExpr = var "___takeCount___" typeof<int> //special "local" variable for Take
-                let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
-                compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' }
-            | Skip (countExpr, queryExpr') ->
-                let countVarExpr = var "___skipCount___" typeof<int> //special "local" variable for Skip
-                let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
-                compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' }
-            | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
-                let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                    InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = []; Exprs = context.Exprs }
-
-                let expr = compileToSeqPipeline nestedQueryExpr context'
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
-            | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr') ->
-                let context' = { CurrentVarExpr = valueExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                    InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = []; Exprs = assign colExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
-
-                let expr = compileToSeqPipeline nestedQueryExpr context'
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
-            | GroupBy (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
-                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
-                let expr = compileToSeqPipeline queryExpr' context'
-                // Generate loop to extract keys
-                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
-                // generare grouping
-                let groupByMethodInfo = typeof<Grouping>.GetMethods()
-                                            |> Array.find (fun methodInfo -> 
-                                                            match methodInfo with
-                                                            | MethodName "GroupBy" [|_; _|] -> true
-                                                            | _ -> false) // TODO: reflection type checks
-                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
-                let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
-                let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
-                let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context
-                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
-            | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExprs, queryExpr') ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
-                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
-                let expr = compileToSeqPipeline queryExpr' context'
-                // Generate loop to extract keys
-                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
-                // generate sort 
-                let sortMethodInfo = typeof<Sort>.GetMethods()
-                                            |> Array.find (fun methodInfo -> 
-                                                            match methodInfo with
-                                                            | MethodName "SequentialSort" [|_; _; _|] -> true
-                                                            | _ -> false) // TODO: reflection type checks
-                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
-                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
-                let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, queryExpr'.Type)) context
-                block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; expr']
-            | _ -> failwithf "Invalid state %A" queryExpr 
-
-        let rec compileToSequential (queryExpr : QueryExpr) : Expression = 
-            match queryExpr with
-            | Sum (queryExpr') ->
-                let t = queryExpr'.Type
-                let finalVarExpr = var "___final___" t
-                let accVarExpr = var "___acc___" t
-                let initExpr = assign accVarExpr (``default`` t)
-                let accExpr = addAssign accVarExpr finalVarExpr
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
-                let expr = compileToSeqPipeline queryExpr' context
-                expr 
-            | Count (queryExpr') ->
-                let t = queryExpr'.Type
-                let accVarExpr = var "___cnt___" typeof<int>
-                let initExpr = assign accVarExpr (constant 0)
-                let accExpr = addAssign accVarExpr (constant 1)
-                let tmpVarExpr = var "___tmp___" t
-                let context = { CurrentVarExpr = tmpVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [tmpVarExpr; accVarExpr]; Exprs = [] }
-                let expr = compileToSeqPipeline queryExpr' context
-                expr 
-            | Aggregate (seed, Lambda ([accVarExpr; varExpr], bodyExpr), queryExpr') ->
-                let initExpr = assign accVarExpr seed
-                let accExpr = assign accVarExpr bodyExpr
-                let context = { CurrentVarExpr = varExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [varExpr; accVarExpr]; Exprs = [] }
-                let expr = compileToSeqPipeline queryExpr' context
-                expr
-            | ForEach (Lambda ([paramExpr], bodyExpr), queryExpr') ->
-                let context = { CurrentVarExpr = paramExpr; AccVarExpr = var "___empty___" typeof<unit>; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [assign paramExpr (``default`` paramExpr.Type)]; 
-                                AccExpr = bodyExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                VarExprs = [paramExpr]; Exprs = [] }
-                let expr = compileToSeqPipeline queryExpr' context
-                expr
-            | ToArray queryExpr' ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let expr = compileToSequential (ToList queryExpr')
-                let expr' = call (listType.GetMethod "ToArray") expr []
-                expr' 
-            | ToList queryExpr' ->
-                let context = toListContext queryExpr'
-                let expr = compileToSeqPipeline queryExpr' context
-                expr
-            | queryExpr' ->
-                let context = toListContext queryExpr'
-                let expr = compileToSeqPipeline queryExpr context
-                expr
-
-        let rec compileToParallel (queryExpr : QueryExpr) : Expression =
-            let toParallelListContext (queryExpr : QueryExpr) = 
-                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
-                let initExpr, accExpr = lambda [||] (``new`` listType), block [] [call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]; accVarExpr]
-                let leftVarExpr, rightVarExpr = var "___left___" listType, var "___right___" listType
-                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [call (listType.GetMethod("AddRange")) leftVarExpr [rightVarExpr]; leftVarExpr])
-                let returnExpr = lambda [|accVarExpr|] accVarExpr
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                    InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
-                context
-            let rec compile queryExpr context =
-                match queryExpr with
-                | Source (ExprType (Array (_, 1)) as expr, t) | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
-                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
-                                                |> Array.find (fun methodInfo -> 
-                                                                match methodInfo with
-                                                                | MethodName "ReduceCombine" [|ParamType (Named (TypeCheck interfaceListTypeDef _, [|_|])); _; _; _; _|] -> true
-                                                                | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
-                    let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
-                                            (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
-                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
-                    call aggregateMethodInfo null [expr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
-                | Source (expr, t) ->
-                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
-                                                |> Array.find (fun methodInfo -> 
-                                                                match methodInfo with
-                                                                | MethodName "ReduceCombine" [| ParamType (Named (TypeCheck partitionerTypeDef _, [|_|])); _; _; _; _|] -> true
-                                                                | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
-                    let partitionerCreateMethodInfo = typeof<Partitioner>.GetMethods()
-                                                        |> Array.find (fun methodInfo -> 
-                                                                        match methodInfo with
-                                                                        | MethodName "Create" [|_|] -> true
-                                                                        | _ -> false) // TODO: reflection type checks
-                                                        |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type|])
-                    let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
-                                            (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
-                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
-                    let partitionerCallExpr = call partitionerCreateMethodInfo  null [expr]
-                    call aggregateMethodInfo null [partitionerCallExpr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
-                | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
-                    let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
-                    compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
-                | Filter (Lambda ([paramExpr], bodyExpr), queryExpr') ->
-                    let exprs' = ifThen (notExpr bodyExpr) (goto context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
-                    compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
-                | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
-                    let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                        InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                        VarExprs = []; Exprs = context.Exprs }
-
-                    let expr = compileToSeqPipeline nestedQueryExpr context'
-                    compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
-                | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr') ->
-                    let context' = { CurrentVarExpr = valueExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                        InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                        VarExprs = []; Exprs = assign colExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
-
-                    let expr = compileToSeqPipeline nestedQueryExpr context'
-                    compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
-                | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
-                    let context' = toParallelListContext queryExpr'
-                    let expr = compile queryExpr' context'
-                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
-                    let groupByMethodInfo = typeof<Grouping>.GetMethods()
-                                                |> Array.find (fun methodInfo -> 
-                                                                match methodInfo with
-                                                                | MethodName "ParallelGroupBy" [|_; _|] -> true
-                                                                | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
-                    let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
-                    let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
-                    let expr' = compile (Source (groupByCallExpr, groupingType)) context
-                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']
-                | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExpr, queryExpr') ->
-                    let context' = toParallelListContext queryExpr'
-                    let expr = compile queryExpr' context'
-                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
-                    // generate sort 
-                    let sortMethodInfo = typeof<Sort>.GetMethods()
-                                                |> Array.find (fun methodInfo -> 
-                                                                match methodInfo with
-                                                                | MethodName "ParallelSort" [|_; _; _|] -> true
-                                                                | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
-                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
-                    let expr' = compile (Source (valueVarArrayExpr, queryExpr'.Type)) context
-                    block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; expr']
-                | _ -> failwithf "Invalid state %A" queryExpr 
-            match queryExpr with
-            | Sum (queryExpr') ->
-                let t = queryExpr'.Type
-                let finalVarExpr = var "___final___" t
-                let accVarExpr = var "___acc___" t
-                let initExpr = lambda [||] (``default`` t)
-                let accExpr = addAssign accVarExpr finalVarExpr
-                let leftVarExpr, rightVarExpr = var "___left___" t, var "___right___" t
-                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [addAssign leftVarExpr rightVarExpr; leftVarExpr])
-                let returnExpr = lambda [|accVarExpr|] accVarExpr
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                VarExprs = [finalVarExpr]; Exprs = [] }
-                let expr = compile queryExpr' context
-                expr 
-            | Count (queryExpr') ->
-                let t = queryExpr'.Type
-                let finalVarExpr = var "___final___" t
-                let accVarExpr = var "___acc___" typeof<int>
-                let initExpr = lambda [||] (``default`` typeof<int>)
-                let accExpr = addAssign accVarExpr (constant 1)
-                let leftVarExpr, rightVarExpr = var "___left___" t, var "___right___" t
-                let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [addAssign leftVarExpr rightVarExpr; leftVarExpr])
-                let returnExpr = lambda [|accVarExpr|] accVarExpr
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                VarExprs = [finalVarExpr]; Exprs = [] }
-                let expr = compile queryExpr' context
-                expr 
-            | ToArray queryExpr' ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let expr = compileToParallel (ToList queryExpr') 
-                let expr' = call (listType.GetMethod "ToArray") expr []
-                expr' 
-            | ToList queryExpr' ->
-                let context = toParallelListContext queryExpr'
-                let expr = compile queryExpr' context
-                expr
-            | queryExpr' ->
-                let context = toParallelListContext queryExpr'
-                let expr = compile queryExpr context
-                expr

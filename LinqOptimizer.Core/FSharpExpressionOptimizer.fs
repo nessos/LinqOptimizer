@@ -137,35 +137,36 @@
                 invalidArg "expr" "Cannot extract QueryExpr from null Expression"
 
         and private transformer (expr : Expression) : Expression option =
-            match expr with
-            | MethodCall (_, MethodName "Map" _,            [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _])
-            | MethodCall (_, MethodName "Filter" _,         [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) 
-            | MethodCall (_, MethodName "Where" _,          [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) 
-            | MethodCall (_, MethodName "Take" _,           [_; _ ]) 
-            | MethodCall (_, MethodName "Skip" _,           [_; _ ])
-            | MethodCall (_, MethodName "Collect" [|_; _|], [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) 
-            | MethodCall (_, MethodName "Sort" _,           [_])
-            | MethodCall (_, MethodName "SortBy" _,         [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _])
-            | MethodCall (_, MethodName "Length" _,         [_]) 
-            | MethodCall (_, MethodName "GroupBy" _,        [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) ->
-                let query = toQueryExpr expr
-                (Compiler.compileToSequential >> Some) query
-            | _ -> // Using all the match cases at once, causes F# compiler to produce invalid CLR code! <3
-                match expr with
-                | PipedMethodCall1(_, MethodName "Map" _,           (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ]))) 
-                | PipedMethodCall1(_, MethodName "Filter" _,        (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ])))
-                | PipedMethodCall1(_, MethodName "Where" _,         (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _])))
-                | PipedMethodCall1(_, MethodName "Take" _,          _) 
-                | PipedMethodCall1(_, MethodName "Skip" _,          _) 
-                | PipedMethodCall1(_, MethodName "Collect" [|_; _|],(MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ])))
-                | PipedMethodCall0(_, MethodName "Sort" _) 
-                | PipedMethodCall1(_, MethodName "SortBy" _,        (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ]))) 
-                | PipedMethodCall0(_, MethodName "Length" _) 
-                | PipedMethodCall1(_, MethodName "GroupBy" _,       (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ]))) ->
-                    let query = toQueryExpr expr
-                    (Compiler.compileToSequential >> Some) query
-                | _ ->
-                    None
+            None
+//            match expr with
+//            | MethodCall (_, MethodName "Map" _,            [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _])
+//            | MethodCall (_, MethodName "Filter" _,         [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) 
+//            | MethodCall (_, MethodName "Where" _,          [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) 
+//            | MethodCall (_, MethodName "Take" _,           [_; _ ]) 
+//            | MethodCall (_, MethodName "Skip" _,           [_; _ ])
+//            | MethodCall (_, MethodName "Collect" [|_; _|], [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) 
+//            | MethodCall (_, MethodName "Sort" _,           [_])
+//            | MethodCall (_, MethodName "SortBy" _,         [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _])
+//            | MethodCall (_, MethodName "Length" _,         [_]) 
+//            | MethodCall (_, MethodName "GroupBy" _,        [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda _ ]) ; _]) ->
+//                let query = toQueryExpr expr
+//                (Compiler.compileToSequential >> Some) query
+//            | _ -> // Using all the match cases at once, causes F# compiler to produce invalid CLR code! <3
+//                match expr with
+//                | PipedMethodCall1(_, MethodName "Map" _,           (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ]))) 
+//                | PipedMethodCall1(_, MethodName "Filter" _,        (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ])))
+//                | PipedMethodCall1(_, MethodName "Where" _,         (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _])))
+//                | PipedMethodCall1(_, MethodName "Take" _,          _) 
+//                | PipedMethodCall1(_, MethodName "Skip" _,          _) 
+//                | PipedMethodCall1(_, MethodName "Collect" [|_; _|],(MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ])))
+//                | PipedMethodCall0(_, MethodName "Sort" _) 
+//                | PipedMethodCall1(_, MethodName "SortBy" _,        (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ]))) 
+//                | PipedMethodCall0(_, MethodName "Length" _) 
+//                | PipedMethodCall1(_, MethodName "GroupBy" _,       (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda _ ]))) ->
+//                    let query = toQueryExpr expr
+//                    (Compiler.compileToSequential >> Some) query
+//                | _ ->
+//                    None
 
         and private opt = ExpressionTransformer.transform transformer
         

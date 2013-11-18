@@ -75,8 +75,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TResult>> selector)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransform(f, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
         }
 
         /// <summary>
@@ -89,8 +88,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, TResult>> selector)
         { 
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransformIndexed(f, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransformIndexed(selector, query.Expr));
         }
 
         /// <summary>
@@ -102,8 +100,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
         public static IQueryExpr<IEnumerable<TSource>> Where<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilter(f, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
         }
         
         /// <summary>
@@ -115,12 +112,11 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
         public static IQueryExpr<IEnumerable<TSource>> Where<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, bool>> predicate)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(predicate);
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilterIndexed(f, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilterIndexed(predicate, query.Expr));
         }
 
         /// <summary>
-        /// Creates a new query tha tapplies an accumulator function over a sequence. The specified seed value is used as the initial accumulator value.
+        /// Creates a new query that applies an accumulator function over a sequence. The specified seed value is used as the initial accumulator value.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <typeparam name="TAcc">The type of the accumulator value.</typeparam>
@@ -130,8 +126,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns the final accumulator value.</returns>
         public static IQueryExpr<TAcc> Aggregate<TSource,TAcc>(this IQueryExpr<IEnumerable<TSource>> query, TAcc seed, Expression<Func<TAcc, TSource, TAcc>> func)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(func);
-            return new QueryExpr<TAcc>(QueryExpr.NewAggregate(Expression.Constant(seed), f, query.Expr));
+            return new QueryExpr<TAcc>(QueryExpr.NewAggregate(Expression.Constant(seed), func, query.Expr));
         }
 
         /// <summary>
@@ -175,9 +170,8 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.</returns>
         public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource,TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TResult>>> selector )
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(selector);
-            var paramExpr = f.Parameters.Single();
-            var bodyExpr = f.Body;
+            var paramExpr = selector.Parameters.Single();
+            var bodyExpr =  selector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
             return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQuery(nested, query.Expr));
         }
@@ -194,12 +188,10 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are the result of invoking the one-to-many transform function on each element of the input sequence and the result selector function on each element therein.</returns>
         public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource,TCol,TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TCol>>> collectionSelector, Expression<Func<TSource, TCol, TResult>> resultSelector)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(collectionSelector);
-            var paramExpr = f.Parameters.Single();
-            var bodyExpr = f.Body;
+            var paramExpr = collectionSelector.Parameters.Single();
+            var bodyExpr =  collectionSelector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            var result = (LambdaExpression)CSharpExpressionOptimizer.Optimize(resultSelector);
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQueryTransform(nested, result, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQueryTransform(nested, resultSelector, query.Expr));
         }
 
         /// <summary>
@@ -234,8 +226,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that performs the action on each element.</returns>
         public static IQueryExpr ForEach<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Action<TSource>> action)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(action);
-            return new QueryExprVoid(QueryExpr.NewForEach(f, query.Expr));
+            return new QueryExprVoid(QueryExpr.NewForEach(action, query.Expr));
         }
 
         /// <summary>
@@ -248,8 +239,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query where each IGrouping<TKey, TElement> element contains a sequence of objects and a key.</returns>
         public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(f, query.Expr, typeof(IGrouping<TKey,TSource>)));
+            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
         }
 
         /// <summary>
@@ -262,8 +252,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted according to a key.</returns>
         public static IQueryExpr<IEnumerable<TSource>> OrderBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(f, Order.Ascending, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -276,8 +265,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted in descending according to a key.</returns>
         public static IQueryExpr<IEnumerable<TSource>> OrderByDescending<TSource, Key>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, Key>> keySelector)
         {
-            var f = (LambdaExpression)CSharpExpressionOptimizer.Optimize(keySelector);
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(f, Order.Descending, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
         /// <summary>
