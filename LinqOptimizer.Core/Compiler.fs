@@ -97,6 +97,7 @@
                     block (enumeratorVarExpr :: disposableVarExpr :: context.VarExprs) [block [] context.InitExprs; enumeratorAssignExpr; disposableAssignExpr; loopExpr; context.ReturnExpr] 
             | RangeGenerator(start, countExpr) ->
                     // count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue
+                    let (start, countExpr) = (optimize start, optimize countExpr)
                     let countVarExpr = var "___count___" typeof<int>
                     let countVarInitExpr = assign countVarExpr countExpr
                     let countCheckExpr = 
@@ -125,6 +126,7 @@
                             (loop (block [] [incCurrExpr; branchExpr ; context.AccExpr]) context.BreakLabel context.ContinueLabel)
                     block (countVarExpr :: currVarExpr :: context.VarExprs) [block [] context.InitExprs; countVarInitExpr; currVarInitExpr; loopExpr; context.ReturnExpr ]
             | RepeatGenerator(elementExpr, countExpr) ->
+                    let countExpr = optimize countExpr
                     let t = elementExpr.Type
                     let countVarExpr = var "___count___" typeof<int>
                     let countVarInitExpr = assign countVarExpr countExpr
@@ -164,10 +166,12 @@
                 let exprs' = addAssign indexExpr (constant 1) :: ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = indexExpr :: paramExpr :: context.VarExprs; Exprs = exprs' } optimize
             | Take (countExpr, queryExpr') ->
+                let countExpr = optimize countExpr
                 let countVarExpr = var "___takeCount___" typeof<int> //special "local" variable for Take
                 let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' } optimize
             | Skip (countExpr, queryExpr') ->
+                let countExpr = optimize countExpr
                 let countVarExpr = var "___skipCount___" typeof<int> //special "local" variable for Skip
                 let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' } optimize
@@ -256,6 +260,7 @@
                 let expr = compileToSeqPipeline queryExpr' context optimize
                 expr 
             | Aggregate (seed, Lambda ([accVarExpr; varExpr], bodyExpr), queryExpr') ->
+                let seed = optimize seed
                 let bodyExpr = optimize bodyExpr
                 let initExpr = assign accVarExpr seed
                 let accExpr = assign accVarExpr bodyExpr
