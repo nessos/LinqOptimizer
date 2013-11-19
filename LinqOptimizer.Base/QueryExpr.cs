@@ -7,7 +7,7 @@ using LinqOptimizer.Core;
 namespace LinqOptimizer.Base
 {
     /// <summary>
-    ///  This class represents an optimized query.
+    ///  This interface represents an optimized query.
     /// </summary>
     public interface IQueryExpr
     {
@@ -15,11 +15,14 @@ namespace LinqOptimizer.Base
     }
 
     /// <summary>
-    /// This class represents an optimized query.
+    /// This interface represents an optimized query.
     /// </summary>
     /// <typeparam name="TQuery">The type of the query.</typeparam>
     public interface IQueryExpr<out TQuery> : IQueryExpr { }
 
+    /// <summary>
+    /// The concrete implementation of an optimized query.
+    /// </summary>
     public class QueryExprVoid : IQueryExpr
     {
         private QueryExpr _expr;
@@ -31,6 +34,10 @@ namespace LinqOptimizer.Base
         }
     }
 
+    /// <summary>
+    /// The concrete implementation of an optimized query.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class QueryExpr<T> : IQueryExpr<T>
     {
         private QueryExpr _expr;
