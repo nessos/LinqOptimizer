@@ -11,6 +11,9 @@ namespace LinqOptimizer.Base
     /// </summary>
     public interface IParallelQueryExpr
     {
+        /// <summary>
+        /// The expression representing the query.
+        /// </summary>
         QueryExpr Expr { get; }
     }
 
@@ -26,8 +29,15 @@ namespace LinqOptimizer.Base
     public class ParallelQueryExprVoid : IParallelQueryExpr
     {
         private QueryExpr _expr;
+        /// <summary>
+        /// The expression representing the query.
+        /// </summary>
         public QueryExpr Expr { get { return _expr; } }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ParallelQueryExprVoid"/> class.
+        /// </summary>
+        /// <param name="query">The expression.</param>
         public ParallelQueryExprVoid(QueryExpr query)
         {
             _expr = query;
@@ -40,8 +50,15 @@ namespace LinqOptimizer.Base
     public class ParallelQueryExpr<T> : IParallelQueryExpr<T>
     {
         private QueryExpr _expr;
+        /// <summary>
+        /// The expression representing the query.
+        /// </summary>
         public QueryExpr Expr { get { return _expr; } }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ParallelQueryExpr{T}"/> class.
+        /// </summary>
+        /// <param name="query">The expression.</param>
         public ParallelQueryExpr(QueryExpr query)
         {
             _expr = query;

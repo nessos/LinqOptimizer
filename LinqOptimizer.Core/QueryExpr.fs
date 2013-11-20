@@ -19,6 +19,7 @@
 //        member self.QueryExpr = queryExpr 
     // Main Query representation
     type Order = Ascending | Descending
+    /// The type representing an query expression.
     and QueryExpr = 
         | Source of Expression * Type
         | Transform of LambdaExpression * QueryExpr 

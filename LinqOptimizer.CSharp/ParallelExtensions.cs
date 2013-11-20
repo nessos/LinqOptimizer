@@ -131,7 +131,7 @@ namespace LinqOptimizer.CSharp
         /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
         /// <param name="query">A query whose elements to group.</param>
         /// <param name="keySelector">A function to extract the key for each element.</param>
-        /// <returns>A parallel query where each IGrouping<TKey, TElement> element contains a sequence of objects and a key.</returns>
+        /// <returns>A parallel query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IParallelQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             return new ParallelQueryExpr<IEnumerable<IGrouping<TKey, TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey, TSource>)));

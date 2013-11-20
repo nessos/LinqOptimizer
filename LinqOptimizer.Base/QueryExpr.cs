@@ -11,6 +11,9 @@ namespace LinqOptimizer.Base
     /// </summary>
     public interface IQueryExpr
     {
+        /// <summary>
+        /// The expression representing the query.
+        /// </summary>
         QueryExpr Expr { get; }
     }
 
@@ -26,8 +29,15 @@ namespace LinqOptimizer.Base
     public class QueryExprVoid : IQueryExpr
     {
         private QueryExpr _expr;
+        /// <summary>
+        /// The expression representing the query.
+        /// </summary>
         public QueryExpr Expr { get { return _expr; } }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryExprVoid"/> class.
+        /// </summary>
+        /// <param name="query">The expression.</param>
         public QueryExprVoid(QueryExpr query)
         {
             _expr = query;
@@ -37,12 +47,19 @@ namespace LinqOptimizer.Base
     /// <summary>
     /// The concrete implementation of an optimized query.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of the query.</typeparam>
     public class QueryExpr<T> : IQueryExpr<T>
     {
         private QueryExpr _expr;
+        /// <summary>
+        /// The expression representing the query.
+        /// </summary>
         public QueryExpr Expr { get { return _expr; } }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryExpr{T}"/> class.
+        /// </summary>
+        /// <param name="query">The expression.</param>
         public QueryExpr(QueryExpr query)
         {
             _expr = query;

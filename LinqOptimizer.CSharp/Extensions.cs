@@ -40,9 +40,9 @@ namespace LinqOptimizer.CSharp
         /// </summary>
         /// <param name="query">The query to compile</param>
         /// <returns>A Func containing optimized code.</returns>
-        public static Action Compile(this IQueryExpr queryExpr)
+        public static Action Compile(this IQueryExpr query)
         {
-            return CoreHelpers.Compile(queryExpr.Expr, CSharpExpressionOptimizer.Optimize);
+            return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace LinqOptimizer.CSharp
         /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
         /// <param name="query">A query whose elements to group.</param>
         /// <param name="keySelector">A function to extract the key for each element.</param>
-        /// <returns>A query where each IGrouping<TKey, TElement> element contains a sequence of objects and a key.</returns>
+        /// <returns>A query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
@@ -263,7 +263,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A query whose elements are sorted in descending according to a key.</returns>
-        public static IQueryExpr<IEnumerable<TSource>> OrderByDescending<TSource, Key>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, Key>> keySelector)
+        public static IQueryExpr<IEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
@@ -285,9 +285,9 @@ namespace LinqOptimizer.CSharp
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="query">The query to create an array from.</param>
         /// <returns>A query that contains elements from the input sequence in an array form.</returns>
-        public static IQueryExpr<T[]> ToArray<T>(this IQueryExpr<IEnumerable<T>> query)
+        public static IQueryExpr<TSource[]> ToArray<TSource>(this IQueryExpr<IEnumerable<TSource>> query)
         {
-            return new QueryExpr<T[]>(QueryExpr.NewToArray(query.Expr));
+            return new QueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
         }
 
         //public static IQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
