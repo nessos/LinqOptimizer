@@ -240,7 +240,7 @@
         ///<returns>A parallel query that contains sorted sequence.</returns>
         static member sortBy<'T, 'Key>(keySelector : Expression<Func<'T, 'Key>>) = 
             fun (query : IParallelQueryExpr<seq<'T>>) ->
-                new ParallelQueryExpr<seq<'T>>(QueryExpr.OrderBy([keySelector :> LambdaExpression, Order.Ascending], queryExpr.Expr)) :> IParallelQueryExpr<_>
+                new ParallelQueryExpr<seq<'T>>(QueryExpr.OrderBy([keySelector :> LambdaExpression, Order.Ascending], query.Expr)) :> IParallelQueryExpr<_>
 
         ///<summary>Constructs a parallel query that yields a sequence ordered by keys.</summary>
         ///<param name="query">The query whose elements are used as input.</param>
