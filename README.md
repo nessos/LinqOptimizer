@@ -26,6 +26,13 @@ let query = nums
 printfn "Result: %d" <| Query.run query // compile and execute
 ```
 
+Install via NuGet
+-----------------
+```
+Install-Package LinqOptimizer.CSharp
+Install-Package LinqOptimizer.FSharp
+```
+
 Optimizations
 -----------------------
 * Lambda inlining
