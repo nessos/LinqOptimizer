@@ -56,7 +56,7 @@
             let test (xs : seq<float>) =
                 let x = xs |> PQuery.ofSeq |> PQuery.map (fun x -> x * x) |> PQuery.sum |> PQuery.run
                 let y = xs |> Seq.map (fun x -> x * x) |> Seq.sum
-                (Double.IsNaN x && Double.IsNaN y) || x = y
+                (Double.IsNaN x && Double.IsNaN y) || Math.Ceiling(x) = Math.Ceiling(y)
             Check.QuickThrowOnFailure (TestInput.RunTest<float> test)
 
         [<Test>]

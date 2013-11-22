@@ -24,6 +24,7 @@ namespace LinqOptimizer.Tests
             //var nums = Enumerable.Range(1, 1000).Select(_ => random.Next(1, 1000)).Select(x => x).ToArray();
 
 
+            
         }
 
         static void Measure(Action action)

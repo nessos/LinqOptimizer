@@ -88,7 +88,7 @@ namespace LinqOptimizer.Tests
                 var y = (from n in xs.AsParallel()
                          select n * 2).Sum();
 
-                return (Double.IsNaN(x) && Double.IsNaN(y)) || x == y;
+                return (Double.IsNaN(x) && Double.IsNaN(y)) || Math.Ceiling(x) == Math.Ceiling(y);
             }).QuickCheckThrowOnFailure();
         }
 
