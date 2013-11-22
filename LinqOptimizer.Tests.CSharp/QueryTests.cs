@@ -486,6 +486,28 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
+
+        [Test]
+        public void LinqLetTest()
+        {
+            Spec.ForAny<List<int>>(nums =>
+            {
+                var x = 
+                    (from num in nums.AsQueryExpr()
+                    let r1 = num * 2
+                    let r2 = r1 * 2
+                    select r2 * num * 2).Sum().Run();
+
+                var y =
+                    (from num in nums
+                     let r1 = num * 2
+                     let r2 = r1 * 2
+                     select r2 * num * 2).Sum();
+
+                return x == y;
+            }).QuickCheckThrowOnFailure();
+        }
+
         [Test]
         public void RangeTest()
         {
