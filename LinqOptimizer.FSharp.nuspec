@@ -1,23 +1,31 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>LinqOptimizer.CSharp</id>
+        <id>LinqOptimizer.FSharp</id>
         <version>0.3.1</version>
-        <title>LinqOptimizer.CSharp</title>
-        <authors>krontogiannis</authors>
+        <title>LinqOptimizer.FSharp</title>
+        <authors>Kostas Rontogiannis,Nick Palladinos</authors>
         <owners>krontogiannis; Nick.Palladinos</owners>
         <licenseUrl>https://github.com/palladin/LinqOptimizer/blob/master/LICENSE.md</licenseUrl>
         <projectUrl>https://github.com/palladin/LinqOptimizer</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>An automatic query optimizer for LINQ to Objects and PLINQ. LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code. The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.</description>
         <summary>An automatic query optimizer for LINQ to Objects and PLINQ.</summary>
-        <tags>C#, linq, optimization</tags>
+        <copyright>Nessos IT</copyright>
+        <tags>F# linq optimization</tags>
         <references>
             <reference file="LinqOptimizer.Base.dll" />
-            <reference file="LinqOptimizer.CSharp.dll" />
+            <reference file="LinqOptimizer.FSharp.dll" />
         </references>
     </metadata>
     <files>
-        <file src="lib\_._" target="lib\_._" />
+        <file src="lib\FSharp.Core.dll" target="lib\FSharp.Core.dll" />
+        <file src="lib\FSharp.Core.xml" target="lib\FSharp.Core.xml" />
+        <file src="lib\LinqOptimizer.Base.dll" target="lib\LinqOptimizer.Base.dll" />
+        <file src="lib\LinqOptimizer.Base.xml" target="lib\LinqOptimizer.Base.xml" />
+        <file src="lib\LinqOptimizer.Core.dll" target="lib\LinqOptimizer.Core.dll" />
+        <file src="lib\LinqOptimizer.Core.xml" target="lib\LinqOptimizer.Core.xml" />
+        <file src="lib\LinqOptimizer.FSharp.dll" target="lib\LinqOptimizer.FSharp.dll" />
+        <file src="lib\LinqOptimizer.FSharp.XML" target="lib\LinqOptimizer.FSharp.XML" />
     </files>
 </package>
