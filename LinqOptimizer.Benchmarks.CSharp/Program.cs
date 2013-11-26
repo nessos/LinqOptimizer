@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using LinqOptimizer.CSharp;
 
 namespace LinqOptimizer.Benchmarks.CSharp
 {
@@ -9,6 +11,94 @@ namespace LinqOptimizer.Benchmarks.CSharp
     {
         static void Main(string[] args)
         {
+            var v = Enumerable.Range(1, 50000000).Select(x => (double)x).ToArray();
+            Measure("Sum Linq", () => SumLinq(v),
+                    "Sum Opt",() => SumLinqOpt(v), 
+                    (x1,x2) => x1 == x2);
+
+            Measure("Sum of Squares Linq", () => SumSqLinq(v),
+                    "Sum of Squares Opt", () => SumSqLinqOpt(v),
+                    (x1, x2) => x1 == x2);
+
+            var v2 = v.Take(1000).ToArray();
+            Measure("Cartesian Linq", () => CartLinq(v,v2),
+                    "Cartesian Opt", () => CartLinqOpt(v,v2),
+                    (x1, x2) => x1 == x2);
+
+            var s = 100000;
+            Measure("GroupBy Linq", () => GroupSqLinq(s),
+                    "GroupBy Opt", () => GroupSqLinq(s),
+                    (x1, x2) => Enumerable.SequenceEqual(x1,x2));
+
+            Console.ReadKey();
+        }
+
+        static void Measure<T>(string title1, Func<T> action1, string title2, Func<T> action2, Func<T,T,bool> validate)
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+            var t1 = action1();
+            sw.Stop();
+            Console.WriteLine("\"{0}\":\t{1}",title1, sw.Elapsed);
+            sw.Restart();
+            var t2 = action2();
+            sw.Stop();
+            Console.WriteLine("\"{0}\":\t{1}", title2, sw.Elapsed);
+            Console.WriteLine("Validate : {0}", validate(t1, t2));
+            Console.WriteLine();
+        }
+
+        static double SumLinq(IEnumerable<double> values)
+        {
+            return values.Sum();
+        }
+
+        static double SumLinqOpt(IEnumerable<double> values)
+        {
+            return values.AsQueryExpr().Sum().Run();
+        }
+
+        static double SumSqLinq(IEnumerable<double> values)
+        {
+            return values.Select(x => x * x).Sum();
+        }
+
+        static double SumSqLinqOpt(IEnumerable<double> values)
+        {
+            return values.AsQueryExpr().Select(x => x * x).Sum().Run();
+        }
+
+        static double CartLinq(IEnumerable<double> dim1, IEnumerable<double> dim2)
+        {
+            return (from x in dim1
+                    from y in dim2
+                    select x * y).Sum();
+        }
+
+        static double CartLinqOpt(IEnumerable<double> dim1, IEnumerable<double> dim2)
+        {
+            return (from x in dim1.AsQueryExpr()
+                    from y in dim2
+                    select x * y).Sum().Run();
+        }
+
+        static IEnumerable<int> GroupSqLinq(int size)
+        {
+            var rnd = new Random(size);
+            return Enumerable.Range(1, size)
+                   .Select(x => 100 * rnd.NextDouble() - 50)
+                   .GroupBy(x => (int)x % 10)
+                   .Select(x => x.Count());
+        }
+
+        static IEnumerable<int> GroupLinqOpt(int size)
+        {
+            var rnd = new Random(size);
+            return Enumerable.Range(1, size).AsQueryExpr()
+                   .Select(x => 100 * rnd.NextDouble() - 50)
+                   .GroupBy(x => (int)x % 10)
+                   .Select(x => x.Count())
+                   .Run();
         }
     }
 }
