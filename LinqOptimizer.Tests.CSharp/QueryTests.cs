@@ -494,15 +494,23 @@ namespace LinqOptimizer.Tests
             {
                 var x = 
                     (from num in nums.AsQueryExpr()
-                    let r1 = num * 2
-                    let r2 = r1 * 2
-                    select r2 * num * 2).Sum().Run();
+                    let a = num * 2
+                    let c = a + 1
+                    let b = a * 2
+                    let e = b - 5
+                    let d = c * c
+                    let m = 3
+                    select a + b + c + d + e + m + num).Sum().Run();
 
-                var y =
+                var y = 
                     (from num in nums
-                     let r1 = num * 2
-                     let r2 = r1 * 2
-                     select r2 * num * 2).Sum();
+                     let a = num * 2
+                     let c = a + 1
+                     let b = a * 2
+                     let e = b - 5
+                     let d = c * c
+                     let m = 3
+                     select a + b + c + d + e + m + num).Sum();
 
                 return x == y;
             }).QuickCheckThrowOnFailure();

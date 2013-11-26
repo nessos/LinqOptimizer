@@ -281,7 +281,7 @@ namespace LinqOptimizer.Tests
                      select r2 * num * 2).Sum().Run();
 
                 var y =
-                    (from num in nums
+                    (from num in nums.AsParallel()
                      let r1 = num * 2
                      let r2 = r1 * 2
                      select r2 * num * 2).Sum();

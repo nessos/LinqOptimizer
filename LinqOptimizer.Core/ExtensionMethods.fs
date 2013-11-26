@@ -29,6 +29,10 @@ namespace LinqOptimizer.Core
 
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : MethodInfo * obj [] =
             let expr = compile query
+            
+            let eraser = AnonymousTypeEraser()
+            let expr = eraser.Visit(expr)
+            
             let csv = ConstantLiftingTransformer()
             let expr' = csv.Visit(expr)
             let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
