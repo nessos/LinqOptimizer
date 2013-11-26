@@ -45,14 +45,14 @@
                         None
 
             let mappings = Dictionary<ParameterExpression, ParameterExpression>()
-            let mappings' = List<ParameterExpression>()
+            let existing = List<ParameterExpression>()
 
             override this.VisitMember(expr : MemberExpression) =
                 match expr.Member.MemberType with
                 | MemberTypes.Property when isAnonymousType expr.Member.DeclaringType ->
                     let p = mappings.Values.SingleOrDefault(fun p -> p.Name = expr.Member.Name) //Expression.Parameter(expr.Type, expr.Member.Name)
                     if p = null then 
-                        mappings'.Single(fun p -> p.Name = expr.Member.Name)  :> _
+                        existing.Single(fun p -> p.Name = expr.Member.Name)  :> _
                     else 
                         p :> _
                 | _ -> 
@@ -61,17 +61,14 @@
             override this.VisitBinary(expr : BinaryExpression) =
                 match expr with
                 | AnonymousTypeAssign(left, right) ->
-                    //System.Diagnostics.Debugger.Break()
-
                     let first = right.Arguments.First() :?> ParameterExpression
-                    if not <| isTransparentIdentifier first then mappings'.Add(first)
+                    if not <| isTransparentIdentifier first then existing.Add(first)
 
                     let right' = this.Visit(right.Arguments.Last())
                     let left' = Expression.Parameter(right'.Type, right.Members.Last().Name)
                     mappings.Add(left, left')
                     Expression.Assign(left', right') :> _
                 | _ -> 
-                   //Expression.MakeBinary(expr.NodeType, this.Visit(expr.Left), this.Visit(expr.Right)) :> _
                    expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _
 
             override this.VisitBlock(expr : BlockExpression) =
