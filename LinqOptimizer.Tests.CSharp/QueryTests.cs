@@ -368,41 +368,45 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
-        //[Test]
-        //public void ThenBy()
-        //{
-        //    Spec.ForAny<DateTime[]>(ds =>
-        //    {
-        //        var x = (ds.AsQueryExpr()
-        //                 .OrderBy(d => d.Year)
-        //                 .ThenBy(d => d.Month)
-        //                 .Select(d => d.ToString())).Run();
+        [Test]
+        public void ThenBy()
+        {
+            Spec.ForAny<DateTime[]>(ds =>
+            {
+                var x = (ds.AsQueryExpr()
+                         .OrderBy(d => d.Year)
+                         .ThenBy(d => d.Month)
+                         .ThenBy(d => d.Day)
+                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
 
-        //        var y = ds.OrderBy(d => d.Year)
-        //                  .ThenBy(d => d.Month)
-        //                  .Select(d => d.ToString());
+                var y = ds.OrderBy(d => d.Year)
+                          .ThenBy(d => d.Month)
+                          .ThenBy(d => d.Day)
+                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
 
-        //        return x.SequenceEqual(y);
-        //    }).QuickCheckThrowOnFailure();
-        //}
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
 
-        //[Test]
-        //public void ThenByDescending()
-        //{
-        //    Spec.ForAny<DateTime[]>(ds =>
-        //    {
-        //        var x = (ds.AsQueryExpr()
-        //                 .OrderByDescending(d => d.Year)
-        //                 .ThenByDescending(d => d.Month)
-        //                 .Select(d => d.ToString())).Run();
+        [Test]
+        public void ThenByDescending()
+        {
+            Spec.ForAny<DateTime[]>(ds =>
+            {
+                var x = (ds.AsQueryExpr()
+                         .OrderByDescending(d => d.Year)
+                         .ThenBy(d => d.Month)
+                         .ThenByDescending(d => d.Day)
+                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
 
-        //        var y = ds.OrderByDescending(d => d.Year)
-        //                  .ThenByDescending(d => d.Month)
-        //                  .Select(d => d.ToString());
+                var y = ds.OrderByDescending(d => d.Year)
+                          .ThenBy(d => d.Month)
+                          .ThenByDescending(d => d.Day)
+                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
 
-        //        return x.SequenceEqual(y);
-        //    }).QuickCheckThrowOnFailure();
-        //}
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
 
         [Test]
         public void Count()
@@ -579,6 +583,46 @@ namespace LinqOptimizer.Tests
         public void NestedRepeatInvalidArgTest()
         {
             Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
+        }
+
+        [Test]
+        public void ComprehensionNestedTest()
+        {
+            Spec.ForAny<int>(max =>
+            {
+                var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         from c in Enumerable.Range(b, max + 1 - b)
+                         where a * a + b * b == c * c
+                         select Tuple.Create(a, b, c)).ToArray().Run();
+
+                var y = (from a in Enumerable.Range(1, max + 1)
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         from c in Enumerable.Range(b, max + 1 - b)
+                         where a * a + b * b == c * c
+                         select Tuple.Create(a, b, c)).ToArray();
+
+                return Enumerable.SequenceEqual(x, y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void ComprehensionNestedTestTypeEraser()
+        {
+            Spec.ForAny<int>(max =>
+            {
+                var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         where a * a + b * b == b
+                         select Tuple.Create(a, b)).ToArray().Run();
+
+                var y = (from a in Enumerable.Range(1, max + 1)
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         where a * a + b * b == b
+                         select Tuple.Create(a, b)).ToArray();
+
+                return Enumerable.SequenceEqual(x, y);
+            }).QuickCheckThrowOnFailure();
         }
 
     }

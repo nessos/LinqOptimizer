@@ -290,5 +290,47 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
+        [Test]
+        public void ThenBy()
+        {
+            Spec.ForAny<DateTime[]>(ds =>
+            {
+                var x = (ds.AsParallelQueryExpr()
+                         .OrderBy(d => d.Year)
+                         .ThenBy(d => d.Month)
+                         .ThenBy(d => d.Day)
+                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
+
+                var y = ds.AsParallel()
+                          .OrderBy(d => d.Year)
+                          .ThenBy(d => d.Month)
+                          .ThenBy(d => d.Day)
+                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
+
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void ThenByDescending()
+        {
+            Spec.ForAny<DateTime[]>(ds =>
+            {
+                var x = (ds.AsParallelQueryExpr()
+                         .OrderByDescending(d => d.Year)
+                         .ThenBy(d => d.Month)
+                         .ThenByDescending(d => d.Day)
+                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
+
+                var y = ds.AsParallel()
+                          .OrderByDescending(d => d.Year)
+                          .ThenBy(d => d.Month)
+                          .ThenByDescending(d => d.Day)
+                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
+
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
+
     }
 }

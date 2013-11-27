@@ -290,15 +290,30 @@ namespace LinqOptimizer.CSharp
             return new QueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
         }
 
-        //public static IQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
-        //{
-        //    throw new NotImplementedException();
-        //    //return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
-        //}
-        //public static IQueryExpr<IOrderedEnumerable<T>> ThenByDescending<T, Key>(this IQueryExpr<IEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
-        //{
-        //    throw new NotImplementedException();
-        //    //return new QueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
-        //}
+        /// <summary>
+        /// Performs a subsequent ordering of the elements of a sequence in ascending order according to a key.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose values to order.</param>
+        /// <param name="keySelector">A function to extract a key from an element.</param>
+        /// <returns>A query whose elements are sorted according to a key.</returns>
+        public static IQueryExpr<IOrderedEnumerable<TSource>> ThenBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        {
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+        }
+
+        /// <summary>
+        /// Performs a subsequent ordering of the elements of a sequence in descending order according to a key.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose values to order.</param>
+        /// <param name="keySelector">A function to extract a key from an element.</param>
+        /// <returns>A query whose elements are sorted according to a key.</returns>
+        public static IQueryExpr<IOrderedEnumerable<TSource>> ThenByDescending<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        {
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+        }
     }
 }
