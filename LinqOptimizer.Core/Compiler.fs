@@ -235,8 +235,8 @@
                                                             match methodInfo with
                                                             | MethodName "GroupBy" [|_; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
-                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
-                let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
+                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
+                let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type|]
                 let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                 let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context optimize
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
@@ -397,8 +397,8 @@
                                                                 match methodInfo with
                                                                 | MethodName "ParallelGroupBy" [|_; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|paramExpr.Type; bodyExpr.Type|])
-                    let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|]
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type |])
+                    let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [| bodyExpr.Type; paramExpr.Type|]
                     let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                     let expr' = compile (Source (groupByCallExpr, groupingType)) context
                     block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']

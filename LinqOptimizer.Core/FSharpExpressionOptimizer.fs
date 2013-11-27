@@ -57,7 +57,7 @@
                 Count (toQueryExpr expr')
 
             | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
-                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type |])
                 
                 let grp = var "___grp___" query'.Type
                 
@@ -107,7 +107,7 @@
                 Count (toQueryExpr expr')
 
             | PipedMethodCall1(expr', MethodName "GroupBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ Lambda ([paramExpr],bodyExpr) as f' ]))) ->
-                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|paramExpr.Type; bodyExpr.Type|])
+                let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type |])
                 
                 let grp = var "___grp___" query'.Type
                 
@@ -125,8 +125,12 @@
             | NotNull expr -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType())
+                elif expr.Type.IsGenericType && expr.Type.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
+                    Source(expr, expr.Type.GetGenericArguments().[0])
+                elif expr.Type.IsGenericType then
+                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0])
                 else
-                    Source (expr, expr.Type.GetGenericArguments().[0])
+                    failwith "Not supported source %A" expr.Type
             | _ ->
                 invalidArg "expr" "Cannot extract QueryExpr from null Expression"
 
