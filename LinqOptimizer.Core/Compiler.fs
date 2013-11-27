@@ -32,8 +32,20 @@
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
                                 VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
                 context
-            
-        let collectKeyValueArrays (listExpr : Expression) (paramExpr : ParameterExpression) (bodyExpr : Expression) = 
+        
+        type KeyValueCollectRecord = { KeyVarArrayExpr : ParameterExpression; 
+                                       ValueVarArrayExpr : ParameterExpression;
+                                       LoopExpr : Expression; KeyType : Type  }
+        let collectKeyValueArrays (listExpr : Expression) (lambdaExprs : LambdaExpression list) : KeyValueCollectRecord = 
+                let valueType, keyType = 
+                    match lambdaExprs with
+                    | [Lambda ([paramExpr], bodyExpr)] -> paramExpr.Type, bodyExpr.Type
+                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2)] -> 
+                        paramExpr1.Type, typedefof<Keys<int, int>>.MakeGenericType [|bodyExpr1.Type; bodyExpr2.Type|]
+                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr3], bodyExpr3)] -> 
+                        paramExpr1.Type, typedefof<Keys<int, int, int>>.MakeGenericType [|bodyExpr1.Type; bodyExpr2.Type; bodyExpr3.Type|]
+                    | _ -> failwith "Invalid state, keys %A" lambdaExprs
+
                 let loopBreak = breakLabel()
                 let loopContinue = continueLabel()
                 let listVarExpr = var "___listVar___" listExpr.Type
@@ -43,18 +55,33 @@
                 let lengthExpr = call (listVarExpr.Type.GetMethod("get_Count")) listVarExpr []
                 let getItemExpr = call (listVarExpr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
                 
-                let keyVarArrayExpr = var "___keys___" (bodyExpr.Type.MakeArrayType())
-                let valueVarArrayExpr = var "___values___" (paramExpr.Type.MakeArrayType())
-                let initKeyArrayExpr = assign keyVarArrayExpr (arrayNew bodyExpr.Type lengthExpr)
-                let initValueArrayExpr = assign valueVarArrayExpr (arrayNew paramExpr.Type lengthExpr)
+                let keyVarArrayExpr = var "___keys___" (keyType.MakeArrayType())
+                let valueVarArrayExpr = var "___values___" (valueType.MakeArrayType())
+                let initKeyArrayExpr = assign keyVarArrayExpr (arrayNew keyType lengthExpr)
+                let initValueArrayExpr = assign valueVarArrayExpr (arrayNew valueType lengthExpr)
                 let accessKeyArrayExpr = arrayAccess keyVarArrayExpr indexVarExpr 
                 let accessValueArrayExpr = arrayAccess valueVarArrayExpr indexVarExpr 
-                let exprs' = [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
+  
+                // collect keys and values assignments
+                let exprs' = 
+                    match lambdaExprs with 
+                    | [Lambda ([paramExpr], bodyExpr)] -> [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
+                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2)] ->
+                        let keysExpr = Expression.New(keyType.GetConstructors().[0], [bodyExpr1; bodyExpr2])
+                        [assign paramExpr1 getItemExpr; assign paramExpr2 getItemExpr; 
+                            assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExpr1] 
+                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr3], bodyExpr3)] ->
+                        let keysExpr = Expression.New(keyType.GetConstructors().[0], [bodyExpr1; bodyExpr2; bodyExpr3])
+                        [assign paramExpr1 getItemExpr; assign paramExpr2 getItemExpr; assign paramExpr3 getItemExpr;
+                            assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExpr1] 
+                    | _ ->failwith "Invalid state, keys %A" lambdaExprs
+
                 let checkBoundExpr = equal indexVarExpr lengthExpr 
                 let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 
-                let loopExpr = block [paramExpr; listVarExpr; indexVarExpr] [listAssignExpr; initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; 
+                let loopExpr = block ((lambdaExprs |> List.map (fun lambdaExpr -> lambdaExpr.Parameters.[0])) @ [listVarExpr; indexVarExpr]) 
+                                    [listAssignExpr; initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; 
                                                     loop (block [] [addAssign indexVarExpr (constant 1); brachExpr]) loopBreak loopContinue]
-                (keyVarArrayExpr, valueVarArrayExpr, loopExpr)
+                { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr; LoopExpr = loopExpr; KeyType = keyType }
             
         let rec compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) (optimize : Expression -> Expression) : Expression =
             match queryExpr with
@@ -200,7 +227,8 @@
                                     VarExprs = [finalVarExpr]; Exprs = [] }
                 let expr = compileToSeqPipeline queryExpr' context' optimize
                 // Generate loop to extract keys
-                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
+                let { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr;
+                      LoopExpr = loopExpr } = collectKeyValueArrays accVarExpr [lambda [|paramExpr|] bodyExpr]
                 // generare grouping
                 let groupByMethodInfo = typeof<Grouping>.GetMethods()
                                             |> Array.find (fun methodInfo -> 
@@ -212,8 +240,8 @@
                 let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                 let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context optimize
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
-            | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExprs, queryExpr') ->
-                let bodyExpr = optimize bodyExpr
+            | OrderBy (keySelectorOrderPairs, queryExpr') ->
+                let keySelectorOrderPairs' = keySelectorOrderPairs |> List.map (fun (lambdaExpr, order) -> (lambda (lambdaExpr.Parameters.ToArray()) (optimize lambdaExpr.Body)), order)
                 let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
@@ -222,15 +250,16 @@
                                     VarExprs = [finalVarExpr]; Exprs = [] }
                 let expr = compileToSeqPipeline queryExpr' context' optimize
                 // Generate loop to extract keys
-                let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays accVarExpr paramExpr bodyExpr
+                let { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr;
+                      LoopExpr = loopExpr; KeyType = keyType } = collectKeyValueArrays accVarExpr (keySelectorOrderPairs' |> List.map fst)
                 // generate sort 
                 let sortMethodInfo = typeof<Sort>.GetMethods()
                                             |> Array.find (fun methodInfo -> 
                                                             match methodInfo with
                                                             | MethodName "SequentialSort" [|_; _; _|] -> true
                                                             | _ -> false) // TODO: reflection type checks
-                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
-                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
+                                            |> (fun methodInfo -> methodInfo.MakeGenericMethod [|keyType; queryExpr'.Type|])
+                let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant Order.Ascending]
                 let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, queryExpr'.Type)) context optimize
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; expr']
             | _ -> failwithf "Invalid state %A" queryExpr 
@@ -361,7 +390,8 @@
                     let bodyExpr = optimize bodyExpr
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
-                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
+                    let { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr;
+                          LoopExpr = loopExpr } = collectKeyValueArrays expr [lambda [|paramExpr|] bodyExpr]
                     let groupByMethodInfo = typeof<Grouping>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
@@ -372,19 +402,20 @@
                     let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
                     let expr' = compile (Source (groupByCallExpr, groupingType)) context
                     block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']
-                | OrderBy ((Lambda ([paramExpr], bodyExpr), order) :: _ as lambdaExpr, queryExpr') ->
-                    let bodyExpr = optimize bodyExpr
+                | OrderBy (keySelectorOrderPairs, queryExpr') ->
+                    let keySelectorOrderPairs' = keySelectorOrderPairs |> List.map (fun (lambdaExpr, order) -> (lambda (lambdaExpr.Parameters.ToArray()) (optimize lambdaExpr.Body)), order)
                     let context' = toParallelListContext queryExpr'
                     let expr = compile queryExpr' context'
-                    let (keyVarArrayExpr, valueVarArrayExpr, loopExpr) = collectKeyValueArrays expr paramExpr bodyExpr
+                    let { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr;
+                          LoopExpr = loopExpr; KeyType = keyType } = collectKeyValueArrays expr (keySelectorOrderPairs' |> List.map fst)
                     // generate sort 
                     let sortMethodInfo = typeof<Sort>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
                                                                 | MethodName "ParallelSort" [|_; _; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
-                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
-                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant order]
+                                                |> (fun methodInfo -> methodInfo.MakeGenericMethod [|keyType; queryExpr'.Type|])
+                    let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant Order.Ascending]
                     let expr' = compile (Source (valueVarArrayExpr, queryExpr'.Type)) context
                     block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; expr']
                 | _ -> failwithf "Invalid state %A" queryExpr 

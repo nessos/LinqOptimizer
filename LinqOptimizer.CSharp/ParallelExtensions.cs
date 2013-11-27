@@ -145,9 +145,9 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A parallel query whose elements are sorted according to a key.</returns>
-        public static IParallelQueryExpr<IEnumerable<TSource>> OrderBy<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        public static IParallelQueryExpr<IOrderedEnumerable<TSource>> OrderBy<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -158,9 +158,9 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A parallel query whose elements are sorted in descending according to a key.</returns>
-        public static IParallelQueryExpr<IEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        public static IParallelQueryExpr<IOrderedEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
         /// <summary>
@@ -196,16 +196,30 @@ namespace LinqOptimizer.CSharp
             return new ParallelQueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
         }
 
-        //public static IParallelQueryExpr<IOrderedEnumerable<T>> ThenBy<T, Key>(this IParallelQueryExpr<IOrderedEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
-        //{
-        //    throw new NotImplementedException();
-        //    //return new ParallelQueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr, typeof(T)));
-        //}
+        /// <summary>
+        /// Performs a subsequent ordering of the elements of a sequence in parallel and in ascending order according to a key.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose values to order.</param>
+        /// <param name="keySelector">A function to extract a key from an element.</param>
+        /// <returns>A parallel query whose elements are sorted according to a key.</returns>
+        public static IParallelQueryExpr<IOrderedEnumerable<TSource>> ThenBy<TSource, TKey>(this IParallelQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        {
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+        }
 
-        //public static IParallelQueryExpr<IOrderedEnumerable<T>> ThenByDescending<T, Key>(this IParallelQueryExpr<IOrderedEnumerable<T>> query, Expression<Func<T, Key>> keySelector)
-        //{
-        //    throw new NotImplementedException();
-        //    //return new ParallelQueryExpr<IOrderedEnumerable<T>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr, typeof(T)));
-        //}
+        /// <summary>
+        /// Performs a subsequent ordering of the elements of a sequence in parallel and in descending order according to a key.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <typeparam name="TKey">The type of the key returned by keySelector.</typeparam>
+        /// <param name="query">A query whose values to order.</param>
+        /// <param name="keySelector">A function to extract a key from an element.</param>
+        /// <returns>A parallel query whose elements are sorted according to a key.</returns>
+        public static IParallelQueryExpr<IOrderedEnumerable<TSource>> ThenByDescending<TSource, TKey>(this IParallelQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        {
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+        }
     }
 }

@@ -25,7 +25,7 @@ namespace LinqOptimizer.Core
 
         let var name (t : Type) = Expression.Parameter(t, name)
         let lambda paramExprs bodyExpr = 
-            Expression.Lambda(bodyExpr, paramExprs) :> Expression
+            Expression.Lambda(bodyExpr, paramExprs) 
 
         let labelTarget (name : string) = Expression.Label(name) 
         let label (labelTarget : LabelTarget) = Expression.Label(labelTarget) 
@@ -77,6 +77,7 @@ namespace LinqOptimizer.Core
                 Some (Seq.toList lambdaExpr.Parameters, lambdaExpr.Body)
             else None
 
+           
         let (|MethodCall|_|) (expr : Expression) =
             if expr <> null && (expr.NodeType = ExpressionType.Call && (expr :? MethodCallExpression)) 
                 then 
