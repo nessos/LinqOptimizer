@@ -86,10 +86,10 @@
             let test (xs : seq<int>) =
                 let x = xs |> PQuery.ofSeq 
                            |> PQuery.collect (fun n -> xs |> Seq.groupBy (fun x -> x))
-                           |> PQuery.map (fun (_,x)  -> x |> Seq.sum)
+                           |> PQuery.map (fun (a,x)  -> x |> Seq.sum)
                            |> PQuery.run
                 let y = xs |> Seq.collect (fun n ->  xs |> Seq.groupBy (fun x -> x))
-                           |> Seq.map (fun (_,x)  -> x |> Seq.sum)
+                           |> Seq.map (fun (a,x)  -> x |> Seq.sum)
                 Seq.sum x = Seq.sum y
             Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
 
@@ -97,11 +97,11 @@
         member __.``groupBy`` () =
             let test (xs : seq<int>) =
                 let x = xs |> PQuery.ofSeq 
-                           |> PQuery.groupBy (fun x -> x)
-                           |> PQuery.map (fun (_,x) -> Seq.sum x)
+                           |> PQuery.groupBy (fun x -> string x)
+                           |> PQuery.map (fun (a,x) -> Seq.sum x)
                            |> PQuery.run
-                let y = xs |> Seq.groupBy (fun x -> x)
-                           |> Seq.map (fun (_,x) -> Seq.sum x)
+                let y = xs |> Seq.groupBy (fun x -> string x)
+                           |> Seq.map (fun (a,x) -> Seq.sum x)
                        
                 Seq.sum x = Seq.sum y
             Check.QuickThrowOnFailure (TestInput.RunTest test)

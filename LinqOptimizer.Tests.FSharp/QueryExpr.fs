@@ -171,10 +171,10 @@
         member __.``groupBy`` () =
             let test (xs : seq<int>) =
                 let x = xs |> Query.ofSeq 
-                           |> Query.groupBy (fun x -> x)
+                           |> Query.groupBy (fun x -> string x)
                            |> Query.map (fun (_,x) -> Seq.sum x)
                            |> Query.run
-                let y = xs |> Seq.groupBy (fun x -> x)
+                let y = xs |> Seq.groupBy (fun x -> string x)
                            |> Seq.map (fun (_,x) -> Seq.sum x)
                        
                 equal x y
