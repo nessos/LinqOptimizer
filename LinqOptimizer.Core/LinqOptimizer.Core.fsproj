@@ -44,7 +44,8 @@
     <Compile Include="ExpressionHelpers.fs" />
     <Compile Include="ReflectionHelpers.fs" />
     <Compile Include="ExpressionTransformer.fs" />
-    <Compile Include="ConstantLifting.fs" />
+    <Compile Include="ConstantLiftingTransformer.fs" />
+    <Compile Include="AnonymousTypeEraser.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionOptimizer.fs" />
     <Compile Include="FSharpExpressionOptimizer.fs" />

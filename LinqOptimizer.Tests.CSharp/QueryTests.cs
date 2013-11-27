@@ -498,15 +498,23 @@ namespace LinqOptimizer.Tests
             {
                 var x = 
                     (from num in nums.AsQueryExpr()
-                    let r1 = num * 2
-                    let r2 = r1 * 2
-                    select r2 * num * 2).Sum().Run();
+                    let a = num * 2
+                    let c = a + 1
+                    let b = a * 2
+                    let e = b - 5
+                    let d = c * c
+                    let m = 3
+                    select a + b + c + d + e + m + num).Sum().Run();
 
-                var y =
+                var y = 
                     (from num in nums
-                     let r1 = num * 2
-                     let r2 = r1 * 2
-                     select r2 * num * 2).Sum();
+                     let a = num * 2
+                     let c = a + 1
+                     let b = a * 2
+                     let e = b - 5
+                     let d = c * c
+                     let m = 3
+                     select a + b + c + d + e + m + num).Sum();
 
                 return x == y;
             }).QuickCheckThrowOnFailure();
@@ -575,6 +583,46 @@ namespace LinqOptimizer.Tests
         public void NestedRepeatInvalidArgTest()
         {
             Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
+        }
+
+        [Test]
+        public void ComprehensionNestedTest()
+        {
+            Spec.ForAny<int>(max =>
+            {
+                var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         from c in Enumerable.Range(b, max + 1 - b)
+                         where a * a + b * b == c * c
+                         select Tuple.Create(a, b, c)).ToArray().Run();
+
+                var y = (from a in Enumerable.Range(1, max + 1)
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         from c in Enumerable.Range(b, max + 1 - b)
+                         where a * a + b * b == c * c
+                         select Tuple.Create(a, b, c)).ToArray();
+
+                return Enumerable.SequenceEqual(x, y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void ComprehensionNestedTestTypeEraser()
+        {
+            Spec.ForAny<int>(max =>
+            {
+                var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         where a * a + b * b == b
+                         select Tuple.Create(a, b)).ToArray().Run();
+
+                var y = (from a in Enumerable.Range(1, max + 1)
+                         from b in Enumerable.Range(a, max + 1 - a)
+                         where a * a + b * b == b
+                         select Tuple.Create(a, b)).ToArray();
+
+                return Enumerable.SequenceEqual(x, y);
+            }).QuickCheckThrowOnFailure();
         }
 
     }
