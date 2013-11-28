@@ -46,27 +46,12 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            var tests = new QueryTests();
-            tests.NestedSelectTest();
-
-            var size = 10;
-            var rnd = new Random(size);
-            var foo= Enumerable.Range(1, size).AsQueryExpr()
-                   .Select(x => 100 * rnd.NextDouble() - 50)
-                   .GroupBy(x => (int)x % 10)
-                   .Select(x => x.Count())
-                   .ToArray()
-                   .Run();
-
-            Random random = new Random();
-            var nums = Enumerable.Range(1, 1000).Select(_ => random.Next(1, 1000)).Select(x => x).ToArray();
-            //var pairs = nums.Select(x => new KeyValue<int, int>(x, x)).ToArray();
-
-            //var g = nums.GroupBy(x => x).First();
-
-            //var test = g.GetEnumerator();
-            //var _test = g.GetEnumerator();
-            //var b = test.GetType().IsClass;
+            int max = 10;
+            (from a in Enumerable.Range(1, max).AsQueryExpr()
+             from b in Enumerable.Range(2, max)
+             from c in Enumerable.Range(3, max)
+             where a + b == c
+             select a + b + c).Run();
 
         }
 
