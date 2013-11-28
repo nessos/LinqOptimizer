@@ -590,16 +590,18 @@ namespace LinqOptimizer.Tests
         {
             Spec.ForAny<int>(max =>
             {
-                var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
-                         from b in Enumerable.Range(a, max + 1 - a)
-                         from c in Enumerable.Range(b, max + 1 - b)
-                         where a * a + b * b == c * c
+                if (max < 0) return true;
+
+                var x = (from a in Enumerable.Range(1, max).AsQueryExpr()
+                         from b in Enumerable.Range(1, max)
+                         from c in Enumerable.Range(1, max)
+                         where a + b == c 
                          select Tuple.Create(a, b, c)).ToArray().Run();
 
-                var y = (from a in Enumerable.Range(1, max + 1)
-                         from b in Enumerable.Range(a, max + 1 - a)
-                         from c in Enumerable.Range(b, max + 1 - b)
-                         where a * a + b * b == c * c
+                var y = (from a in Enumerable.Range(1, max)
+                         from b in Enumerable.Range(1, max)
+                         from c in Enumerable.Range(1, max)
+                         where a + b == c 
                          select Tuple.Create(a, b, c)).ToArray();
 
                 return Enumerable.SequenceEqual(x, y);
@@ -611,6 +613,8 @@ namespace LinqOptimizer.Tests
         {
             Spec.ForAny<int>(max =>
             {
+                if (max < 0) return true;
+
                 var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
                          from b in Enumerable.Range(a, max + 1 - a)
                          where a * a + b * b == b

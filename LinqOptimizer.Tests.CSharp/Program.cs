@@ -47,11 +47,12 @@ namespace LinqOptimizer.Tests
         {
 
             int max = 10;
-            (from a in Enumerable.Range(1, max).AsQueryExpr()
-             from b in Enumerable.Range(2, max)
-             from c in Enumerable.Range(3, max)
-             where a + b == c
-             select a + b + c).Run();
+            var x = 
+                (from a in Enumerable.Range(1, max).AsQueryExpr()
+                 from b in Enumerable.Range(1, max)
+                 from c in Enumerable.Range(1, max)
+                 where a + b == c
+                 select a + b + c).Run();
 
         }
 
