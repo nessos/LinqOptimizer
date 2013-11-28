@@ -27,6 +27,7 @@ namespace LinqOptimizer.Core
             | _ -> 
                 Source (constant enumerable, ty)
 
+#if CORE_COMPILETOMETHOD
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : MethodInfo * obj [] =
             let expr = compile query
             
@@ -56,3 +57,19 @@ namespace LinqOptimizer.Core
         static member CompileToParallel<'T>(queryExpr : QueryExpr,  optimize : Func<Expression,Expression>) : Func<'T> =
             let mi, objs = CoreHelpers.Compile(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
             Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
+#else
+        static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
+            eprintfn "Warning : Compiling without CompileToMethod. Possible degradation of performance."
+            let expr = Compiler.compileToSequential queryExpr optimize.Invoke
+            Func<'T>(fun () -> Expression.Lambda(expr).Compile().DynamicInvoke() :?> 'T)
+
+        static member Compile(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Action =
+            eprintfn "Warning : Compiling without CompileToMethod. Possible degradation of performance."
+            let expr = Compiler.compileToSequential queryExpr optimize.Invoke
+            Action(fun () -> Expression.Lambda(expr).Compile().DynamicInvoke() :?> unit)
+
+        static member CompileToParallel<'T>(queryExpr : QueryExpr,  optimize : Func<Expression,Expression>) : Func<'T> =
+            eprintfn "Warning : Compiling without CompileToMethod. Possible degradation of performance."
+            let expr = Compiler.compileToParallel queryExpr optimize.Invoke
+            Func<'T>(fun () -> Expression.Lambda(expr).Compile().DynamicInvoke() :?> 'T)
+#endif
