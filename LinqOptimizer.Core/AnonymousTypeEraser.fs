@@ -55,6 +55,7 @@
                 else
                     None
 
+            let generated = sprintf "___%s___"
 
             let mappings = Dictionary<ParameterExpression, ParameterExpression>()
             let existing = List<ParameterExpression>()
@@ -63,9 +64,9 @@
             override this.VisitMember(expr : MemberExpression) =
                 match expr.Member.MemberType with
                 | MemberTypes.Property when isAnonymousType expr.Member.DeclaringType ->
-                    let p = mappings.Values.SingleOrDefault(fun p -> p.Name = expr.Member.Name) //Expression.Parameter(expr.Type, expr.Member.Name)
+                    let p = mappings.Values.SingleOrDefault(fun p -> p.Name = generated expr.Member.Name) //Expression.Parameter(expr.Type, expr.Member.Name)
                     if p = null then 
-                        existing.Single(fun p -> p.Name = expr.Member.Name)  :> _
+                        existing.Single(fun p -> p.Name =  expr.Member.Name)  :> _
                     else 
                         p :> _
                 | _ -> 
@@ -78,7 +79,7 @@
                     if not <| isTransparentIdentifier first then existing.Add(first)
 
                     let right' = this.Visit(right.Arguments.Last())
-                    let left' = Expression.Parameter(right'.Type, right.Members.Last().Name)
+                    let left' = Expression.Parameter(right'.Type, generated(right.Members.Last().Name))
                     mappings.Add(left, left')
                     Expression.Assign(left', right') :> _
                 | TransparentIdentifierIdentityAssignment(ti1, ti2) ->
