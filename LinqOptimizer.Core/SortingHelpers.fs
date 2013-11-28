@@ -9,18 +9,19 @@
    
     type Sort =
         
-        static member SequentialSort(keys : 'Key[], values : 'Value[], order : Order) = 
+        static member SequentialSort(keys : 'Key[], values : 'Value[], orders : Order[]) = 
             Array.Sort(keys, values)
-            match order with
-            | Descending -> 
-                Array.Reverse(values)
-            | _ -> ()
+            if orders.Length = 1 then
+                match orders.[0] with
+                | Descending -> 
+                        Array.Reverse(values)
+                | _ -> ()
 
-        static member ParallelSort(keys : 'Key[], values : 'Value[], order : Order) = 
-            Sort.ParallelSort(keys, values, 0, keys.Length - 1, order)
+        static member ParallelSort(keys : 'Key[], values : 'Value[], orders : Order[]) = 
+            Sort.ParallelSort(keys, values, 0, keys.Length - 1, orders)
 
 
-        static member ParallelSort<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], values : 'Value[], left : int, right : int, order : Order) = 
+        static member ParallelSort<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], values : 'Value[], left : int, right : int, orders : Order[]) = 
             let swap (arr : 'T[]) i j =
                 let tmp = arr.[i]
                 arr.[i] <- arr.[j]
@@ -49,21 +50,23 @@
             
                 if right - left < 2048 then
                     Array.Sort(keys, values, left, (right - left) + 1)
-                    match order with
-                    | Descending -> 
-                        Array.Reverse(values)
-                    | _ -> ()
+                    if orders.Length = 1 then
+                        match orders.[0] with
+                        | Descending -> 
+                            Array.Reverse(values)
+                        | _ -> ()
                 else
                     let pivot = partition keys values left right
-                    Parallel.Invoke([| Action(fun () -> Sort.ParallelSort(keys, values, left, pivot - 1, order)); 
-                                       Action(fun () -> Sort.ParallelSort(keys, values, pivot + 1, right, order)) |])
+                    Parallel.Invoke([| Action(fun () -> Sort.ParallelSort(keys, values, left, pivot - 1, orders)); 
+                                       Action(fun () -> Sort.ParallelSort(keys, values, pivot + 1, right, orders)) |])
         
 
-    // Composite keys for sorting
+    // Composite keys for sorting, used only for code generation
     [<Struct>]
     [<CustomComparison>]
     [<CustomEquality>]
-    type Keys<'T1, 'T2 when 'T1 :> IComparable<'T1> and 'T2 :> IComparable<'T2>>(t1 : 'T1, t2 : 'T2) =
+    type Keys<'T1, 'T2 when 'T1 :> IComparable<'T1> and 'T2 :> IComparable<'T2>>
+        (t1 : 'T1, t2 : 'T2, o1 : Order, o2 : Order) =
         member self.T1 = t1
         member self.T2 = t2
 
@@ -77,9 +80,15 @@
             member self.CompareTo(keys : Keys<'T1, 'T2>) =
                 let cmpt1 = t1.CompareTo(keys.T1)
                 if cmpt1 = 0 then
-                    t2.CompareTo(keys.T2)
+                    if o2 = Order.Ascending then
+                        t2.CompareTo(keys.T2)
+                    else
+                        -t2.CompareTo(keys.T2)
                 else
-                    cmpt1
+                    if o1 = Order.Ascending then
+                        cmpt1
+                    else
+                        -cmpt1
 
         interface IComparable with
             member self.CompareTo(_) =
@@ -92,7 +101,7 @@
     type Keys<'T1, 'T2, 'T3 when 'T1 :> IComparable<'T1> and 
                                  'T2 :> IComparable<'T2> and
                                  'T3 :> IComparable<'T3>> 
-                                 (t1 : 'T1, t2 : 'T2, t3 : 'T3) =
+                                 (t1 : 'T1, t2 : 'T2, t3 : 'T3, o1 : Order, o2 : Order, o3 : Order) =
         member self.T1 = t1
         member self.T2 = t2
         member self.T3 = t3
@@ -109,11 +118,20 @@
                 if cmpt1 = 0 then
                     let cmpt2 = t2.CompareTo(keys.T2)
                     if cmpt2 = 0 then
-                        t3.CompareTo(keys.T3)
+                        if o3 = Order.Ascending then
+                            t3.CompareTo(keys.T3)
+                        else
+                            -t3.CompareTo(keys.T3)
                     else
-                        cmpt2 
+                        if o2 = Order.Ascending then
+                            cmpt2 
+                        else
+                            -cmpt2 
                 else
-                    cmpt1
+                    if o1 = Order.Ascending then
+                        cmpt1
+                    else
+                        -cmpt1
 
         interface IComparable with
             member self.CompareTo(_) =

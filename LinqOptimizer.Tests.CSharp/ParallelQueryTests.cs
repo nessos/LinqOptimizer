@@ -170,12 +170,12 @@ namespace LinqOptimizer.Tests
             Spec.ForAny<int[]>(xs =>
             {
                 var x = (from num in xs.AsParallelQueryExpr()
-                         group num by num into g
+                         group num by num.ToString() into g
                          select g.Count()).Sum()
                         .Run();
 
                 var y = (from num in xs.AsParallel()
-                         group num by num into g
+                         group num by num.ToString() into g
                          select g.Count()).Sum();
 
                 return x == y;

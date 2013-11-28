@@ -320,12 +320,12 @@ namespace LinqOptimizer.Tests
             Spec.ForAny<int[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()
-                         group num by num into g
+                         group num by num.ToString() into g
                          select g.Sum())
                         .Run();
 
                 var y = (from num in xs
-                         group num by num into g
+                         group num by num.ToString() into g
                          select g.Sum());
 
                 return x.SequenceEqual(y);

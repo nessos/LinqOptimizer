@@ -45,26 +45,29 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
+
+            var tests = new QueryTests();
+            tests.NestedSelectTest();
+
+            var size = 10;
+            var rnd = new Random(size);
+            var foo= Enumerable.Range(1, size).AsQueryExpr()
+                   .Select(x => 100 * rnd.NextDouble() - 50)
+                   .GroupBy(x => (int)x % 10)
+                   .Select(x => x.Count())
+                   .ToArray()
+                   .Run();
+
             Random random = new Random();
-            //var nums = Enumerable.Range(1, 100000000).Select(_ => random.Next(1, 1000)).Select(x => x).ToArray();
+            var nums = Enumerable.Range(1, 1000).Select(_ => random.Next(1, 1000)).Select(x => x).ToArray();
             //var pairs = nums.Select(x => new KeyValue<int, int>(x, x)).ToArray();
 
-            var ds = new[] { DateTime.Parse("20/4/1989 8:00:00 μμ"), DateTime.Parse("2/6/2024 11:00:00 πμ"),
-            DateTime.Parse("28/5/2094 1:00:00 πμ"),DateTime.Parse("19/10/2091 10:00:00 μμ"),DateTime.Parse("10/1/1981 11:00:00 πμ"),
-            DateTime.Parse("26/2/1953 7:00:00 μμ"),DateTime.Parse("25/5/2022 12:00:00 πμ"),DateTime.Parse(" 14/9/2087 2:00:00 μμ"),
-            DateTime.Parse("24/12/1952 2:00:00 μμ"),DateTime.Parse("8/12/2007 12:00:00 πμ"),DateTime.Parse("20/2/1932 5:00:00 πμ"),
-            DateTime.Parse("20/10/1988 6:00:00 πμ"),DateTime.Parse("19/4/1999 5:00:00 μμ"),DateTime.Parse("31/5/1954 2:00:00 μμ"),
-            DateTime.Parse("5/10/2072 10:00:00 πμ"),DateTime.Parse("16/1/1981 10:00:00 μμ"),DateTime.Parse("29/8/1982 6:00:00 πμ")};
-            var test = ds.AsParallelQueryExpr().OrderBy(d1 => d1.Year).ThenBy(d2 => d2.Month).ThenBy(d2 => d2.Day).Select(d3 => d3.ToString()).Run();
-            var _test = ds.OrderBy(d => d.Year).ThenBy(d => d.Month).ThenBy(d2 => d2.Day).Select(d => d.ToString()).ToList();
+            //var g = nums.GroupBy(x => x).First();
 
-            var b = test.SequenceEqual(_test);
+            //var test = g.GetEnumerator();
+            //var _test = g.GetEnumerator();
+            //var b = test.GetType().IsClass;
 
-            //Measure(() => nums.OrderBy(x => x).ThenBy(x => x).ToList());
-            //Measure(() => nums.AsQueryExpr().OrderBy(x => x).ThenBy(x => x).ToList().Run());
-            //Measure(() => nums.OrderBy(x => Tuple.Create(x, x)).ToList());
-            //Measure(() => Array.Sort(pairs, nums));
-            //Measure(() => Array.Sort(nums, nums));
         }
 
         static void Measure(Action action)
