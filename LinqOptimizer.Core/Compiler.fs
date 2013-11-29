@@ -8,8 +8,14 @@
     open System.Reflection
     open System.Collections.Concurrent
 
+    type CollectorList<'T> () =
+        inherit List<'T>()
+
+        interface IOrderedEnumerable<'T> with 
+            member __.CreateOrderedEnumerable<'TKey>(keySelector : Func<'T, 'TKey> , comparer : IComparer<'TKey>, desc : bool) =
+                raise <| NotImplementedException()
+
     module internal Compiler =
-        let listTypeDef = typedefof<List<_>>
         let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
 
@@ -22,16 +28,17 @@
                                 BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
                                 InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
-
+        
+        let listTypeDef = typedefof<CollectorList<_>> //typedefof<List<_>>
 
         let toListContext (queryExpr : QueryExpr) =
-                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
-                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
-                context
+            let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+            let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
+            let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+            let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                            InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
+                            VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+            context
         
         type KeyValueCollectRecord = { KeyVarArrayExpr : ParameterExpression; 
                                        ValueVarArrayExpr : ParameterExpression;
