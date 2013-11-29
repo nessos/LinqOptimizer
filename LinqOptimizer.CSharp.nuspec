@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>LinqOptimizer.CSharp</id>
-        <version>0.3.1</version>
+        <version>0.3.2</version>
         <title>LinqOptimizer.CSharp</title>
         <authors>Kostas Rontogiannis,Nick Palladinos</authors>
         <owners>krontogiannis; Nick.Palladinos</owners>
@@ -19,13 +19,13 @@
         </references>
     </metadata>
     <files>
-        <file src="lib\FSharp.Core.dll" target="lib\FSharp.Core.dll" />
-        <file src="lib\FSharp.Core.xml" target="lib\FSharp.Core.xml" />
-        <file src="lib\LinqOptimizer.Base.dll" target="lib\LinqOptimizer.Base.dll" />
-        <file src="lib\LinqOptimizer.Base.xml" target="lib\LinqOptimizer.Base.xml" />
-        <file src="lib\LinqOptimizer.Core.dll" target="lib\LinqOptimizer.Core.dll" />
-        <file src="lib\LinqOptimizer.Core.xml" target="lib\LinqOptimizer.Core.xml" />
-        <file src="lib\LinqOptimizer.CSharp.dll" target="lib\LinqOptimizer.CSharp.dll" />
-        <file src="lib\LinqOptimizer.CSharp.XML" target="lib\LinqOptimizer.CSharp.XML" />
+        <file src="LinqOptimizer.CSharp\bin\Release\FSharp.Core.dll" target="lib\FSharp.Core.dll" />
+        <file src="LinqOptimizer.CSharp\bin\Release\FSharp.Core.xml" target="lib\FSharp.Core.xml" />
+        <file src="LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Base.dll" target="lib\LinqOptimizer.Base.dll" />
+        <file src="LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Base.xml" target="lib\LinqOptimizer.Base.xml" />
+        <file src="LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Core.dll" target="lib\LinqOptimizer.Core.dll" />
+        <file src="LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Core.xml" target="lib\LinqOptimizer.Core.xml" />
+        <file src="LinqOptimizer.CSharp\bin\Release\LinqOptimizer.CSharp.dll" target="lib\LinqOptimizer.CSharp.dll" />
+        <file src="LinqOptimizer.CSharp\bin\Release\LinqOptimizer.CSharp.XML" target="lib\LinqOptimizer.CSharp.XML" />
     </files>
 </package>
