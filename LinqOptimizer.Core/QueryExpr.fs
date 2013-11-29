@@ -51,7 +51,7 @@
             | Filter (_, q) -> q.Type
             | FilterIndexed (_, q) -> q.Type
             | NestedQuery ((_, q), _) -> q.Type
-            | NestedQueryTransform ((_, q), _, _) -> q.Type
+            | NestedQueryTransform ((_, _), resultSelector, _) -> resultSelector.Body.Type
             | Aggregate (seed, _, _) -> seed.Type
             | Sum (q) -> q.Type
             | Count (q) -> q.Type
