@@ -72,7 +72,7 @@
                 elif expr.Type.IsGenericType then
                     Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0])
                 else
-                    failwith "Not supported source %A" expr.Type
+                    failwithf "Not supported source %A" expr.Type
             | _ ->
                 invalidArg "expr" "Cannot extract QueryExpr from null Expression"
 

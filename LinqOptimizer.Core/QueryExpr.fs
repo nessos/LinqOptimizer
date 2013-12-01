@@ -69,7 +69,7 @@
         static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr) = 
             match queryExpr with
             | OrderBy (keySelectorOrderPairs, queryExpr') ->
-                OrderBy (keySelectorOrderPairs @ [(keySelector, order)], queryExpr')
+                OrderBy ((keySelector, order) :: keySelectorOrderPairs, queryExpr')
             | _ -> OrderBy ([keySelector, order], queryExpr)
             
 //        static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =

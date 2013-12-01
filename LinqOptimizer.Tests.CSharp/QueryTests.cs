@@ -420,14 +420,15 @@ namespace LinqOptimizer.Tests
                 var x = ds.AsQueryExpr()
                          .OrderBy(d => d.Year)
                          .ThenBy(d => d.Month)
-                         .ThenBy(d => d.Second).Run();
-                         //.Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
-
+                         .ThenBy(d => d.Day)
+                         .ThenBy(d => d)
+                         .Run();
+                         
                 var y = ds.OrderBy(d => d.Year)
                          .ThenBy(d => d.Month)
-                         .ThenBy(d => d.Second);
-                         //.Select(d => d.Year + ":" + d.Month + ":" + d.Day);
-
+                         .ThenBy(d => d.Day)
+                         .ThenBy(d => d);
+                         
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
