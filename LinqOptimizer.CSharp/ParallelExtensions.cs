@@ -36,6 +36,18 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Compiles a parallel query to optimized code that can by invoked using a Func.<para/>
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <param name="query">The query to compile</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A Func containing optimized code.</returns>
+        public static Func<TQuery> Compile<TQuery>(this IParallelQueryExpr<TQuery> query, bool enableNonPublicMemberAccess)
+        {
+            return CoreHelpers.CompileToParallel<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
         /// Compiles a parallel query to optimized code, runs the code and returns the result.
         /// </summary>
         /// <param name="query">The query to run.</param>
@@ -43,6 +55,18 @@ namespace LinqOptimizer.CSharp
         public static TQuery Run<TQuery>(this IParallelQueryExpr<TQuery> query)
         {
             return query.Compile<TQuery>().Invoke();
+        }
+
+        /// <summary>
+        /// Compiles a parallel query to optimized code, runs the code and returns the result.<para/>
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <param name="query">The query to run.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>The result of the query.</returns>
+        public static TQuery Run<TQuery>(this IParallelQueryExpr<TQuery> query, bool enableNonPublicMemberAccess)
+        {
+            return query.Compile<TQuery>(enableNonPublicMemberAccess).Invoke();
         }
 
         /// <summary>

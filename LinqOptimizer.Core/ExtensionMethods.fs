@@ -27,8 +27,7 @@ namespace LinqOptimizer.Core
             | _ -> 
                 Source (constant enumerable, ty)
 
-#if CORE_COMPILETOMETHOD
-        static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : MethodInfo * obj [] =
+        static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : MethodInfo * obj [] =
             let expr = compile query
             
             let eraser = AnonymousTypeEraser()
@@ -41,35 +40,57 @@ namespace LinqOptimizer.Core
             let func = Expression.Lambda(expr', pms)
             Session.Compile(func), objs
 
+        static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Delegate =
+            let expr = compile query
+            Expression.Lambda(expr).Compile()
+
         static member private WrapInvocation<'T>(mi : MethodInfo, args : obj []) =
             fun () -> 
                 try mi.Invoke(null, args) :?> 'T
-                with :? TargetInvocationException as ex -> raise ex.InnerException 
+                with :? TargetInvocationException as ex -> 
+                    if ex.InnerException :? MemberAccessException 
+                    then raise <| Exception(
+                                        "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.",
+                                        ex.InnerException)
+                    else raise ex.InnerException 
+
+
+
 
         static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
-            let mi, objs = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
-            Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
+            CoreHelpers.Compile<'T>(queryExpr, optimize, false)
 
         static member Compile(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Action =
-            let mi, objs = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
-            Action(CoreHelpers.WrapInvocation(mi, objs))
+            CoreHelpers.Compile(queryExpr, optimize, false)
 
         static member CompileToParallel<'T>(queryExpr : QueryExpr,  optimize : Func<Expression,Expression>) : Func<'T> =
-            let mi, objs = CoreHelpers.Compile(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
-            Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
-#else
-        static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
-            eprintfn "Warning : Compiling without CompileToMethod. Possible degradation of performance."
-            let expr = Compiler.compileToSequential queryExpr optimize.Invoke
-            Func<'T>(fun () -> Expression.Lambda(expr).Compile().DynamicInvoke() :?> 'T)
+            CoreHelpers.CompileToParallel<'T>(queryExpr, optimize, false)
 
-        static member Compile(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Action =
-            eprintfn "Warning : Compiling without CompileToMethod. Possible degradation of performance."
-            let expr = Compiler.compileToSequential queryExpr optimize.Invoke
-            Action(fun () -> Expression.Lambda(expr).Compile().DynamicInvoke() :?> unit)
 
-        static member CompileToParallel<'T>(queryExpr : QueryExpr,  optimize : Func<Expression,Expression>) : Func<'T> =
-            eprintfn "Warning : Compiling without CompileToMethod. Possible degradation of performance."
-            let expr = Compiler.compileToParallel queryExpr optimize.Invoke
-            Func<'T>(fun () -> Expression.Lambda(expr).Compile().DynamicInvoke() :?> 'T)
-#endif
+
+
+        static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Func<'T> =
+            if allowNonPublicMemberAccess then
+                let d = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke)
+                Func<'T>(fun () -> d.DynamicInvoke() :?> _)
+            else
+                let mi, objs = CoreHelpers.CompileToMethod(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
+                Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
+
+        static member Compile(queryExpr : QueryExpr, optimize : Func<Expression,Expression>,  allowNonPublicMemberAccess : bool) : Action =
+            if allowNonPublicMemberAccess then
+                let d = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke)
+                Action(fun () -> d.DynamicInvoke() :?> _)
+            else
+                let mi, objs = CoreHelpers.CompileToMethod(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
+                Action(CoreHelpers.WrapInvocation(mi, objs))
+
+        static member CompileToParallel<'T>(queryExpr : QueryExpr,  optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool ) : Func<'T> =
+            if allowNonPublicMemberAccess then
+                let d = CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToParallel expr optimize.Invoke)
+                Func<'T>(fun () -> d.DynamicInvoke() :?> _)
+            else
+                let mi, objs = CoreHelpers.CompileToMethod(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
+                Func<'T>(CoreHelpers.WrapInvocation(mi, objs))
+
+
