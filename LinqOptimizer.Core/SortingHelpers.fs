@@ -5,7 +5,14 @@
     open System.Collections.Generic
     open System.Linq
     open System.Threading.Tasks
+    open System.Threading
 
+
+    type private MergeArrayType =
+    | FromArrayType
+    | ToArrayType
+ 
+   
    
     type Sort =
         
@@ -17,49 +24,103 @@
                         Array.Reverse(values)
                 | _ -> ()
 
-        static member ParallelSort(keys : 'Key[], values : 'Value[], orders : Order[]) = 
-            Sort.ParallelSort(keys, values, 0, keys.Length - 1, orders)
 
-
-        static member ParallelSort<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], values : 'Value[], left : int, right : int, orders : Order[]) = 
-            let swap (arr : 'T[]) i j =
-                let tmp = arr.[i]
-                arr.[i] <- arr.[j]
-                arr.[j] <- tmp
-            let partition (keys : 'Key[]) (values : 'Value[]) low high = 
-
-                    let pivotPos = (high + low) / 2
-                    let pivot = keys.[pivotPos]
-                    swap keys low pivotPos
-                    swap values low pivotPos
-
-                    let mutable left = low
-                    for i = low + 1 to high do
-            
-                        if keys.[i].CompareTo(pivot) < 0 then
-                            left <- left + 1
-                            swap keys i left
-                            swap values i left
-            
-
-                    swap keys low left
-                    swap values low left
-                    left
-
-            if right > left then
-            
-                if right - left < 2048 then
-                    Array.Sort(keys, values, left, (right - left) + 1)
-                    if orders.Length = 1 then
-                        match orders.[0] with
-                        | Descending -> 
-                            Array.Reverse(values)
-                        | _ -> ()
-                else
-                    let pivot = partition keys values left right
-                    Parallel.Invoke([| Action(fun () -> Sort.ParallelSort(keys, values, left, pivot - 1, orders)); 
-                                       Action(fun () -> Sort.ParallelSort(keys, values, pivot + 1, right, orders)) |])
         
+        static member ParallelSort<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], array : 'Value[], orders : Order[]) = 
+            // Taken from Carl Nolan's parallel inplace merge
+            // The merge of the two array
+            let merge (toArray: 'Value [], toKeys : 'Key[]) (fromArray: 'Value [], fromKeys : 'Key[]) (low1: int) (low2: int) (high1: int) (high2: int) =
+                let mutable ptr1 = low1
+                let mutable ptr2 = high1
+ 
+                for ptr in low1..high2 do
+                    if (ptr1 > low2) then
+                        toArray.[ptr] <- fromArray.[ptr2]
+                        toKeys.[ptr] <- fromKeys.[ptr2]
+                        ptr2 <- ptr2 + 1
+                    elif (ptr2 > high2) then
+                        toArray.[ptr] <- fromArray.[ptr1]
+                        toKeys.[ptr] <- fromKeys.[ptr1]
+                        ptr1 <- ptr1 + 1
+                    elif (fromKeys.[ptr1].CompareTo(fromKeys.[ptr2]) <= 0) then
+                        toArray.[ptr] <- fromArray.[ptr1]
+                        toKeys.[ptr] <- fromKeys.[ptr1]
+                        ptr1 <- ptr1 + 1
+                    else
+                        toArray.[ptr] <- fromArray.[ptr2]
+                        toKeys.[ptr] <- fromKeys.[ptr2]
+                        ptr2 <- ptr2 + 1
+ 
+            // define the sort operation
+            let parallelSort () =
+ 
+                // control flow parameters
+                let totalWorkers = int (2.0 ** float (int (Math.Log(float Environment.ProcessorCount, 2.0))))
+                let auxArray : 'Value array = Array.zeroCreate array.Length
+                let auxKeys : 'Key array = Array.zeroCreate array.Length
+                let workers : Task array = Array.zeroCreate (totalWorkers - 1)
+                let iterations = int (Math.Log((float totalWorkers), 2.0))
+ 
+
+ 
+                // Number of elements for each array, if the elements number is not divisible by the workers
+                // the remainders will be added to the first worker (the main thread)
+                let partitionSize = ref (int (array.Length / totalWorkers))
+                let remainder = array.Length % totalWorkers
+ 
+                // Define the arrays references for processing as they are swapped during each iteration
+                let swapped = ref false
+ 
+                let inline getMergeArray (arrayType: MergeArrayType) =
+                    match (arrayType, !swapped) with
+                    | (FromArrayType, true) -> (auxArray, auxKeys)
+                    | (FromArrayType, false) -> (array, keys)
+                    | (ToArrayType, true) -> (array, keys)
+                    | (ToArrayType, false) -> (auxArray, auxKeys)
+ 
+                use barrier = new Barrier(totalWorkers, fun (b) ->
+                    partitionSize := !partitionSize <<< 1
+                    swapped := not !swapped)
+ 
+                // action to perform the sort an merge steps
+                let action (index: int) =   
+                         
+                    //calculate the partition boundary
+                    let low = index * !partitionSize + match index with | 0 -> 0 | _ -> remainder
+                    let high = (index + 1) * !partitionSize - 1 + remainder
+ 
+                    // Sort the specified range - could implement QuickSort here
+                    let sortLen = high - low + 1
+                    Array.Sort(keys, array, low, sortLen)
+ 
+                    barrier.SignalAndWait()
+ 
+                    let rec loopArray loopIdx actionIdx loopHigh =
+                        if loopIdx < iterations then
+                            if (actionIdx % 2 = 1) then
+                                barrier.RemoveParticipant()
+                            else
+                                let newHigh = loopHigh + !partitionSize / 2
+                                merge (getMergeArray FromArrayType) (getMergeArray ToArrayType) low loopHigh (loopHigh + 1) newHigh
+                                barrier.SignalAndWait()
+                                loopArray (loopIdx + 1) (actionIdx >>> 1) newHigh
+                    loopArray 0 index high
+ 
+                for index in 1 .. workers.Length do
+                    workers.[index - 1] <- Task.Factory.StartNew(fun() -> action index)
+ 
+                action 0
+ 
+                // if odd iterations return auxArray otherwise array (swapped will be false)
+                if not (iterations % 2 = 0) then  
+                    Array.blit auxArray 0 array 0 array.Length
+ 
+            parallelSort()
+            if orders.Length = 1 then
+                match orders.[0] with
+                | Descending -> 
+                        Array.Reverse(array)
+                | _ -> ()
 
     // Composite keys for sorting, used only for code generation
     [<Struct>]
