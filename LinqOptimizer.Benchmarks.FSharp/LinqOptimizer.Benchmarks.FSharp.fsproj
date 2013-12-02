@@ -48,6 +48,23 @@
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">
+      <Name>LinqOptimizer.Base</Name>
+      <Project>{f21f83a3-bdbd-4965-87d6-94e65a069a7b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\LinqOptimizer.Core\LinqOptimizer.Core.fsproj">
+      <Name>LinqOptimizer.Core</Name>
+      <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\LinqOptimizer.FSharp\LinqOptimizer.FSharp.fsproj">
+      <Name>LinqOptimizer.FSharp</Name>
+      <Project>{5c5fe9f9-91df-44e2-a68d-b9a49828e0bb}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>

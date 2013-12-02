@@ -107,22 +107,23 @@ namespace LinqOptimizer.Benchmarks.CSharp
                    .Run();
         }
 
-        //static Tuple<int, int, int>[] PythagoreanTriplesLinq(int max)
-        //{
-        //    return (Enumerable.Range(1, max + 1).SelectMany( a =>)
-        //            from b in Enumerable.Range(a, max + 1 - a)
-        //            from c in Enumerable.Range(b, max + 1 - b)
-        //            where a * a + b * b == c * c
-        //            select Tuple.Create(a, b, c)).ToArray();
-        //}
+        static Tuple<int, int, int>[] PythagoreanTriplesLinq(int max)
+        {
+            return (from a in Enumerable.Range(1, max + 1)
+                    from b in Enumerable.Range(a, max + 1 - a)
+                    from c in Enumerable.Range(b, max + 1 - b)
+                    where a * a + b * b == c * c
+                    select Tuple.Create(a, b, c)).ToArray();
+        }
 
-        //static Tuple<int, int, int>[] PythagoreanTriplesLinqOpt(int max)
-        //{
-        //    return (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
-        //            from b in Enumerable.Range(a, max + 1 - a)
-        //            let cSq = a * a + b * b 
-        //            where cSq <= (max + 1) * (max + 1)).ToArray().Run();
-        //}
+        static Tuple<int, int, int>[] PythagoreanTriplesLinqOpt(int max)
+        {
+            return (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
+                    from b in Enumerable.Range(a, max + 1 - a)
+                    from c in Enumerable.Range(b, max + 1 - b)
+                    where a * a + b * b == c * c
+                    select Tuple.Create(a, b, c)).ToArray().Run();
+        }
 
     }
 }
