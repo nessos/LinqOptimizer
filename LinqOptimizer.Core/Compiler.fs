@@ -8,8 +8,14 @@
     open System.Reflection
     open System.Collections.Concurrent
 
+    type CollectorList<'T> () =
+        inherit List<'T>()
+
+        interface IOrderedEnumerable<'T> with 
+            member __.CreateOrderedEnumerable<'TKey>(keySelector : Func<'T, 'TKey> , comparer : IComparer<'TKey>, desc : bool) =
+                raise <| NotImplementedException()
+
     module internal Compiler =
-        let listTypeDef = typedefof<List<_>>
         let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
 
@@ -22,16 +28,17 @@
                                 BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
                                 InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
-
+        
+        let listTypeDef = typedefof<CollectorList<_>> //typedefof<List<_>>
 
         let toListContext (queryExpr : QueryExpr) =
-                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
-                let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
-                let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
-                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
-                context
+            let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+            let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
+            let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
+            let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                            InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
+                            VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+            context
         
         type KeyValueCollectRecord = { KeyVarArrayExpr : ParameterExpression; 
                                        ValueVarArrayExpr : ParameterExpression;
@@ -40,11 +47,14 @@
                 let valueType, keyType = 
                     match lambdaExprs with
                     | [Lambda ([paramExpr], bodyExpr)] -> paramExpr.Type, bodyExpr.Type
-                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2)] -> 
+                    | [Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr1], bodyExpr1)] -> 
                         paramExpr1.Type, typedefof<Keys<int, int>>.MakeGenericType [|bodyExpr1.Type; bodyExpr2.Type|]
-                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr3], bodyExpr3)] -> 
-                        paramExpr1.Type, typedefof<Keys<int, int, int>>.MakeGenericType [|bodyExpr1.Type; bodyExpr2.Type; bodyExpr3.Type|]
-                    | _ -> failwith "Invalid state, keys %A" lambdaExprs
+                    | Lambda ([paramExprn], bodyExprn) :: Lambda ([paramExprnm1], bodyExprnm1) :: rest ->
+                        let accKeyType = typedefof<Keys<int, int>>.MakeGenericType [|bodyExprnm1.Type; bodyExprn.Type|]
+                        let keyType = List.fold (fun keyType (lambda : LambdaExpression) -> typedefof<Keys<int, int>>.MakeGenericType [| lambda.Body.Type; keyType |]) 
+                                                accKeyType rest
+                        paramExprn.Type, keyType
+                    | _ -> failwithf "Invalid state, keys %A" lambdaExprs
 
                 let loopBreak = breakLabel()
                 let loopContinue = continueLabel()
@@ -66,15 +76,21 @@
                 let exprs' = 
                     match lambdaExprs, orders with 
                     | [Lambda ([paramExpr], bodyExpr)], _ -> [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
-                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2)], [o1; o2] ->
+                    | [Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr1], bodyExpr1)], [o2; o1] ->
                         let keysExpr = Expression.New(keyType.GetConstructors().[0], [bodyExpr1; bodyExpr2; constant o1; constant o2])
                         [assign paramExpr1 getItemExpr; assign paramExpr2 getItemExpr; 
                             assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExpr1]
-                    | [Lambda ([paramExpr1], bodyExpr1); Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr3], bodyExpr3)], [o1; o2; o3]  ->
-                        let keysExpr = Expression.New(keyType.GetConstructors().[0], [bodyExpr1; bodyExpr2; bodyExpr3; constant o1; constant o2; constant o3])
-                        [assign paramExpr1 getItemExpr; assign paramExpr2 getItemExpr; assign paramExpr3 getItemExpr;
-                            assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExpr1] 
-                    | _ -> failwith "Invalid state, keys %A" lambdaExprs
+                    | Lambda ([paramExprn], bodyExprn) :: Lambda ([paramExprnm1], bodyExprnm1) :: restLambdas, on :: onm1 :: restOrders ->
+                        let accKeysExpr = Expression.New((typedefof<Keys<int, int>>.MakeGenericType [|bodyExprnm1.Type; bodyExprn.Type|]).GetConstructors().[0], [bodyExprnm1; bodyExprn; constant onm1; constant on])
+                        let keysExpr = List.fold (fun (keysExpr : NewExpression) (lambda : LambdaExpression, order : Order) -> 
+                                                    Expression.New((typedefof<Keys<int, int>>.MakeGenericType [| lambda.Body.Type; keysExpr.Type |]).GetConstructors().[0], 
+                                                                        [lambda.Body; keysExpr :> Expression; constant order; constant Order.Ascending]))
+                                                 accKeysExpr (List.zip restLambdas restOrders)
+                        
+                        let assignExprs = List.fold (fun assignExprs (lambda : LambdaExpression) -> assign lambda.Parameters.[0] getItemExpr :: assignExprs) 
+                                                    [assign paramExprn getItemExpr; assign paramExprnm1 getItemExpr] restLambdas
+                        assignExprs @ [assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExprn]                    
+                    | _ -> failwithf "Invalid state, keys %A" lambdaExprs
 
                 let checkBoundExpr = equal indexVarExpr lengthExpr 
                 let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 

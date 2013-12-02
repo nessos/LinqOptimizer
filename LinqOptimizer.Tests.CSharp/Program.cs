@@ -11,11 +11,13 @@ using LinqOptimizer.Core;
 using LinqOptimizer.CSharp;
 
 
+using System.Xml.Linq;
+using LinqOptimizer.Base;
+
 namespace LinqOptimizer.Tests
 {
     public class Program
     {
-
 
         public static void Main(string[] args)
         {
@@ -31,4 +33,6 @@ namespace LinqOptimizer.Tests
             Console.WriteLine(watch.Elapsed);
         }
     }
+
+    
 }

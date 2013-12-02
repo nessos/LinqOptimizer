@@ -6,6 +6,7 @@
     open System.Collections.Concurrent
 
     type ParallelismHelpers =
+        static member TotalWorkers = int (2.0 ** float (int (Math.Log(float Environment.ProcessorCount, 2.0))))
 
         static member ReduceCombine<'T, 'Acc, 'R>(values : IList<'T>, 
                                                     init : Func<'Acc>, 
@@ -22,10 +23,10 @@
                                                         selector : Func<'Acc, 'R>) : 'R = 
 
             let seqReduceCount = 
-                if length > Environment.ProcessorCount then 
-                    length / Environment.ProcessorCount 
+                if length > ParallelismHelpers.TotalWorkers then 
+                    length / ParallelismHelpers.TotalWorkers
                 else
-                    Environment.ProcessorCount 
+                    ParallelismHelpers.TotalWorkers
             let rec reduceCombine s e =
                 async { 
                     if e - s <= seqReduceCount then
@@ -70,6 +71,6 @@
                         let! result =  Async.Parallel [| reduceCombine left; reduceCombine right |]
                         return combiner.Invoke(result.[0], result.[1])
                 }
-            reduceCombine (partitioner.GetPartitions(Environment.ProcessorCount) |> Seq.toArray) 
+            reduceCombine (partitioner.GetPartitions(ParallelismHelpers.TotalWorkers) |> Seq.toArray) 
             |> Async.RunSynchronously |> selector.Invoke
             

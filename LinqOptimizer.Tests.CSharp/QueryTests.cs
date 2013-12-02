@@ -5,6 +5,7 @@ using System.Text;
 using FsCheck.Fluent;
 using NUnit.Framework;
 using LinqOptimizer.CSharp;
+using System.Linq.Expressions;
 
 namespace LinqOptimizer.Tests
 {
@@ -417,17 +418,18 @@ namespace LinqOptimizer.Tests
         {
             Spec.ForAny<DateTime[]>(ds =>
             {
-                var x = (ds.AsQueryExpr()
+                var x = ds.AsQueryExpr()
                          .OrderBy(d => d.Year)
                          .ThenBy(d => d.Month)
                          .ThenBy(d => d.Day)
-                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
-
+                         .ThenBy(d => d)
+                         .Run();
+                         
                 var y = ds.OrderBy(d => d.Year)
-                          .ThenBy(d => d.Month)
-                          .ThenBy(d => d.Day)
-                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
-
+                         .ThenBy(d => d.Month)
+                         .ThenBy(d => d.Day)
+                         .ThenBy(d => d);
+                         
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
@@ -629,7 +631,27 @@ namespace LinqOptimizer.Tests
             Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
         }
 
- 
+        private int UserDefinedAnonymousTypeTest(bool enable)
+        {
+            var anon = new { A = 1, B = "42" };
+            try
+            {
+                var t = Enumerable.Range(1, 42).AsQueryExpr().Select(_ => anon.A).Sum().Run(enable);
+                return t;
+            }
+            catch (Exception ex)
+            {
+                throw ex.InnerException;
+            }
+                
+        }
+
+        [Test]
+        public void UserDefinedAnonymousType()
+        {
+            Assert.Catch(typeof(MemberAccessException), () => UserDefinedAnonymousTypeTest(false));
+            Assert.AreEqual(42, UserDefinedAnonymousTypeTest(true));
+        } 
 
     }
 }

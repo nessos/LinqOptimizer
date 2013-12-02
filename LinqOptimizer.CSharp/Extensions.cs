@@ -36,6 +36,18 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Compiles a query to optimized code that can by invoked using a Func. <para/>
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <param name="query">The query to compile</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A Func containing optimized code.</returns>
+        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query, bool enableNonPublicMemberAccess)
+        {
+            return CoreHelpers.Compile<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
         /// Compiles a query to optimized code that can by invoked using a Func.
         /// </summary>
         /// <param name="query">The query to compile</param>
@@ -43,6 +55,18 @@ namespace LinqOptimizer.CSharp
         public static Action Compile(this IQueryExpr query)
         {
             return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize);
+        }
+
+        /// <summary>
+        /// Compiles a query to optimized code that can by invoked using a Func.<para/>
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <param name="query">The query to compile</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A Func containing optimized code.</returns>
+        public static Action Compile(this IQueryExpr query, bool enableNonPublicMemberAccess)
+        {
+            return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
 
         /// <summary>
@@ -56,6 +80,18 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Compiles a query to optimized code, runs the code and returns the result. <para/>
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <param name="query">The query to run.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>The result of the query.</returns>
+        public static TQuery Run<TQuery>(this IQueryExpr<TQuery> query, bool enableNonPublicMemberAccess)
+        {
+            return query.Compile<TQuery>(enableNonPublicMemberAccess).Invoke();
+        }
+
+        /// <summary>
         /// Compiles a query to optimized code, runs the code and returns the result.
         /// </summary>
         /// <param name="query">The query to run.</param>
@@ -63,6 +99,18 @@ namespace LinqOptimizer.CSharp
         public static void Run(this IQueryExpr query)
         {
             query.Compile().Invoke();
+        }
+
+        /// <summary>
+        /// Compiles a query to optimized code, runs the code and returns the result.<para/>
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <param name="query">The query to run.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>The result of the query.</returns>
+        public static void Run(this IQueryExpr query, bool enableNonPublicMemberAccess)
+        {
+            query.Compile(enableNonPublicMemberAccess).Invoke();
         }
 
         /// <summary>
