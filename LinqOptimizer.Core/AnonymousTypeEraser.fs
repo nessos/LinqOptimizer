@@ -66,8 +66,8 @@
                 | MemberTypes.Property when isAnonymousType expr.Member.DeclaringType ->
                     let p = mappings.Values.SingleOrDefault(fun p -> p.Name = generated expr.Member.Name) //Expression.Parameter(expr.Type, expr.Member.Name)
                     if p = null then 
-                        let e = existing.Single(fun p -> p.Name = expr.Member.Name) 
-                        e  :> _
+                        let e = existing.SingleOrDefault(fun p -> p.Name = expr.Member.Name) 
+                        if e = null then expr.Update(this.Visit expr.Expression) :> _ else e  :> _
                     else 
                         p :> _
                 | _ -> 

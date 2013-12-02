@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="QueryBuilder.fs" />
     <Compile Include="FSharpQuery.fs" />
+    <Compile Include="FSharpParallelQuery.fs" />
     <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
   <ItemGroup>
