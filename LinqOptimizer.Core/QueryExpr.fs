@@ -22,6 +22,7 @@
     /// The type representing an query expression.
     and QueryExpr = 
         | Source of Expression * Type
+        | Generate of Expression * LambdaExpression * LambdaExpression * LambdaExpression
         | Transform of LambdaExpression * QueryExpr 
         | TransformIndexed of LambdaExpression * QueryExpr 
         | Filter of LambdaExpression * QueryExpr 
@@ -47,6 +48,7 @@
         member self.Type = 
             match self with
             | Source (_, t) -> t
+            | Generate(_,_,_, selector) -> selector.Body.Type
             | Transform (lambda, _) -> lambda.Body.Type
             | TransformIndexed (lambda, _) -> lambda.Body.Type
             | Filter (_, q) -> q.Type

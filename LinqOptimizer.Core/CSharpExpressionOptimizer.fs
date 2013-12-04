@@ -28,6 +28,9 @@
             | MethodCall (_, MethodName "Aggregate" [|_;_|] , [expr'; seedExpr; Lambda ([_;_] as paramsExpr, bodyExpr) as f' ] ) ->
                 Aggregate(seedExpr, f' :?> LambdaExpression, toQueryExpr expr')    
 
+            | MethodCall (_, MethodName "Generate" [|_;_|], [startExpr; Lambda (_,_) as pred; Lambda (_,_) as state; Lambda (_,_) as result]) ->
+                Generate(startExpr, pred :?> LambdaExpression, state :?> LambdaExpression, result :?> LambdaExpression)
+
             | MethodCall (_, MethodName "Take" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
                 Take (countExpr, toQueryExpr expr' )
 

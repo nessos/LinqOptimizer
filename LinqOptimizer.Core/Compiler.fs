@@ -200,6 +200,24 @@
                 let bodyExpr = optimize bodyExpr
                 let exprs' = addAssign indexExpr (constant 1) :: assign context.CurrentVarExpr bodyExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; InitExprs = assign indexExpr (constant -1) :: context.InitExprs; VarExprs = paramExpr :: indexExpr :: context.VarExprs; Exprs = exprs' } optimize
+            
+            | Generate(startExpr, Lambda ([paramCondExpr], bodyCondExpr), Lambda ([paramStateExpr], bodyStateExpr), Lambda ([paramResultExpr], bodyResultExpr)) ->
+
+                let (startExpr, bodyCondExpr, bodyStateExpr, bodyResultExpr) = (optimize startExpr, optimize bodyCondExpr, optimize bodyStateExpr, optimize bodyResultExpr)
+                
+                let stateVarInitExpr = assign paramStateExpr startExpr
+                let nextStateExpr = assign paramStateExpr bodyStateExpr
+
+//                let currVarExpr = var "___curr___" bodyResultExpr.Type
+//                let currVarInitExpr = assign currVarExpr bodyResultExpr
+
+                let exprs' = assign paramResultExpr paramStateExpr :: assign context.CurrentVarExpr bodyResultExpr :: context.Exprs
+                let branchExpr = ifThenElse bodyCondExpr (block [] exprs') (``break`` context.BreakLabel) 
+                let loopExpr = 
+                    (loop (block [] [ (assign paramCondExpr paramStateExpr); branchExpr ; nextStateExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel)
+                
+                block (paramCondExpr :: paramStateExpr :: paramResultExpr :: context.VarExprs) [block [] context.InitExprs; stateVarInitExpr; loopExpr; context.ReturnExpr ]
+
             | Filter (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                 let bodyExpr = optimize bodyExpr
                 let exprs' = ifThenElse bodyExpr empty (``continue`` context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs

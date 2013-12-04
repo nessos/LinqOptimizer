@@ -375,5 +375,12 @@ namespace LinqOptimizer.CSharp
         {
             return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
+
+
+        public static IQueryExpr<IEnumerable<TResult>> Generate<TSource, TResult>(TSource start, Expression<Func<TSource, bool>> cond, Expression<Func<TSource, TSource>> step, Expression<Func<TSource, TResult>> resultSelector)
+        {
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewGenerate(Expression.Constant(start), cond, step, resultSelector));
+        }
+
     }
 }
