@@ -213,6 +213,10 @@
                 let countVarExpr = var "___takeCount___" typeof<int> //special "local" variable for Take
                 let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (greaterThan countVarExpr countExpr) (``break`` context.BreakLabel) empty :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | TakeWhile (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let exprs' = ifThenElse (bodyExpr) empty (``break`` context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' } optimize
             | Skip (countExpr, queryExpr') ->
                 let countExpr = optimize countExpr
                 let countVarExpr = var "___skipCount___" typeof<int> //special "local" variable for Skip

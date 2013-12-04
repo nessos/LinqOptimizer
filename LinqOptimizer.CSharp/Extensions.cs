@@ -255,6 +255,18 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Creates a query that returns a specified number of contiguous elements from the start of a sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to return elements from.</param>
+        /// <param name="count">The number of elements to return.</param>
+        /// <returns>A query that returns a sequence containing the specified number of elements from the start of the input sequence.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> TakeWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource,bool>> predicate)
+        {
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTakeWhile(predicate, query.Expr));
+        }
+
+        /// <summary>
         /// A query that bypasses a specified number of elements in a sequence and then returns the remaining elements.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>

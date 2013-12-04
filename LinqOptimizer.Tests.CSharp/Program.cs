@@ -24,7 +24,11 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-
+            var xs =
+                Enumerable.Range(1, 10)
+                    .AsQueryExpr()
+                    .TakeWhile(x => x < 5)
+                    .Run();
             
             
 
