@@ -8,13 +8,6 @@
     open System.Reflection
     open System.Collections.Concurrent
 
-    type CollectorList<'T> () =
-        inherit List<'T>()
-
-        interface IOrderedEnumerable<'T> with 
-            member __.CreateOrderedEnumerable<'TKey>(keySelector : Func<'T, 'TKey> , comparer : IComparer<'TKey>, desc : bool) =
-                raise <| NotImplementedException()
-
     module internal Compiler =
         let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
