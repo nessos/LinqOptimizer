@@ -17,38 +17,54 @@
 
 //    type ArrayCollector<'T> () =
 //        
-//        let ls = List<ICollection<'T>>()
-//        
-//        member __.Add(element : 'T) =
-//            if ls.Count = 0 then
-//                ls.Add(List<'T>())
-//            ls.[ls.Count - 1].Add(element)
+//        let ls = List<'T [] * int>()
 //
-//        member __.AddRange(array : 'T []) = 
-//            ls.Add(array)
+//        let mutable isAdd = false
 //
-//        member __.AddRange(lst : List<'T>) = 
-//            ls.Add(lst)
+//        let bufferSize                = 1024
+//        let mutable currentBufferSize = bufferSize
+//        let newBuffer( size )         = currentBufferSize <- size; Array.zeroCreate size
+//        let mutable buffer : 'T []    = newBuffer bufferSize
+//        let mutable idx               = 0
+//       
+//        let flushBuffer () =
+//                ls.Add(buffer, idx)
+//                buffer <- newBuffer bufferSize
+//                isAdd <- false
+//                idx <- 0
 //
-//        member __.ToArray () = 
-//            let length =  ls |> Seq.map (fun l -> l.Count) |> Seq.sum
-//            let array = Array.zeroCreate<'T> length
-//            let mutable i = 0
-//            for col in ls do
-//                for e in col do
-//                    array.[i] <- e
-//                    i <- i + 1
-//            array
+//        member this.AddRange(array : 'T[]) =
+//            if isAdd then
+//                flushBuffer()
+//            ls.Add(array, array.Length)
 //
-//        member this.ToList () =
-//            let length =  ls |> Seq.map (fun l -> l.Count) |> Seq.sum
-//            let lst = List<'T>(length)
-//            let mutable i = 0
-//            for col in ls do
-//                for e in col do
-//                    lst.[i] <- e
-//                    i <- i + 1
-//            lst
+//        member this.Add(elem : 'T) =
+//            isAdd <- true
+//            if idx >= currentBufferSize then
+//                currentBufferSize <- currentBufferSize * 2
+//                let newBuffer = newBuffer currentBufferSize
+//                Array.Copy(buffer, newBuffer, idx)
+//                this.Add(elem)
+//            else
+//                buffer.[idx] <- elem
+//                idx <- idx + 1
+//
+//        member this.ToArray () : 'T [] =
+//            if isAdd then
+//                flushBuffer()
+//
+//            let mutable length = 0
+//            for (_, l) in ls do 
+//                length <- length + l
+//
+//            let final = Array.zeroCreate length
+//            let mutable currIdx = 0
+//            for (array, l) in ls do 
+//                Array.Copy(array, 0, final, currIdx, l)
+//                currIdx <- currIdx + l
+//            final
+//
+//        member this.ArrayList with get () = ls
 //                
 //
 //    module Foo =
@@ -57,6 +73,16 @@
 //        let x = Array.init 100000 id
 //
 //        #time
+//
+//        ac.AddRange([|0..1|])
+//        ac.Add(1)
+//        ac.Add(2)
+//        ac.AddRange([|1..5|])
+//        ac.AddRange([|5..10|])
+//        ac.Add(42)
+//        let a = ac.ToArray()
+//
+//        let y = ac.ArrayList
 //
 //        for i = 1 to 1000 do
 //            ac.Add(i)
