@@ -147,16 +147,16 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectManyCompehension()
         {
-            Spec.ForAny<int[]>(xs =>
+            Spec.ForAny<string[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()
                           from _num in xs
-                          select num * _num).Sum().Run();
+                          select num + " " + _num).Run();
                 var y = (from num in xs
                          from _num in xs
-                         select num * _num).Sum();
+                         select num + " " + _num);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
