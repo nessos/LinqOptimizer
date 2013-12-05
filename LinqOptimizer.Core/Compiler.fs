@@ -473,7 +473,7 @@
                 let accVarExpr = var "___acc___" typeof<int>
                 let initExpr = lambda [||] (``default`` typeof<int>)
                 let accExpr = addAssign accVarExpr (constant 1)
-                let leftVarExpr, rightVarExpr = var "___left___" t, var "___right___" t
+                let leftVarExpr, rightVarExpr = var "___left___" typeof<int>, var "___right___" typeof<int>
                 let combinerExpr = lambda [|leftVarExpr; rightVarExpr|] (block [] [addAssign leftVarExpr rightVarExpr; leftVarExpr])
                 let returnExpr = lambda [|accVarExpr|] accVarExpr
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
