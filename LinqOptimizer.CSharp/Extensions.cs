@@ -255,24 +255,24 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
-        /// Creates a query that returns a specified number of contiguous elements from the start of a sequence.
+        /// Creates a query that returns elements from a sequence as long as a specified condition is true, and then skips the remaining elements.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="query">The query to return elements from.</param>
-        /// <param name="count">The number of elements to return.</param>
-        /// <returns>A query that returns a sequence containing the specified number of elements from the start of the input sequence.</returns>
+        /// <param name="predicate">A function to test each element for a condition.</param>
+        /// <returns>A query that contains the elements from the input sequence that occur before the element at which the test no longer passes.</returns>
         public static IQueryExpr<IEnumerable<TSource>> TakeWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource,bool>> predicate)
         {
             return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTakeWhile(predicate, query.Expr));
         }
 
         /// <summary>
-        /// Creates a query that returns a specified number of contiguous elements from the start of a sequence.
+        /// Creates a query that bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="query">The query to return elements from.</param>
-        /// <param name="count">The number of elements to return.</param>
-        /// <returns>A query that returns a sequence containing the specified number of elements from the start of the input sequence.</returns>
+        /// <param name="predicate">A function to test each element for a condition.</param>
+        /// <returns>A query that contains the elements from the input sequence starting at the first element in the linear series that does not pass the test specified by predicate.</returns>
         public static IQueryExpr<IEnumerable<TSource>> SkipWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
             return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewSkipWhile(predicate, query.Expr));
