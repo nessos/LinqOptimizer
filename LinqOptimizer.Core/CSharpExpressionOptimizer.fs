@@ -37,6 +37,9 @@
             | MethodCall (_, MethodName "TakeWhile" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
                 TakeWhile(f' :?> LambdaExpression, toQueryExpr expr' )
 
+            | MethodCall (_, MethodName "SkipWhile" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
+                SkipWhile(f' :?> LambdaExpression, toQueryExpr expr' )
+
             | MethodCall (_, MethodName "Skip" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
                 Skip (countExpr, toQueryExpr expr')
     
@@ -91,6 +94,7 @@
             | MethodCall (_, MethodName "Aggregate" _,   [_; _; Lambda ([_;_], _) ])
             | MethodCall (_, MethodName "Take" _,               [_; _        ])
             | MethodCall (_, MethodName "TakeWhile" _,          [_; Lambda _ ])
+            | MethodCall (_, MethodName "SkipWhile" _,          [_; Lambda _ ])
             | MethodCall (_, MethodName "Skip" _,               [_; _        ])
             | MethodCall (_, MethodName "SelectMany" _,  [_; Lambda _ ])
             | MethodCall (_, MethodName "GroupBy" _,            [_; Lambda _ ])

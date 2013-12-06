@@ -228,6 +228,11 @@
                 let bodyExpr = optimize bodyExpr
                 let exprs' = ifThenElse (bodyExpr) empty (``break`` context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' } optimize
+            | SkipWhile (Lambda ([paramExpr], bodyExpr), queryExpr') ->
+                let bodyExpr = optimize bodyExpr
+                let skipWhileVar = var "___skipFlag___" typeof<bool>
+                let exprs' = ifThenElse (Expression.And(skipWhileVar, bodyExpr)) (``continue`` context.ContinueLabel) (assign skipWhileVar (constant false)) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                compileToSeqPipeline queryExpr' { context with InitExprs = assign skipWhileVar (constant true) :: context.InitExprs; CurrentVarExpr = paramExpr; VarExprs = skipWhileVar :: paramExpr :: context.VarExprs; Exprs = exprs' } optimize
             | Skip (countExpr, queryExpr') ->
                 let countExpr = optimize countExpr
                 let countVarExpr = var "___skipCount___" typeof<int> //special "local" variable for Skip

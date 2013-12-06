@@ -267,6 +267,18 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Creates a query that returns a specified number of contiguous elements from the start of a sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to return elements from.</param>
+        /// <param name="count">The number of elements to return.</param>
+        /// <returns>A query that returns a sequence containing the specified number of elements from the start of the input sequence.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> SkipWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
+        {
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewSkipWhile(predicate, query.Expr));
+        }
+
+        /// <summary>
         /// A query that bypasses a specified number of elements in a sequence and then returns the remaining elements.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
@@ -376,10 +388,19 @@ namespace LinqOptimizer.CSharp
             return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
-
-        public static IQueryExpr<IEnumerable<TResult>> Generate<TSource, TResult>(TSource start, Expression<Func<TSource, bool>> cond, Expression<Func<TSource, TSource>> step, Expression<Func<TSource, TResult>> resultSelector)
+        /// <summary>        
+        /// A query that generates a sequence by mimicking a for loop.
+        /// </summary>        
+        /// <typeparam name="TState">State type.</typeparam>        
+        /// <typeparam name="TResult">Result sequence element type.</typeparam>        
+        /// <param name="initialState">Initial state of the generator loop.</param>        
+        /// <param name="condition">Loop condition.</param>        
+        /// <param name="iterate">State update function to run after every iteration of the generator loop.</param>        
+        /// <param name="resultSelector">Result selector to compute resulting sequence elements.</param>        
+        /// <returns>A query whose elements are obtained by running the generator loop, yielding computed elements.</returns>
+        public static IQueryExpr<IEnumerable<TResult>> Generate<TState, TResult>(TState initialState, Expression<Func<TState, bool>> condition, Expression<Func<TState, TState>> iterate, Expression<Func<TState, TResult>> resultSelector)
         {
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewGenerate(Expression.Constant(start), cond, step, resultSelector));
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewGenerate(Expression.Constant(initialState), condition, iterate, resultSelector));
         }
 
     }

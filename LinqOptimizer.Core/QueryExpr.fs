@@ -34,6 +34,7 @@
         | Count of QueryExpr 
         | Take of Expression * QueryExpr
         | TakeWhile of LambdaExpression * QueryExpr
+        | SkipWhile of LambdaExpression * QueryExpr
         | Skip of Expression * QueryExpr 
         | ForEach of LambdaExpression * QueryExpr 
         | GroupBy of LambdaExpression * QueryExpr * Type
@@ -60,6 +61,7 @@
             | Count (q) -> q.Type
             | Take (_, q) -> q.Type
             | TakeWhile(_,q) -> q.Type
+            | SkipWhile(_,q) -> q.Type
             | Skip (_, q) -> q.Type
             | ForEach (_, _) -> typeof<Void>
             | GroupBy (_, _, t) -> t

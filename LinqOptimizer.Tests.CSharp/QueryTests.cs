@@ -27,6 +27,36 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
+        public void TakeWhile()
+        {
+            Func<IEnumerable<int>, bool> f = xs =>
+            {
+                var x = xs.AsQueryExpr().TakeWhile(i => i < 10).Run();
+                var y = xs.TakeWhile(i => i < 10);
+                return Enumerable.SequenceEqual(x, y);
+            };
+
+            Spec.ForAny<TestInput<int>>(xs =>
+                    TestInput<int>.RunTestFunc<int>(f, xs))
+                .QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void SkipWhile()
+        {
+            Func<IEnumerable<int>, bool> f = xs =>
+            {
+                var x = xs.AsQueryExpr().SkipWhile(i => i < 10).Run();
+                var y = xs.SkipWhile(i => i < 10);
+                return Enumerable.SequenceEqual(x, y);
+            };
+
+            Spec.ForAny<TestInput<int>>(xs =>
+                    TestInput<int>.RunTestFunc<int>(f, xs))
+                .QuickCheckThrowOnFailure();
+        }
+
+        [Test]
         public void SelectIndexed()
         {
             Spec.ForAny<int[]>(xs =>
