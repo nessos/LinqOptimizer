@@ -194,3 +194,19 @@
         ///<returns>A query that contains the array.</returns>        
         static member toArray(query : IQueryExpr<seq<'T>>) =
             new QueryExpr<'T []>(ToArray(query.Expr))
+
+        ///<summary>Constructs a query that skips elements of the underlying sequence while the given predicate returns true, and then yields the remaining elements of the sequence.</summary>
+        ///<param name="predicate">A function that evaluates an element of the sequence to a Boolean value.</param>
+        ///<param name="query">The query whose elements are used as input.</param>
+        ///<returns>A query that contains the result of the computation.</returns>
+        static member skipWhile(predicate : Expression<Func<'T,bool>>) =
+            fun (query : IQueryExpr<seq<'T>>) ->
+                new QueryExpr<seq<'T>>(SkipWhile(predicate, query.Expr)) :> IQueryExpr<_>
+
+        ///<summary>Constructs a query that when iterated, yields elements of the underlying sequence while the given predicate returns true, and then returns no further elements.</summary>
+        ///<param name="predicate">A function that evaluates to false when no more items should be returned.</param>
+        ///<param name="query">The query whose elements are used as input.</param>
+        ///<returns>A query that contains the result of the computation.</returns>
+        static member takeWhile(predicate : Expression<Func<'T,bool>>) =
+            fun (query : IQueryExpr<seq<'T>>) ->
+                new QueryExpr<seq<'T>>(TakeWhile(predicate, query.Expr)) :> IQueryExpr<_>

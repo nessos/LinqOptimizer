@@ -51,6 +51,22 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
+        member __.``takeWhile`` () =
+            let test (xs : seq<int>) =
+                let x = xs |> Query.ofSeq |> Query.takeWhile (fun n -> n < 10) |> Query.run
+                let y = xs |> Seq.takeWhile (fun n -> n < 10)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``skipWhile`` () =
+            let test (xs : seq<int>) =
+                let x = xs |> Query.ofSeq |> Query.skipWhile (fun n -> n < 10) |> Query.run
+                let y = xs |> Seq.skipWhile (fun n -> n < 10)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
         member __.``pipelined`` () =
             let test (xs : seq<int>) =
                 let x = xs |> Query.ofSeq 
