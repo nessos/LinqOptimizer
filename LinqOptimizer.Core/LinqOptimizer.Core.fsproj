@@ -38,7 +38,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="QueryExpr.fs" />
-    <Compile Include="CollectorList.fs" />
+    <Compile Include="Collector.fs" />
     <Compile Include="ParallelismHelpers.fs" />
     <Compile Include="SortingHelpers.fs" />
     <Compile Include="GroupingHelpers.fs" />

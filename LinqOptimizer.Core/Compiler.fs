@@ -22,10 +22,9 @@
                                 InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list }
         
-        let listTypeDef = typedefof<CollectorList<_>> //typedefof<List<_>>
-
+        let collectorType = typedefof<ArrayCollector<_>>
         let toListContext (queryExpr : QueryExpr) =
-            let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+            let listType = collectorType.MakeGenericType [| queryExpr.Type |]
             let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
             let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
             let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
@@ -55,24 +54,31 @@
                 let indexVarExpr = var "___index___" typeof<int>
                 let listAssignExpr = assign listVarExpr listExpr
                 let indexAssignExpr = assign indexVarExpr (constant -1) 
-                let lengthExpr = call (listVarExpr.Type.GetMethod("get_Count")) listVarExpr []
-                let getItemExpr = call (listVarExpr.Type.GetMethod("get_Item")) listVarExpr [indexVarExpr]
+                
+                let collectorType = collectorType.MakeGenericType [| valueType |]
+                let velueArrayExpr = call (collectorType.GetMethod "ToArray") listVarExpr []
                 
                 let keyVarArrayExpr = var "___keys___" (keyType.MakeArrayType())
                 let valueVarArrayExpr = var "___values___" (valueType.MakeArrayType())
+                                
+                let lengthExpr = Expression.ArrayLength(valueVarArrayExpr)
+                let getItemExpr = Expression.ArrayAccess(valueVarArrayExpr, indexVarExpr)
+
+
                 let initKeyArrayExpr = assign keyVarArrayExpr (arrayNew keyType lengthExpr)
-                let initValueArrayExpr = assign valueVarArrayExpr (arrayNew valueType lengthExpr)
+                let initValueArrayExpr =  assign valueVarArrayExpr velueArrayExpr
+
                 let accessKeyArrayExpr = arrayAccess keyVarArrayExpr indexVarExpr 
                 let accessValueArrayExpr = arrayAccess valueVarArrayExpr indexVarExpr 
   
                 // collect keys and values assignments
                 let exprs' = 
                     match lambdaExprs, orders with 
-                    | [Lambda ([paramExpr], bodyExpr)], _ -> [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr; assign accessValueArrayExpr paramExpr]
+                    | [Lambda ([paramExpr], bodyExpr)], _ -> [assign paramExpr getItemExpr; assign accessKeyArrayExpr bodyExpr]
                     | [Lambda ([paramExpr2], bodyExpr2); Lambda ([paramExpr1], bodyExpr1)], [o2; o1] ->
                         let keysExpr = Expression.New(keyType.GetConstructors().[0], [bodyExpr1; bodyExpr2; constant o1; constant o2])
                         [assign paramExpr1 getItemExpr; assign paramExpr2 getItemExpr; 
-                            assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExpr1]
+                            assign accessKeyArrayExpr keysExpr]
                     | Lambda ([paramExprn], bodyExprn) :: Lambda ([paramExprnm1], bodyExprnm1) :: restLambdas, on :: onm1 :: restOrders ->
                         let accKeysExpr = Expression.New((typedefof<Keys<int, int>>.MakeGenericType [|bodyExprnm1.Type; bodyExprn.Type|]).GetConstructors().[0], [bodyExprnm1; bodyExprn; constant onm1; constant on])
                         let keysExpr = List.fold (fun (keysExpr : NewExpression) (lambda : LambdaExpression, order : Order) -> 
@@ -82,13 +88,13 @@
                         
                         let assignExprs = List.fold (fun assignExprs (lambda : LambdaExpression) -> assign lambda.Parameters.[0] getItemExpr :: assignExprs) 
                                                     [assign paramExprn getItemExpr; assign paramExprnm1 getItemExpr] restLambdas
-                        assignExprs @ [assign accessKeyArrayExpr keysExpr; assign accessValueArrayExpr paramExprn]                    
+                        assignExprs @ [assign accessKeyArrayExpr keysExpr ]                    
                     | _ -> failwithf "Invalid state, keys %A" lambdaExprs
 
                 let checkBoundExpr = equal indexVarExpr lengthExpr 
                 let brachExpr = ifThenElse checkBoundExpr (``break`` loopBreak) (block [] exprs') 
                 let loopExpr = block ((lambdaExprs |> List.map (fun lambdaExpr -> lambdaExpr.Parameters.[0])) @ [listVarExpr; indexVarExpr]) 
-                                    [listAssignExpr; initKeyArrayExpr; initValueArrayExpr; indexAssignExpr; 
+                                    [listAssignExpr; initValueArrayExpr; initKeyArrayExpr; indexAssignExpr; 
                                                     loop (block [] [addAssign indexVarExpr (constant 1); brachExpr]) loopBreak loopContinue]
                 { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr; LoopExpr = loopExpr; KeyType = keyType }
             
@@ -106,7 +112,7 @@
                     let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
                     block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
-            | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
+            | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t) ->
                     let indexVarExpr = var "___index___" typeof<int>
                     let listVarExpr = var "___list___" expr.Type
                     let listAssignExpr = assign listVarExpr expr
@@ -201,9 +207,6 @@
                 let stateVarInitExpr = assign paramStateExpr startExpr
                 let nextStateExpr = assign paramStateExpr bodyStateExpr
 
-//                let currVarExpr = var "___curr___" bodyResultExpr.Type
-//                let currVarInitExpr = assign currVarExpr bodyResultExpr
-
                 let exprs' = assign paramResultExpr paramStateExpr :: assign context.CurrentVarExpr bodyResultExpr :: context.Exprs
                 let branchExpr = ifThenElse bodyCondExpr (block [] exprs') (``break`` context.BreakLabel) 
                 let loopExpr = 
@@ -257,7 +260,7 @@
                                                      Exprs = [expr]; BreakLabel = breakLabel (); ContinueLabel = continueLabel ();  } optimize
             | GroupBy (Lambda ([paramExpr], bodyExpr), queryExpr', _) ->
                 let bodyExpr = optimize bodyExpr
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let listType = collectorType.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
                 let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
@@ -280,7 +283,7 @@
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
             | OrderBy (keySelectorOrderPairs, queryExpr') ->
                 let keySelectorOrderPairs' = keySelectorOrderPairs |> List.map (fun (lambdaExpr, order) -> (lambda (lambdaExpr.Parameters.ToArray()) (optimize lambdaExpr.Body)), order)
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
+                let listType = collectorType.MakeGenericType [| queryExpr'.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr'.Type, var "___acc___" listType
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
                 let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
@@ -345,22 +348,24 @@
                 let expr = compileToSeqPipeline queryExpr' context optimize
                 expr
             | ToArray queryExpr' ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let expr = compileToSequential (ToList queryExpr') optimize
-                let expr' = call (listType.GetMethod "ToArray") expr []
-                expr' 
-            | ToList queryExpr' ->
+                let collectorType = collectorType.MakeGenericType [| queryExpr'.Type |]
                 let context = toListContext queryExpr'
                 let expr = compileToSeqPipeline queryExpr' context optimize
-                expr
+                call (collectorType.GetMethod "ToArray") expr []
+            | ToList queryExpr' ->
+                let collectorType = collectorType.MakeGenericType [| queryExpr'.Type |]
+                let context = toListContext queryExpr'
+                let expr = compileToSeqPipeline queryExpr' context optimize
+                call (collectorType.GetMethod "ToList") expr []
             | queryExpr' ->
+                let collectorType = collectorType.MakeGenericType [| queryExpr'.Type |]
                 let context = toListContext queryExpr'
                 let expr = compileToSeqPipeline queryExpr context optimize
                 expr
 
         let rec compileToParallel (queryExpr : QueryExpr) (optimize : Expression -> Expression) : Expression =
             let toParallelListContext (queryExpr : QueryExpr) = 
-                let listType = listTypeDef.MakeGenericType [| queryExpr.Type |]
+                let listType = collectorType.MakeGenericType [| queryExpr.Type |]
                 let finalVarExpr, accVarExpr  = var "___final___" queryExpr.Type, var "___acc___" listType
                 let initExpr, accExpr = lambda [||] (``new`` listType), block [] [call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]; accVarExpr]
                 let leftVarExpr, rightVarExpr = var "___left___" listType, var "___right___" listType
@@ -370,9 +375,12 @@
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
                                     VarExprs = [finalVarExpr]; Exprs = [] }
                 context
+
+
+
             let rec compile queryExpr context =
                 match queryExpr with
-                | Source (ExprType (Array (_, 1)) as expr, t) | Source (ExprType (Named (TypeCheck listTypeDef _, [|_|])) as expr, t) ->
+                | Source (ExprType (Array (_, 1)) as expr, t) | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t) ->
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
@@ -487,15 +495,17 @@
                 let expr = compile queryExpr' context
                 expr 
             | ToArray queryExpr' ->
-                let listType = listTypeDef.MakeGenericType [| queryExpr'.Type |]
-                let expr = compileToParallel (ToList queryExpr') optimize
-                let expr' = call (listType.GetMethod "ToArray") expr []
-                expr' 
-            | ToList queryExpr' ->
+                let collectorType = collectorType.MakeGenericType [| queryExpr'.Type |]
                 let context = toParallelListContext queryExpr'
                 let expr = compile queryExpr' context
-                expr
+                call (collectorType.GetMethod "ToArray") expr []
+            | ToList queryExpr' ->
+                let collectorType = collectorType.MakeGenericType [| queryExpr'.Type |]
+                let context = toParallelListContext queryExpr'
+                let expr = compile queryExpr' context
+                call (collectorType.GetMethod "ToList") expr []
             | queryExpr' ->
+                let collectorType = collectorType.MakeGenericType [| queryExpr'.Type |]
                 let context = toParallelListContext queryExpr'
                 let expr = compile queryExpr context
                 expr

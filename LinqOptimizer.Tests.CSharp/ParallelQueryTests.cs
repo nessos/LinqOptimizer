@@ -295,17 +295,16 @@ namespace LinqOptimizer.Tests
         {
             Spec.ForAny<DateTime[]>(ds =>
             {
-                var x = (ds.AsParallelQueryExpr()
+                var x = ds.AsParallelQueryExpr()
                          .OrderBy(d => d.Year)
                          .ThenBy(d => d.Month)
                          .ThenBy(d => d.Day)
-                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
+                         .Run();
 
                 var y = ds.AsParallel()
                           .OrderBy(d => d.Year)
                           .ThenBy(d => d.Month)
-                          .ThenBy(d => d.Day)
-                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
+                          .ThenBy(d => d.Day);
 
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
