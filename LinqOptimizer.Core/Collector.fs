@@ -66,12 +66,12 @@
 
         interface IEnumerable<'T> with
             member this.GetEnumerator() =
-                let list = this.ToList()
-                list.GetEnumerator() :> IEnumerator<'T>
+                let array = this.ToArray() :> IEnumerable<'T>
+                array.GetEnumerator()
 
             member this.GetEnumerator() =
-                let list = this.ToList()
-                list.GetEnumerator() :> IEnumerator
+                let list = this.ToArray()
+                list.GetEnumerator()
         
         interface IOrderedEnumerable<'T> with 
             member __.CreateOrderedEnumerable<'TKey>(keySelector : Func<'T, 'TKey> , comparer : IComparer<'TKey>, desc : bool) =
