@@ -86,11 +86,14 @@ let main argv =
     
     measuref("Sum Sq Linq", (fun () -> SumSqLinq vs), "Sum Sq Opt", (fun () -> SumSqLinqOpt vs), fun (x, y) -> x = y)
     
+    let v2 = vs |> Seq.take 10 |> Seq.toArray
+    measuref("Cartesian Linq", (fun () -> CartLinq(vs, v2)), "Cartesian Linq Opt", (fun () -> CartLinqOpt(vs, v2)), fun (x,y) -> x = y)
+
     let s = 50000000
     measuref("Group Linq", (fun () -> GroupLinq s), "Group Opt", (fun () -> GroupLinqOpt s), fun (x, y) -> x = y)
     
-    //``measure``("Sum Linq", (fun () -> SumLinq vs), "Sum Opt", (fun () -> SumLinqOpt vs), fun (x, y) -> x = y)
-
+    let n = 1000
+    measuref("Pythagorean Linq", (fun () -> PythagoreanTriplesLinq n), "Pythagorean Opt", (fun () -> PythagoreanTriplesLinqOpt n ), fun (x, y) -> x = y)
 
 
     0 // return an integer exit code
