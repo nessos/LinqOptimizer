@@ -322,9 +322,9 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A query whose elements are sorted according to a key.</returns>
-        public static IQueryExpr<IEnumerable<TSource>> OrderBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        public static IQueryExpr<IOrderedEnumerable<TSource>> OrderBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -335,9 +335,9 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A query whose elements are sorted in descending according to a key.</returns>
-        public static IQueryExpr<IEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        public static IQueryExpr<IOrderedEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
         /// <summary>
@@ -370,7 +370,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A query whose elements are sorted according to a key.</returns>
-        public static IQueryExpr<IOrderedEnumerable<TSource>> ThenBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        public static IQueryExpr<IOrderedEnumerable<TSource>> ThenBy<TSource, TKey>(this IQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
@@ -383,7 +383,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to order.</param>
         /// <param name="keySelector">A function to extract a key from an element.</param>
         /// <returns>A query whose elements are sorted according to a key.</returns>
-        public static IQueryExpr<IOrderedEnumerable<TSource>> ThenByDescending<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
+        public static IQueryExpr<IOrderedEnumerable<TSource>> ThenByDescending<TSource, TKey>(this IQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
             return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
