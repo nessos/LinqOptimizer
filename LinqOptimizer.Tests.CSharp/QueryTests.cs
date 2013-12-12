@@ -27,6 +27,36 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
+        public void TakeWhile()
+        {
+            Func<IEnumerable<int>, bool> f = xs =>
+            {
+                var x = xs.AsQueryExpr().TakeWhile(i => i < 10).Run();
+                var y = xs.TakeWhile(i => i < 10);
+                return Enumerable.SequenceEqual(x, y);
+            };
+
+            Spec.ForAny<TestInput<int>>(xs =>
+                    TestInput<int>.RunTestFunc<int>(f, xs))
+                .QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void SkipWhile()
+        {
+            Func<IEnumerable<int>, bool> f = xs =>
+            {
+                var x = xs.AsQueryExpr().SkipWhile(i => i < 10).Run();
+                var y = xs.SkipWhile(i => i < 10);
+                return Enumerable.SequenceEqual(x, y);
+            };
+
+            Spec.ForAny<TestInput<int>>(xs =>
+                    TestInput<int>.RunTestFunc<int>(f, xs))
+                .QuickCheckThrowOnFailure();
+        }
+
+        [Test]
         public void SelectIndexed()
         {
             Spec.ForAny<int[]>(xs =>
@@ -147,16 +177,16 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectManyCompehension()
         {
-            Spec.ForAny<int[]>(xs =>
+            Spec.ForAny<string[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()
                           from _num in xs
-                          select num * _num).Sum().Run();
+                          select num + " " + _num).Run();
                 var y = (from num in xs
                          from _num in xs
-                         select num * _num).Sum();
+                         select num + " " + _num);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 

@@ -255,6 +255,30 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Creates a query that returns elements from a sequence as long as a specified condition is true, and then skips the remaining elements.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to return elements from.</param>
+        /// <param name="predicate">A function to test each element for a condition.</param>
+        /// <returns>A query that contains the elements from the input sequence that occur before the element at which the test no longer passes.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> TakeWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource,bool>> predicate)
+        {
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTakeWhile(predicate, query.Expr));
+        }
+
+        /// <summary>
+        /// Creates a query that bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to return elements from.</param>
+        /// <param name="predicate">A function to test each element for a condition.</param>
+        /// <returns>A query that contains the elements from the input sequence starting at the first element in the linear series that does not pass the test specified by predicate.</returns>
+        public static IQueryExpr<IEnumerable<TSource>> SkipWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
+        {
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewSkipWhile(predicate, query.Expr));
+        }
+
+        /// <summary>
         /// A query that bypasses a specified number of elements in a sequence and then returns the remaining elements.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
@@ -363,5 +387,21 @@ namespace LinqOptimizer.CSharp
         {
             return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
+
+        /// <summary>        
+        /// A query that generates a sequence by mimicking a for loop.
+        /// </summary>        
+        /// <typeparam name="TState">State type.</typeparam>        
+        /// <typeparam name="TResult">Result sequence element type.</typeparam>        
+        /// <param name="initialState">Initial state of the generator loop.</param>        
+        /// <param name="condition">Loop condition.</param>        
+        /// <param name="iterate">State update function to run after every iteration of the generator loop.</param>        
+        /// <param name="resultSelector">Result selector to compute resulting sequence elements.</param>        
+        /// <returns>A query whose elements are obtained by running the generator loop, yielding computed elements.</returns>
+        public static IQueryExpr<IEnumerable<TResult>> Generate<TState, TResult>(TState initialState, Expression<Func<TState, bool>> condition, Expression<Func<TState, TState>> iterate, Expression<Func<TState, TResult>> resultSelector)
+        {
+            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewGenerate(Expression.Constant(initialState), condition, iterate, resultSelector));
+        }
+
     }
 }

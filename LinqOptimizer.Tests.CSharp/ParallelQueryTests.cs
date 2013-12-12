@@ -151,16 +151,16 @@ namespace LinqOptimizer.Tests
         [Test]
         public void SelectManyCompehension()
         {
-            Spec.ForAny<int[]>(xs =>
+            Spec.ForAny<string[]>(xs =>
             {
                 var x = (from num in xs.AsParallelQueryExpr()
                          from _num in xs
-                         select num * _num).Sum().Run();
-                var y = (from num in xs.AsParallel()
+                         select num + " " + _num).Run();
+                var y = (from num in xs.AsParallel().AsOrdered()
                          from _num in xs
-                         select num * _num).Sum();
+                         select num + " " + _num);
 
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
@@ -295,17 +295,16 @@ namespace LinqOptimizer.Tests
         {
             Spec.ForAny<DateTime[]>(ds =>
             {
-                var x = (ds.AsParallelQueryExpr()
+                var x = ds.AsParallelQueryExpr()
                          .OrderBy(d => d.Year)
                          .ThenBy(d => d.Month)
                          .ThenBy(d => d.Day)
-                         .Select(d => d.Year + ":" + d.Month + ":" + d.Day)).Run();
+                         .Run();
 
                 var y = ds.AsParallel()
                           .OrderBy(d => d.Year)
                           .ThenBy(d => d.Month)
-                          .ThenBy(d => d.Day)
-                          .Select(d => d.Year + ":" + d.Month + ":" + d.Day);
+                          .ThenBy(d => d.Day);
 
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();

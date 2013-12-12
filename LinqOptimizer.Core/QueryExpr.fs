@@ -22,6 +22,7 @@
     /// The type representing an query expression.
     and QueryExpr = 
         | Source of Expression * Type
+        | Generate of Expression * LambdaExpression * LambdaExpression * LambdaExpression
         | Transform of LambdaExpression * QueryExpr 
         | TransformIndexed of LambdaExpression * QueryExpr 
         | Filter of LambdaExpression * QueryExpr 
@@ -31,7 +32,9 @@
         | Aggregate of Expression * LambdaExpression * QueryExpr
         | Sum of QueryExpr 
         | Count of QueryExpr 
-        | Take of Expression * QueryExpr 
+        | Take of Expression * QueryExpr
+        | TakeWhile of LambdaExpression * QueryExpr
+        | SkipWhile of LambdaExpression * QueryExpr
         | Skip of Expression * QueryExpr 
         | ForEach of LambdaExpression * QueryExpr 
         | GroupBy of LambdaExpression * QueryExpr * Type
@@ -46,6 +49,7 @@
         member self.Type = 
             match self with
             | Source (_, t) -> t
+            | Generate(_,_,_, selector) -> selector.Body.Type
             | Transform (lambda, _) -> lambda.Body.Type
             | TransformIndexed (lambda, _) -> lambda.Body.Type
             | Filter (_, q) -> q.Type
@@ -56,6 +60,8 @@
             | Sum (q) -> q.Type
             | Count (q) -> q.Type
             | Take (_, q) -> q.Type
+            | TakeWhile(_,q) -> q.Type
+            | SkipWhile(_,q) -> q.Type
             | Skip (_, q) -> q.Type
             | ForEach (_, _) -> typeof<Void>
             | GroupBy (_, _, t) -> t

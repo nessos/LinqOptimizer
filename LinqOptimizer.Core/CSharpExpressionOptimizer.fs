@@ -25,16 +25,25 @@
             | MethodCall (_, MethodName "Where" _, [expr'; Lambda ([paramExpr; indexExpr], _) as f']) -> 
                 FilterIndexed (f' :?> LambdaExpression, toQueryExpr expr')
             
-            | MethodCall (_, MethodName "Aggregate" [|_;_|] , [expr'; seedExpr; Lambda ([_;_] as paramsExpr, bodyExpr) as f' ] ) ->
+            | MethodCall (_, MethodName "Aggregate" _, [expr'; seedExpr; Lambda ([_;_] as paramsExpr, bodyExpr) as f' ] ) ->
                 Aggregate(seedExpr, f' :?> LambdaExpression, toQueryExpr expr')    
+
+            | MethodCall (_, MethodName "Generate" _, [startExpr; Lambda (_,_) as pred; Lambda (_,_) as state; Lambda (_,_) as result]) ->
+                Generate(startExpr, pred :?> LambdaExpression, state :?> LambdaExpression, result :?> LambdaExpression)
 
             | MethodCall (_, MethodName "Take" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
                 Take (countExpr, toQueryExpr expr' )
-    
+
+            | MethodCall (_, MethodName "TakeWhile" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
+                TakeWhile(f' :?> LambdaExpression, toQueryExpr expr' )
+
+            | MethodCall (_, MethodName "SkipWhile" _, [expr'; Lambda ([paramExpr], _) as f']) -> 
+                SkipWhile(f' :?> LambdaExpression, toQueryExpr expr' )
+
             | MethodCall (_, MethodName "Skip" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
                 Skip (countExpr, toQueryExpr expr')
     
-            | MethodCall (_, (MethodName "SelectMany" [|_; _|] as m), [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
+            | MethodCall (_, (MethodName "SelectMany" _ as m), [expr'; Lambda ([paramExpr], bodyExpr)]) -> 
                 NestedQuery ((paramExpr, toQueryExpr (bodyExpr)), toQueryExpr expr')
     
             | MethodCall (_, MethodName "GroupBy" _, [expr'; Lambda ([paramExpr], bodyExpr) as f']) -> 
@@ -82,10 +91,12 @@
             | MethodCall (_, MethodName "Select" _,             [_; Lambda _ ]) 
             | MethodCall (_, MethodName "Where" _,              [_; Lambda _ ])
             | MethodCall (_, MethodName "Where" _,              [_; Lambda _ ]) 
-            | MethodCall (_, MethodName "Aggregate" [|_;_|] ,   [_; _; Lambda ([_;_], _) ])
+            | MethodCall (_, MethodName "Aggregate" _,   [_; _; Lambda ([_;_], _) ])
             | MethodCall (_, MethodName "Take" _,               [_; _        ])
+            | MethodCall (_, MethodName "TakeWhile" _,          [_; Lambda _ ])
+            | MethodCall (_, MethodName "SkipWhile" _,          [_; Lambda _ ])
             | MethodCall (_, MethodName "Skip" _,               [_; _        ])
-            | MethodCall (_, MethodName "SelectMany" [|_; _|],  [_; Lambda _ ])
+            | MethodCall (_, MethodName "SelectMany" _,  [_; Lambda _ ])
             | MethodCall (_, MethodName "GroupBy" _,            [_; Lambda _ ])
             | MethodCall (_, MethodName "OrderBy" _,            [_; Lambda _ ])
             | MethodCall (_, MethodName "OrderByDescending" _,  [_; Lambda _ ])
