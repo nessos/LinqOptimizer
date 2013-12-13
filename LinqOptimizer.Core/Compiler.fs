@@ -415,7 +415,7 @@
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
                 | Filter (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                     let bodyExpr = optimize bodyExpr
-                    let exprs' = ifThen (notExpr bodyExpr) (goto context.BreakLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
+                    let exprs' = ifThenElse bodyExpr empty (goto context.ContinueLabel) :: assign context.CurrentVarExpr paramExpr :: context.Exprs
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; VarExprs = paramExpr :: context.VarExprs; Exprs = exprs' }
                 | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
                     let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
