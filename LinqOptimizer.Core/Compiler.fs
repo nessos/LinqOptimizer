@@ -426,12 +426,14 @@
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
                 | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr') ->
                     let bodyExpr = optimize bodyExpr
-                    let context' = { CurrentVarExpr = colExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                    let context' = { CurrentVarExpr = colExpr; AccVarExpr = context.AccVarExpr; BreakLabel = context.BreakLabel; ContinueLabel = context.ContinueLabel;  
                                         InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
                                         VarExprs = []; Exprs = assign valueExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
 
                     let expr = compileToSeqPipeline nestedQueryExpr context' optimize
-                    compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; Exprs = [expr] }
+                    compile queryExpr' { context with CurrentVarExpr = paramExpr; 
+                                                        AccExpr = empty; VarExprs = paramExpr :: valueExpr :: colExpr :: context.VarExprs; 
+                                                        Exprs = [expr]; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); }
                 | GroupBy (Lambda ([paramExpr], bodyExpr) as lambdaExpr, queryExpr', _) ->
                     let bodyExpr = optimize bodyExpr
                     let context' = toParallelListContext queryExpr'
