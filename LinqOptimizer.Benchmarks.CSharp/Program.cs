@@ -11,52 +11,53 @@ namespace LinqOptimizer.Benchmarks.CSharp
     {
         static void Main(string[] args)
         {
-            var v = Enumerable.Range(1, 200000000).Select(x => (double)x).ToArray();
-            Measure("Sum Linq", () => SumLinq(v),
-                    "Sum Opt", () => SumLinqOpt(v),
-                    (x1, x2) => x1 == x2);
-
-            Measure("Sum of Squares Linq", () => SumSqLinq(v),
-                    "Sum of Squares Opt", () => SumSqLinqOpt(v),
-                    (x1, x2) => x1 == x2);
-
-            var v2 = v.Take(20).ToArray();
-            //Measure("Cartesian Linq", () => CartLinq(v, v2),
-            //        "Cartesian Opt", () => CartLinqOpt(v, v2),
+            var rnd = new Random();
+            //var v = Enumerable.Range(1, 200000000).Select(x => rnd.NextDouble()).ToArray();
+            //Measure("Sum Linq", () => SumLinq(v),
+            //        "Sum Opt", () => SumLinqOpt(v),
             //        (x1, x2) => x1 == x2);
 
-            var s = 200000000;
-            Measure("GroupBy Linq", () => GroupLinq(s),
-                    "GroupBy Opt", () => GroupLinqOpt(s),
+            //Measure("Sum of Squares Linq", () => SumSqLinq(v),
+            //        "Sum of Squares Opt", () => SumSqLinqOpt(v),
+            //        (x1, x2) => x1 == x2);
+
+            //var v2 = v.Take(20).ToArray();
+            ////Measure("Cartesian Linq", () => CartLinq(v, v2),
+            ////        "Cartesian Opt", () => CartLinqOpt(v, v2),
+            ////        (x1, x2) => x1 == x2);
+
+            var g = Enumerable.Range(1, 2000000).Select(x => 1000000 * rnd.NextDouble() - 500000).ToArray();
+            Measure("GroupBy Linq", () => GroupLinq(g),
+                    "GroupBy Opt", () => GroupLinqOpt(g),
                     (x1, x2) => Enumerable.SequenceEqual(x1, x2));
 
             var n = 1000;
-            Measure("Pythagorean Triples Linq", () => PythagoreanTriplesLinq(n),
-                    "Pythagorean Triples Opt", () => PythagoreanTriplesLinqOpt(n),
-                    (x1, x2) => x1 == x2);
+            //Measure("Pythagorean Triples Linq", () => PythagoreanTriplesLinq(n),
+            //        "Pythagorean Triples Opt", () => PythagoreanTriplesLinqOpt(n),
+            //        (x1, x2) => x1 == x2);
 
 
             ///////////////////////
 
-            Measure("Parallel Sum Linq", () => ParallelSumLinq(v),
-                    "Parallel Sum Opt", () => ParallelSumLinqOpt(v),
-                    (x1, x2) => x1 == x2);
-
-            Measure("Parallel Sum of Squares Linq", () => ParallelSumSqLinq(v),
-                    "Parallel Sum of Squares Opt", () => ParallelSumSqLinqOpt(v),
-                    (x1, x2) => x1 == x2);
-
-            //Measure("Parallel Cartesian Linq", () => ParallelCartLinq(v, v2),
-            //        "Parallel Cartesian Opt", () => ParallelCartLinqOpt(v, v2),
+            //Measure("Parallel Sum Linq", () => ParallelSumLinq(v),
+            //        "Parallel Sum Opt", () => ParallelSumLinqOpt(v),
             //        (x1, x2) => x1 == x2);
 
-            Measure("Parallel GroupBy Linq", () => ParallelGroupLinq(s),
-                    "Parallel GroupBy Opt", () => ParallelGroupLinqOpt(s),
+            //Measure("Parallel Sum of Squares Linq", () => ParallelSumSqLinq(v),
+            //        "Parallel Sum of Squares Opt", () => ParallelSumSqLinqOpt(v),
+            //        (x1, x2) => x1 == x2);
+
+            ////Measure("Parallel Cartesian Linq", () => ParallelCartLinq(v, v2),
+            ////        "Parallel Cartesian Opt", () => ParallelCartLinqOpt(v, v2),
+            ////        (x1, x2) => x1 == x2);
+
+            Measure("Parallel GroupBy Linq", () => ParallelGroupLinq(g),
+                    "Parallel GroupBy Opt", () => ParallelGroupLinqOpt(g),
                     (x1, x2) => Enumerable.SequenceEqual(x1, x2));
 
-            Measure("Parallel Pythagorean Triples Linq", () => ParallelPythagoreanTriplesLinq(n),
-                    "Parallel Pythagorean Triples Opt", () => ParallelPythagoreanTriplesLinqOpt(n),
-                    (x1, x2) => x1 == x2);
+            //Measure("Parallel Pythagorean Triples Linq", () => ParallelPythagoreanTriplesLinq(n),
+            //        "Parallel Pythagorean Triples Opt", () => ParallelPythagoreanTriplesLinqOpt(n),
+            //        (x1, x2) => x1 == x2);
 
         }
 
@@ -109,22 +110,18 @@ namespace LinqOptimizer.Benchmarks.CSharp
                     select x * y).Sum().Run();
         }
 
-        static int[] GroupLinq(int size)
+        static int[] GroupLinq(IEnumerable<double> values)
         {
-            var rnd = new Random(size);
-            return Enumerable.Range(1, size)
-                   .Select(x => 10000000 * rnd.NextDouble() - 5000000)
+            return values
                    .GroupBy(x => (int)x % 100000)
                    .OrderBy(x => x.Count())
                    .Select(k => k.Key)
                    .ToArray();
         }
 
-        static int[] GroupLinqOpt(int size)
+        static int[] GroupLinqOpt(IEnumerable<double> values)
         {
-            var rnd = new Random(size);
-            return Enumerable.Range(1, size).AsQueryExpr()
-                   .Select(x => 10000000 * rnd.NextDouble() - 5000000)
+            return values.AsQueryExpr()
                    .GroupBy(x => (int)x % 100000)
                    .OrderBy(x => x.Count())
                    .Select(k => k.Key)
@@ -187,22 +184,18 @@ namespace LinqOptimizer.Benchmarks.CSharp
                     select x * y).Sum().Run();
         }
 
-        static int[] ParallelGroupLinq(int size)
+        static int[] ParallelGroupLinq(IEnumerable<double> values)
         {
-            var rnd = new Random(size);
-            return Enumerable.Range(1, size).AsParallel()
-                   .Select(x => 10000000 * rnd.NextDouble() - 5000000)
+            return values.AsParallel()
                    .GroupBy(x => (int)x % 100000)
                    .OrderBy(x => x.Count())
                    .Select(k => k.Key)
                    .ToArray();
         }
 
-        static int[] ParallelGroupLinqOpt(int size)
+        static int[] ParallelGroupLinqOpt(IEnumerable<double> values)
         {
-            var rnd = new Random(size);
-            return Enumerable.Range(1, size).AsParallelQueryExpr()
-                   .Select(x => 10000000 * rnd.NextDouble() - 5000000)
+            return values.AsParallelQueryExpr()
                    .GroupBy(x => (int)x % 100000)
                    .OrderBy(x => x.Count())
                    .Select(k => k.Key)
