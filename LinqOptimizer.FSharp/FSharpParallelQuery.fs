@@ -16,7 +16,7 @@
         ///<param name="source">The source sequence.</param>
         ///<returns>The parallel query.</returns>
         static member ofSeq(source : seq<'T>) = 
-             new ParallelQueryExpr<seq<'T>>(QueryExpr.Source(Expression.Constant(source), typeof<'T>)) :> IParallelQueryExpr<_>
+             new ParallelQueryExpr<seq<'T>>(QueryExpr.Source(Expression.Constant(source), typeof<'T>, QueryExprType.Parallel)) :> IParallelQueryExpr<_>
 
         ///<summary>Compiles the parallel query and returns a delegate to the compiled code.</summary>
         ///<param name="query">The query to compile.</param>

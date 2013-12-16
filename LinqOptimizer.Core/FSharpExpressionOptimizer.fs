@@ -124,11 +124,11 @@
 
             | NotNull expr -> 
                 if expr.Type.IsArray then
-                    Source (expr, expr.Type.GetElementType())
+                    Source (expr, expr.Type.GetElementType(), QueryExprType.Sequential)
                 elif expr.Type.IsGenericType && expr.Type.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
-                    Source(expr, expr.Type.GetGenericArguments().[0])
+                    Source(expr, expr.Type.GetGenericArguments().[0], QueryExprType.Sequential)
                 elif expr.Type.IsGenericType then
-                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0])
+                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0], QueryExprType.Sequential)
                 else
                     failwithf "Not supported source %A" expr.Type
             | _ ->

@@ -6,6 +6,7 @@
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open System.Text
 
 //    // Typed Wrapper for QueryExpr 
 //    type QueryExpr<'T>(queryExpr : QueryExpr) =
@@ -18,10 +19,11 @@
 //    and ParallelQueryExprVoid(queryExpr : QueryExpr) =
 //        member self.QueryExpr = queryExpr 
     // Main Query representation
+    type QueryExprType = Sequential | Parallel
     type Order = Ascending | Descending
     /// The type representing an query expression.
     and QueryExpr = 
-        | Source of Expression * Type
+        | Source of Expression * Type * QueryExprType
         | Generate of Expression * LambdaExpression * LambdaExpression * LambdaExpression
         | Transform of LambdaExpression * QueryExpr 
         | TransformIndexed of LambdaExpression * QueryExpr 
@@ -48,7 +50,7 @@
 
         member self.Type = 
             match self with
-            | Source (_, t) -> t
+            | Source (_, t, _) -> t
             | Generate(_,_,_, selector) -> selector.Body.Type
             | Transform (lambda, _) -> lambda.Body.Type
             | TransformIndexed (lambda, _) -> lambda.Body.Type
@@ -71,6 +73,65 @@
             | RangeGenerator _ -> typeof<int>
             | RepeatGenerator (objExpr,_) -> objExpr.Type
 //            | ZipWith (_,_,f) -> f.ReturnType
+
+        override self.ToString() = 
+            let str (expr : Expression ) = expr.ToString()
+            let rec toString (query : QueryExpr) : string = 
+                match query with
+                | Source (expr, t, queryExprType) -> 
+                    match queryExprType with
+                    | Sequential -> sprintf "Source (%s, %s, Sequential)" <| str expr <| t.ToString()
+                    | Parallel -> sprintf "Source (%s, %s, Parallel)" <| str expr <| t.ToString()
+                | Generate(expr1, expr2, expr3, expr4) -> 
+                    sprintf "Generate (%s, %s, %s, %s)" <| str expr1 <| str expr2 <| str expr3 <| str expr4
+                | Transform (lambda, query) -> 
+                    sprintf "Transform [%s](%s, %s)" <| lambda.Body.Type.ToString() <| str lambda <| toString query
+                | TransformIndexed (lambda, query) -> 
+                    sprintf "TransformIndexed [%s](%s, %s)" <| lambda.Body.Type.ToString() <| str lambda <| toString query
+                | Filter (lambda, query) -> 
+                    sprintf "Filter (%s, %s)" <| str lambda <| toString query
+                | FilterIndexed (lambda, query) -> 
+                    sprintf "FilterIndexed (%s, %s)" <| str lambda <| toString query
+                | NestedQuery ((param, query), query') -> 
+                    sprintf "NestedQuery [%s](%s, %s, %s)" <| query.Type.ToString() <| str param <| toString query <| toString query'
+                | NestedQueryTransform ((param, query), resultSelector, query') -> 
+                    sprintf "NestedQueryTransform [%s](%s, %s, %s, %s)" <| query.Type.ToString() <| str param <| toString query <| str resultSelector <| toString query'
+                | Aggregate (seed, acc, query) -> 
+                    sprintf "Aggregate [%s](%s, %s, %s)" <| acc.Body.Type.ToString() <| str seed <| str acc <| toString query
+                | Sum (query) -> 
+                    sprintf "Sum (%s, %s)" <| toString query <| query.Type.ToString()
+                | Count (query) -> 
+                    sprintf "Count (%s)" <| toString query
+                | Take (takeCount, query) -> 
+                    sprintf "Take (%s, %s)" <| str takeCount <| toString query
+                | TakeWhile(lambda, query) -> 
+                    sprintf "TakeWhile (%s, %s)" <| str lambda <| toString query
+                | SkipWhile(lambda, query) -> 
+                    sprintf "SkipWhile (%s, %s)" <| str lambda <| toString query
+                | Skip (skipCount, query) -> 
+                    sprintf "Skip (%s, %s)" <| str skipCount <| toString query
+                | ForEach (lambda, query) -> 
+                    sprintf "ForEach (%s, %s)" <| str lambda <| toString query
+                | GroupBy (lambda, query, _) -> 
+                    sprintf "GroupBy (%s, %s)" <| str lambda <| toString query
+                | OrderBy (lambdaOrderPairs, query) ->
+                    List.foldBack
+                        (fun (lambda, order) s -> 
+                            match order with
+                            | Ascending -> sprintf "OrderBy (%s, Asc, %s)" <| str lambda <| s
+                            | Descending -> sprintf "OrderBy (%s, Desc, %s)" <| str lambda <| s)
+                        lambdaOrderPairs (toString query)
+                | ToList query -> 
+                    sprintf "ToList [%s](%s)" <| query.Type.ToString() <| toString query
+                | ToArray query -> 
+                    sprintf "ToArray [%s](%s)" <| query.Type.ToString() <| toString query
+                | RangeGenerator (expr1, expr2) -> 
+                    sprintf "RangeGenerator (%s, %s)" <| str expr1 <| str expr2
+                | RepeatGenerator (expr1, expr2) -> 
+                    sprintf "RepeatGenerator (%s, %s)" <| str expr1 <| str expr2
+
+            toString self 
+            
 
         static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr) = 
             match queryExpr with

@@ -8,9 +8,10 @@ namespace LinqOptimizer.Core
     open System.Linq.Expressions
     open System.Reflection
     open System.Reflection.Emit
+    
 
     module CompiledThunks = 
-        let cache = Concurrent.ConcurrentDictionary<string, Func<obj>>()
+        let cache = Concurrent.ConcurrentDictionary<string, MethodInfo>()
 
     type CoreHelpers =
         
@@ -29,9 +30,10 @@ namespace LinqOptimizer.Core
                 let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
                 RepeatGenerator(Expression.Convert(constant element, ty) , constant count)
             | _ -> 
-                Source (constant enumerable, ty)
+                Source (constant enumerable, ty, QueryExprType.Sequential)
 
         static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
+            let source = query.ToString()
             let expr = compile query
             
             let eraser = AnonymousTypeEraser()
@@ -41,23 +43,19 @@ namespace LinqOptimizer.Core
             let expr' = csv.Visit(expr)
             let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
 
-            let func = Expression.Lambda(expr', pms)
-            let source = func.ToString()
-//            if CompiledThunks.cache.ContainsKey(source) then
-//                Func<'T>(fun () -> CompiledThunks.cache.[source].Invoke() :?> 'T)
-//            else
-            let func = CoreHelpers.WrapInvocation(Session.Compile(func), objs)
-                //let b = CompiledThunks.cache.TryAdd(source, func)
-            Func<'T>(fun () -> func.Invoke() :?> 'T)
+            if CompiledThunks.cache.ContainsKey(source) then
+                let func = CoreHelpers.WrapInvocation(CompiledThunks.cache.[source], objs)
+                Func<'T>(fun () -> func.Invoke() :?> 'T)
+            else
+                let func = Expression.Lambda(expr', pms)
+                let methodInfo = Session.Compile(func)
+                let func = CoreHelpers.WrapInvocation(methodInfo, objs)
+                CompiledThunks.cache.TryAdd(source, methodInfo) |> ignore
+                Func<'T>(fun () -> func.Invoke() :?> 'T)
 
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let expr = compile query
-            let source = expr.ToString()
-//            if CompiledThunks.cache.ContainsKey(source) then
-//                Func<'T>(fun () -> CompiledThunks.cache.[source].Invoke() :?> 'T)
-//            else
             let func = Expression.Lambda<Func<obj>>(expr).Compile()
-                //CompiledThunks.cache.TryAdd(source, func) |> ignore
             Func<'T>(fun () -> func.Invoke() :?> 'T)
 
         static member private WrapInvocation<'T>(mi : MethodInfo, args : obj []) : Func<obj> =

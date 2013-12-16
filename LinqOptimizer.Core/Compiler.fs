@@ -100,7 +100,7 @@
             
         let rec compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) (optimize : Expression -> Expression) : Expression =
             match queryExpr with
-            | Source (ExprType (Array (_, 1)) as expr, t) ->
+            | Source (ExprType (Array (_, 1)) as expr, t, _) ->
                     let indexVarExpr = var "___index___" typeof<int>
                     let arrayVarExpr = var "___array___" expr.Type
                     let arrayAssignExpr = assign arrayVarExpr expr
@@ -112,7 +112,7 @@
                     let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
                     block (arrayVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; arrayAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
-            | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t) ->
+            | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t, _) ->
                     let indexVarExpr = var "___index___" typeof<int>
                     let listVarExpr = var "___list___" expr.Type
                     let listAssignExpr = assign listVarExpr expr
@@ -124,7 +124,7 @@
                     let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
                     let loopExpr = loop (block [] [addAssign indexVarExpr (constant 1); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel 
                     block (listVarExpr :: indexVarExpr :: context.VarExprs) [block [] context.InitExprs; listAssignExpr; indexAssignExpr; loopExpr; context.ReturnExpr] 
-            | Source (expr, t) -> // general case for IEnumerable
+            | Source (expr, t, _) -> // general case for IEnumerable
                     let enumerableType = typedefof<IEnumerable<_>>.MakeGenericType [| t |]
                     let enumeratorType = typedefof<IEnumerator<_>>.MakeGenericType [| t |]
                     let disposableVarExpr = var "___disposable___" typeof<IDisposable>
@@ -279,7 +279,7 @@
                                             |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type|])
                 let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type|]
                 let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
-                let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType)) context optimize
+                let expr' = compileToSeqPipeline (Source (groupByCallExpr, groupingType, QueryExprType.Sequential)) context optimize
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; expr']
             | OrderBy (keySelectorOrderPairs, queryExpr') ->
                 let keySelectorOrderPairs' = keySelectorOrderPairs |> List.map (fun (lambdaExpr, order) -> (lambda (lambdaExpr.Parameters.ToArray()) (optimize lambdaExpr.Body)), order)
@@ -301,7 +301,7 @@
                                                             | _ -> false) // TODO: reflection type checks
                                             |> (fun methodInfo -> methodInfo.MakeGenericMethod [|keyType; queryExpr'.Type|])
                 let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant (keySelectorOrderPairs' |> List.map snd |> List.toArray)]
-                let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, queryExpr'.Type)) context optimize
+                let expr' = compileToSeqPipeline (Source (valueVarArrayExpr, queryExpr'.Type, QueryExprType.Sequential)) context optimize
                 block [accVarExpr; keyVarArrayExpr; valueVarArrayExpr] [expr; loopExpr; sortCallExpr; expr']
             | _ -> failwithf "Invalid state %A" queryExpr 
 
@@ -380,7 +380,7 @@
 
             let rec compile queryExpr context =
                 match queryExpr with
-                | Source (ExprType (Array (_, 1)) as expr, t) | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t) ->
+                | Source (ExprType (Array (_, 1)) as expr, t, _) | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t, _) ->
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
@@ -391,7 +391,7 @@
                                             (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
                                             (context.Exprs @ [context.AccExpr; label context.ContinueLabel; context.AccVarExpr]))
                     call aggregateMethodInfo null [expr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
-                | Source (expr, t) ->
+                | Source (expr, t, _) ->
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
@@ -448,7 +448,7 @@
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|bodyExpr.Type; paramExpr.Type |])
                     let groupingType = typedefof<IGrouping<_, _>>.MakeGenericType [| bodyExpr.Type; paramExpr.Type|]
                     let groupByCallExpr = call groupByMethodInfo null [keyVarArrayExpr; valueVarArrayExpr]
-                    let expr' = compile (Source (groupByCallExpr, groupingType)) context
+                    let expr' = compile (Source (groupByCallExpr, groupingType, QueryExprType.Parallel)) context
                     block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; expr']
                 | OrderBy (keySelectorOrderPairs, queryExpr') ->
                     let keySelectorOrderPairs' = keySelectorOrderPairs |> List.map (fun (lambdaExpr, order) -> (lambda (lambdaExpr.Parameters.ToArray()) (optimize lambdaExpr.Body)), order)
@@ -464,7 +464,7 @@
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|keyType; queryExpr'.Type|])
                     let sortCallExpr = call sortMethodInfo null [keyVarArrayExpr; valueVarArrayExpr; constant (keySelectorOrderPairs' |> List.map snd |> List.toArray)]
-                    let expr' = compile (Source (valueVarArrayExpr, queryExpr'.Type)) context
+                    let expr' = compile (Source (valueVarArrayExpr, queryExpr'.Type, QueryExprType.Parallel)) context
                     block [keyVarArrayExpr; valueVarArrayExpr] [loopExpr; sortCallExpr; expr']
                 | _ -> failwithf "Invalid state %A" queryExpr 
             match queryExpr with
