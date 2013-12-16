@@ -19,19 +19,15 @@ namespace LinqOptimizer.Tests
     public class Program
     {
 
-      
-
-
         public static void Main(string[] args)
         {
-            var xs =
-                Enumerable.Range(1, 10)
-                    .AsQueryExpr()
-                    .TakeWhile(x => x < 5)
-                    .Run();
-            
-            
-
+            //var xs =
+            //    Enumerable.Range(1, 10)
+            //        .AsQueryExpr()
+            //        .TakeWhile(x => x < 5)
+            //        .Run();
+            var t = new QueryTests();
+            t.UserDefinedAnonymousType();
         }
 
         static void Measure(Action action)

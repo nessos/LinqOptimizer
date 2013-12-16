@@ -56,10 +56,10 @@ namespace LinqOptimizer.Core
 //            if CompiledThunks.cache.ContainsKey(source) then
 //                Func<'T>(fun () -> CompiledThunks.cache.[source].Invoke() :?> 'T)
 //            else
-            let func = Expression.Lambda<Func<obj>>(expr).Compile()
+            let func = Expression.Lambda(expr).Compile()
                 //CompiledThunks.cache.TryAdd(source, func) |> ignore
-            Func<'T>(fun () -> func.Invoke() :?> 'T)
-
+            Func<'T>(fun () -> func.DynamicInvoke() :?> 'T)
+            
         static member private WrapInvocation<'T>(mi : MethodInfo, args : obj []) : Func<obj> =
             Func<obj>(
                 fun () -> 
