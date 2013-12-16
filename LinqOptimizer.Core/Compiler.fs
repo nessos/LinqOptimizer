@@ -389,7 +389,7 @@
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
                     let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
                                             (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
-                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
+                                            (context.Exprs @ [context.AccExpr; label context.ContinueLabel; context.AccVarExpr]))
                     call aggregateMethodInfo null [expr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
                 | Source (expr, t) ->
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
@@ -406,7 +406,7 @@
                                                         |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type|])
                     let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
                                             (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
-                                            (context.Exprs @ [context.AccExpr; label context.BreakLabel; context.AccVarExpr]))
+                                            (context.Exprs @ [context.AccExpr; label context.ContinueLabel; context.AccVarExpr]))
                     let partitionerCallExpr = call partitionerCreateMethodInfo  null [expr]
                     call aggregateMethodInfo null [partitionerCallExpr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
