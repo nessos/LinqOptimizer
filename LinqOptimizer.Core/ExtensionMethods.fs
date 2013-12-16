@@ -8,7 +8,7 @@ namespace LinqOptimizer.Core
     open System.Linq.Expressions
     open System.Reflection
     open System.Reflection.Emit
-    
+
 
     module CompiledThunks = 
         let cache = Concurrent.ConcurrentDictionary<string, MethodInfo>()
@@ -47,16 +47,21 @@ namespace LinqOptimizer.Core
                 let func = CoreHelpers.WrapInvocation(CompiledThunks.cache.[source], objs)
                 Func<'T>(fun () -> func.Invoke() :?> 'T)
             else
-                let func = Expression.Lambda(expr', pms)
+            let func = Expression.Lambda(expr', pms)
                 let methodInfo = Session.Compile(func)
                 let func = CoreHelpers.WrapInvocation(methodInfo, objs)
                 CompiledThunks.cache.TryAdd(source, methodInfo) |> ignore
-                Func<'T>(fun () -> func.Invoke() :?> 'T)
+            Func<'T>(fun () -> func.Invoke() :?> 'T)
 
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let expr = compile query
-            let func = Expression.Lambda<Func<obj>>(expr).Compile()
-            Func<'T>(fun () -> func.Invoke() :?> 'T)
+            let source = expr.ToString()
+//            if CompiledThunks.cache.ContainsKey(source) then
+//                Func<'T>(fun () -> CompiledThunks.cache.[source].Invoke() :?> 'T)
+//            else
+            let func = Expression.Lambda(expr).Compile()
+                //CompiledThunks.cache.TryAdd(source, func) |> ignore
+            Func<'T>(fun () -> func.DynamicInvoke() :?> 'T)
 
         static member private WrapInvocation<'T>(mi : MethodInfo, args : obj []) : Func<obj> =
             Func<obj>(
