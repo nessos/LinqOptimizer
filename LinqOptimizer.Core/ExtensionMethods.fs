@@ -11,7 +11,7 @@ namespace LinqOptimizer.Core
 
 
     module CompiledThunks = 
-        let cache = Concurrent.ConcurrentDictionary<string, MethodInfo>()
+        let cache = Concurrent.ConcurrentDictionary<string, Delegate>()
 
     type CoreHelpers =
         
@@ -44,23 +44,38 @@ namespace LinqOptimizer.Core
             let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
 
             if CompiledThunks.cache.ContainsKey(source) then
-                let func = CoreHelpers.WrapInvocation(CompiledThunks.cache.[source], objs)
-                Func<'T>(fun () -> func.Invoke() :?> 'T)
+                let func = CompiledThunks.cache.[source] :?> Func<obj[], obj>
+                Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
             else
-                let func = Expression.Lambda(expr', pms)
-                let methodInfo = Session.Compile(func)
-                let func = CoreHelpers.WrapInvocation(methodInfo, objs)
-                CompiledThunks.cache.TryAdd(source, methodInfo) |> ignore
-                Func<'T>(fun () -> func.Invoke() :?> 'T)
+                let lambda = Expression.Lambda(expr', pms)
+                let methodInfo = Session.Compile(lambda)
+                let func = CoreHelpers.WrapInvocation(methodInfo) 
+                CompiledThunks.cache.TryAdd(source, func) |> ignore
+                Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
 
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
+            let source = sprintf "allowNonPublicMemberAccess query (%s)" <| query.ToString()
             let expr = compile query
-            let func = Expression.Lambda(expr).Compile()
-            Func<'T>(fun () -> func.DynamicInvoke() :?> 'T)
+            
+            let eraser = AnonymousTypeEraser()
+            let expr = eraser.Visit(expr)
+            
+            let csv = ConstantLiftingTransformer()
+            let expr' = csv.Visit(expr)
+            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
 
-        static member private WrapInvocation<'T>(mi : MethodInfo, args : obj []) : Func<obj> =
-            Func<obj>(
-                fun () -> 
+            if CompiledThunks.cache.ContainsKey(source) then
+                let func = CompiledThunks.cache.[source]
+                Func<'T>(fun () -> func.DynamicInvoke(objs) :?> 'T)
+            else
+                let lambda = Expression.Lambda(expr', pms)
+                let func = lambda.Compile()
+                CompiledThunks.cache.TryAdd(source, func) |> ignore
+                Func<'T>(fun () -> func.DynamicInvoke(objs) :?> 'T)
+
+        static member private WrapInvocation<'T>(mi : MethodInfo) : Func<obj [], obj> =
+            Func<obj[], obj>(
+                fun (args : obj[]) -> 
                     try mi.Invoke(null, args) 
                     with :? TargetInvocationException as ex -> 
                         if ex.InnerException :? MemberAccessException 
