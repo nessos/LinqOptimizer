@@ -29,6 +29,10 @@ namespace LinqOptimizer.Tests
 
             var nums = Enumerable.Range(1, 1000).ToArray();
 
+            Expression<Func<int[], IQueryExpr<int>>> f = ls => ls.AsQueryExpr().Sum();
+            //var func = f.Compile();
+
+
             Measure(() => Extensions.CompileTemplate<int [], int>(ls => ls.AsQueryExpr().Sum()));
 
             //var e3 = Extensions.CompileTemplate<int[], int>(ls => ls.AsQueryExpr().Count());
