@@ -57,6 +57,13 @@ namespace LinqOptimizer.CSharp
             return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
 
+        public static Func<T,R> CompileTemplate<T,R>(Expression<Func<T,IQueryExpr<R>>> template)
+        {
+            var param = template.Parameters.Single();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return CoreHelpers.CompileTemplate<T, R>(param, query, CSharpExpressionOptimizer.Optimize);
+        }
+
         /// <summary>
         /// Compiles a query to optimized code that can by invoked using a Func.<para/>
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.

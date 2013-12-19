@@ -117,5 +117,17 @@ namespace LinqOptimizer.Core
             else
                 CoreHelpers.CompileToMethod(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
                 
-
-
+        static member CompileTemplate<'T,'R>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T, 'R> =
+            let func = 
+                CoreHelpers.CompileToMethod(template, 
+                    fun query -> 
+                        let expr = Compiler.compileToSequential query optimize.Invoke
+                        let lam = lambda [|parameter|] expr
+                        lam :> _)
+            let template = func.Invoke()
+            template
+            //var query = new QueryExpr<R>(CSharpExpressionOptimizer.ToQueryExpr(template.Body));
+            //var f = query.Compile();
+            ////var body = CSharpExpressionOptimizer.Optimize()
+            ////var reshaped = template.Update()
+            //return null;

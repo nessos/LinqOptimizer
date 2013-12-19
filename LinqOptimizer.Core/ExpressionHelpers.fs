@@ -70,12 +70,29 @@ namespace LinqOptimizer.Core
         let isPrimitive (expr : ConstantExpression) =
             expr.Type.IsPrimitive || expr.Type = typeof<string> 
 
+        let (|QuotedLambda|_|) (expr : Expression) =
+            match expr with
+            | :? UnaryExpression as unaryExpr when unaryExpr.NodeType = ExpressionType.Quote ->
+                match unaryExpr.Operand with
+                | :? LambdaExpression as lam -> Some lam
+                | _ -> None
+            | _ -> None
+
         // Expression Active Patterns
         let (|Lambda|_|) (expr : Expression) = 
-            if expr :? LambdaExpression then 
-                let lambdaExpr = expr :?> LambdaExpression
-                Some (Seq.toList lambdaExpr.Parameters, lambdaExpr.Body)
-            else None
+            match expr with
+            | :? LambdaExpression as lam -> Some (Seq.toList lam.Parameters, lam.Body)
+            | _ -> None
+
+        // Expression Active Patterns
+        let (|LambdaOrQuote|_|) (expr : Expression) = 
+            match expr with
+            | Lambda(param, body) -> 
+                Some (Seq.toList param, body, expr :?> LambdaExpression)
+            | QuotedLambda lam ->
+                Some (Seq.toList lam.Parameters, lam.Body, lam)
+            | _ ->
+                None
 
            
         let (|MethodCall|_|) (expr : Expression) =
