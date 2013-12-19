@@ -24,7 +24,6 @@
     type Order = Ascending | Descending
     /// The type representing an query expression.
     and QueryExpr = 
-        | SourceParameter of Expression * Type
         | Source of Expression * Type * QueryExprType
         | Generate of Expression * LambdaExpression * LambdaExpression * LambdaExpression
         | Transform of LambdaExpression * QueryExpr 
@@ -52,7 +51,6 @@
 
         member self.Type = 
             match self with
-            | SourceParameter(_, t) -> t
             | Source (_, t, _) -> t
             | Generate(_,_,_, selector) -> selector.Body.Type
             | Transform (lambda, _) -> lambda.Body.Type
@@ -81,8 +79,6 @@
             let str (expr : Expression ) = expr.ToString()
             let rec toString (query : QueryExpr) : string = 
                 match query with
-                | SourceParameter(expr, t) ->
-                    sprintf' "SourceParameter (%s, %s)" <| str expr <| t.ToString()
                 | Source (expr, t, queryExprType) -> 
                     match queryExprType with
                     | Sequential -> sprintf' "Source (%s, %s, Sequential)" <| str expr <| t.ToString()

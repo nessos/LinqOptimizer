@@ -29,34 +29,30 @@ namespace LinqOptimizer.Tests
 
             var nums = Enumerable.Range(1, 1000).ToArray();
 
-            Expression<Func<int[], IQueryExpr<int>>> f = ls => ls.AsQueryExpr().Sum();
-            //var func = f.Compile();
+            Measure(() => Extensions.CompileTemplate<Tuple<int, int>, int>(ls => Enumerable.Range(ls.Item1, ls.Item2).AsQueryExpr().Count()));
+
+            var e3 = Extensions.CompileTemplate<Tuple<int,int>, int>(ls => Enumerable.Range(ls.Item1, ls.Item2).AsQueryExpr().Count());
+
+            Measure(() =>
+            {
+                var s1 = 0;
+                for (int i = 0; i < 10000; i++)
+                {
+                    s1 += e3(Tuple.Create(0,i));
+                }
+                Console.WriteLine(s1);
+            });
 
 
-            Measure(() => Extensions.CompileTemplate<int [], int>(ls => ls.AsQueryExpr().Sum()));
-
-            //var e3 = Extensions.CompileTemplate<int[], int>(ls => ls.AsQueryExpr().Count());
-
-            //Measure(() =>
-            //{
-            //    var s1 = 0;
-            //    for (int i = 0; i < 100000; i++)
-            //    {
-            //        s1 += e3(nums);
-            //    }
-            //    Console.WriteLine(s1);
-            //});
-
-
-            //Measure(() =>
-            //{
-            //    var s2 = 0;
-            //    for (int i = 0; i < 100000; i++)
-            //    {
-            //        s2 += nums.AsQueryExpr().Count().Run();
-            //    }
-            //    Console.WriteLine(s2);
-            //});
+            Measure(() =>
+            {
+                var s2 = 0;
+                for (int i = 0; i < 10000; i++)
+                {
+                    s2 += Enumerable.Range(0, i).AsQueryExpr().Count().Run();
+                }
+                Console.WriteLine(s2);
+            });
         }
 
         static void Measure(Action action)
