@@ -22,16 +22,16 @@ namespace LinqOptimizer.Tests
             
             //e1(10).ForEach(Console.WriteLine);
 
-            //var e2 = Extensions.CompileTemplate<IEnumerable<int>, int>(ls => ls.AsQueryExpr().Count());
+            var e2 = Extensions.Compile<IEnumerable<int>, int>(ls => ls.AsQueryExpr().Count());
 
             //Console.WriteLine(e2(Enumerable.Range(1, 10)));
             //Console.WriteLine(e2(Enumerable.Range(1, 20)));
 
             var nums = Enumerable.Range(1, 1000).ToArray();
 
-            Measure(() => Extensions.CompileTemplate<Tuple<int, int>, int>(ls => Enumerable.Range(ls.Item1, ls.Item2).AsQueryExpr().Count()));
+            Measure(() => Extensions.Compile<Tuple<int, int>, int>(ls => Enumerable.Range(ls.Item1, ls.Item2).AsQueryExpr().Count()));
 
-            var e3 = Extensions.CompileTemplate<Tuple<int,int>, int>(ls => Enumerable.Range(ls.Item1, ls.Item2).AsQueryExpr().Count());
+            var e3 = Extensions.Compile<Tuple<int, int>, int>(ls => Enumerable.Range(ls.Item1, ls.Item2).AsQueryExpr().Count());
 
             Measure(() =>
             {

@@ -70,19 +70,13 @@
             | MethodCall (_, MethodName "ToArray" _, [expr']) ->
                 ToArray(toQueryExpr expr')
 
-            | MethodCall (expr', MethodName "ForEach" _, [LambdaOrQuote ([paramExpr], bodyExpr, f')]) ->
+            | MethodCall (expr', MethodName "ForEach" _, [       LambdaOrQuote ([paramExpr], bodyExpr, f')]) 
+            | MethodCall (_,     MethodName "ForEach" _, [expr'; LambdaOrQuote ([paramExpr], bodyExpr, f')]) ->
                 ForEach(f', toQueryExpr expr')
 
             | MethodCall (_, MethodName "AsQueryExpr" _, [expr']) ->
-//                if expr'.Type.IsArray then
-//                    SourceParameter (expr', expr'.Type.GetElementType())
-//                elif expr'.Type.IsGenericType && expr.Type.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
-//                    SourceParameter (expr', expr'.Type.GetGenericArguments().[0])
-//                elif expr'.Type.IsGenericType then
-//                    SourceParameter (expr', expr'.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0])
-//                else
-//                    failwithf "Not supported source %A" expr'.Type
                 toQueryExpr expr'
+
             | NotNull expr -> 
                 if expr.Type.IsArray then
                     Source (expr, expr.Type.GetElementType(), QueryExprType.Sequential)
@@ -115,7 +109,8 @@
             | MethodCall (_, MethodName "Sum" _,                [_           ])
             | MethodCall (_, MethodName "ToList" _,             [_           ])
             | MethodCall (_, MethodName "ToArray" _,            [_           ]) 
-            | MethodCall (_, MethodName "ForEach" _,            [LambdaOrQuote _    ]) ->
+            | MethodCall (_, MethodName "ForEach" _,            [_; LambdaOrQuote _    ]) 
+            | MethodCall (_, MethodName "ForEach" _,            [   LambdaOrQuote _    ]) ->
                 let query = toQueryExpr expr
                 let expr = (Compiler.compileToSequential query optimize)
                 Some expr

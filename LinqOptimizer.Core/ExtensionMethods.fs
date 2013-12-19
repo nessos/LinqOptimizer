@@ -101,7 +101,6 @@ namespace LinqOptimizer.Core
                 CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke)
             else
                 CoreHelpers.CompileToMethod(queryExpr, fun expr -> Compiler.compileToSequential expr optimize.Invoke )
-                
 
         static member Compile(queryExpr : QueryExpr, optimize : Func<Expression,Expression>,  allowNonPublicMemberAccess : bool) : Action =
             if allowNonPublicMemberAccess then
@@ -116,18 +115,56 @@ namespace LinqOptimizer.Core
                 CoreHelpers.Compile(queryExpr, fun expr -> Compiler.compileToParallel expr optimize.Invoke)
             else
                 CoreHelpers.CompileToMethod(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
-                
-        static member CompileTemplate<'T,'R>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T, 'R> =
+             
+
+
+        static member CompileTemplate<'T,'R>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Func<'T, 'R> =
             let func = 
-                CoreHelpers.CompileToMethod(template, 
-                    fun query -> 
-                        let expr = Compiler.compileToSequential query optimize.Invoke
-                        let lam = lambda [|parameter|] expr
-                        lam :> _)
+                if allowNonPublicMemberAccess then
+                    CoreHelpers.Compile(template, 
+                        fun query -> 
+                            let expr = Compiler.compileToSequential query optimize.Invoke
+                            let lam = lambda [|parameter|] expr
+                            lam :> Expression) 
+                else
+                    CoreHelpers.CompileToMethod(template, 
+                        fun query -> 
+                            let expr = Compiler.compileToSequential query optimize.Invoke
+                            let lam = lambda [|parameter|] expr
+                            lam :> _) 
             let template = func.Invoke()
             template
-            //var query = new QueryExpr<R>(CSharpExpressionOptimizer.ToQueryExpr(template.Body));
-            //var f = query.Compile();
-            ////var body = CSharpExpressionOptimizer.Optimize()
-            ////var reshaped = template.Update()
-            //return null;
+
+        static member CompileTemplate<'T>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Action<'T> =
+            let func = 
+                if allowNonPublicMemberAccess then
+                    CoreHelpers.Compile(template, 
+                        fun query -> 
+                            let expr = Compiler.compileToSequential query optimize.Invoke
+                            let lam = lambda [|parameter|] expr
+                            lam :> Expression) 
+                else
+                    CoreHelpers.CompileToMethod(template, 
+                        fun query -> 
+                            let expr = Compiler.compileToSequential query optimize.Invoke
+                            let lam = lambda [|parameter|] expr
+                            lam :> _) 
+            let template = func.Invoke()
+            template
+
+        static member CompileTemplateToParallel<'T,'R>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Func<'T, 'R> =
+            let func = 
+                if allowNonPublicMemberAccess then
+                    CoreHelpers.Compile(template, 
+                        fun query -> 
+                            let expr = Compiler.compileToParallel query optimize.Invoke
+                            let lam = lambda [|parameter|] expr
+                            lam :> Expression) 
+                else
+                    CoreHelpers.CompileToMethod(template, 
+                        fun query -> 
+                            let expr = Compiler.compileToParallel query optimize.Invoke
+                            let lam = lambda [|parameter|] expr
+                            lam :> _) 
+            let template = func.Invoke()
+            template

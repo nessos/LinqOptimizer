@@ -6,6 +6,7 @@ using FsCheck.Fluent;
 using NUnit.Framework;
 using LinqOptimizer.CSharp;
 using System.Linq.Expressions;
+using LinqOptimizer.Base;
 
 namespace LinqOptimizer.Tests
 {
@@ -681,7 +682,45 @@ namespace LinqOptimizer.Tests
         {
             Assert.Catch(typeof(MemberAccessException), () => UserDefinedAnonymousTypeTest(false));
             Assert.AreEqual(42, UserDefinedAnonymousTypeTest(true));
-        } 
+        }
+
+
+        [Test]
+        public void PreCompileFunc()
+        {
+            Spec.ForAny<int>(i =>
+            {
+                if (i < 1) return true;
+
+                var t = Extensions.Compile<int, IEnumerable<string>>(m => 
+                        Enumerable.Range(1, m).AsQueryExpr().Select(n => n.ToString()));
+
+                var x = t(i);
+
+                var y = Enumerable.Range(1, i).Select(n => n.ToString());
+
+                return Enumerable.SequenceEqual(x,y);
+            }).QuickCheckThrowOnFailure();
+        }
+        [Test]
+        public void PreCompileAction()
+        {
+            Spec.ForAny<int>(i =>
+            {
+                if (i < 1) return true;
+
+                var xs = new List<int>();
+                Expression<Func<int, IQueryExpr>> lam = m => Enumerable.Range(1, m).AsQueryExpr().ForEach(n => xs.Add(n));
+                Action<int> t = Extensions.Compile<int>(lam);
+
+                t(i);
+
+                var ys = new List<int>();
+                Enumerable.Range(1, i).ToList().ForEach(n => ys.Add(n));
+
+                return Enumerable.SequenceEqual(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
 
     }
 }

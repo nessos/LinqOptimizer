@@ -25,12 +25,13 @@ namespace LinqOptimizer.CSharp
             return new QueryExpr<IEnumerable<TSource>>(CoreHelpers.AsQueryExpr(source, typeof(TSource)));
         }
 
+        #region Compile methods
         /// <summary>
         /// Compiles a query to optimized code that can by invoked using a Func.
         /// </summary>
         /// <param name="query">The query to compile</param>
         /// <returns>A Func containing optimized code.</returns>
-        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query) 
+        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query)
         {
             return CoreHelpers.Compile<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
@@ -57,13 +58,6 @@ namespace LinqOptimizer.CSharp
             return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
 
-        public static Func<T,R> CompileTemplate<T,R>(Expression<Func<T,IQueryExpr<R>>> template)
-        {
-            var param = template.Parameters.Single();
-            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
-            return CoreHelpers.CompileTemplate<T, R>(param, query, CSharpExpressionOptimizer.Optimize);
-        }
-
         /// <summary>
         /// Compiles a query to optimized code that can by invoked using a Func.<para/>
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
@@ -74,8 +68,10 @@ namespace LinqOptimizer.CSharp
         public static Action Compile(this IQueryExpr query, bool enableNonPublicMemberAccess)
         {
             return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
-        }
+        } 
+        #endregion
 
+        #region Run methods
         /// <summary>
         /// Compiles a query to optimized code, runs the code and returns the result.
         /// </summary>
@@ -106,7 +102,7 @@ namespace LinqOptimizer.CSharp
         public static void Run(this IQueryExpr query)
         {
             query.Compile().Invoke();
-        }
+        } 
 
         /// <summary>
         /// Compiles a query to optimized code, runs the code and returns the result.<para/>
@@ -119,7 +115,66 @@ namespace LinqOptimizer.CSharp
         {
             query.Compile(enableNonPublicMemberAccess).Invoke();
         }
+        #endregion
 
+        #region Compiled templates
+        /// <summary>
+        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The paramiterized query.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IQueryExpr<TResult>>> template)
+        {
+            return Extensions.Compile<TSource, TResult>(template, false);
+        }
+
+        /// <summary>
+        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The paramiterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess)
+        {
+            var param = template.Parameters.Single();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return CoreHelpers.CompileTemplate<TSource, TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
+        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The paramiterized query.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template)
+        {
+            return Extensions.Compile(template, false);
+        }
+
+        /// <summary>
+        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <param name="template">The paramiterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template, bool enableNonPublicMemberAccess)
+        {
+            var param = template.Parameters.Single();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return CoreHelpers.CompileTemplate<TSource>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        } 
+        #endregion
+
+        #region Combinators
         /// <summary>
         /// Creates a new query that projects each element of a sequence into a new form.
         /// </summary>
@@ -142,7 +197,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="selector">A transform function to apply to each source element; the second parameter of the function represents the index of the source element.</param>
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, TResult>> selector)
-        { 
+        {
             return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransformIndexed(selector, query.Expr));
         }
 
@@ -157,7 +212,7 @@ namespace LinqOptimizer.CSharp
         {
             return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
         }
-        
+
         /// <summary>
         /// Creates a new query that filters a sequence of values based on a predicate. Each element's index is used in the logic of the predicate function.
         /// </summary>
@@ -179,7 +234,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="seed">The initial accumulator value.</param>
         /// <param name="func">An accumulator function to be invoked on each element.</param>
         /// <returns>A query that returns the final accumulator value.</returns>
-        public static IQueryExpr<TAcc> Aggregate<TSource,TAcc>(this IQueryExpr<IEnumerable<TSource>> query, TAcc seed, Expression<Func<TAcc, TSource, TAcc>> func)
+        public static IQueryExpr<TAcc> Aggregate<TSource, TAcc>(this IQueryExpr<IEnumerable<TSource>> query, TAcc seed, Expression<Func<TAcc, TSource, TAcc>> func)
         {
             return new QueryExpr<TAcc>(QueryExpr.NewAggregate(Expression.Constant(seed), func, query.Expr));
         }
@@ -223,10 +278,10 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">A query whose values to project.</param>
         /// <param name="selector">A transform function to apply to each element.</param>
         /// <returns>A query whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.</returns>
-        public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource,TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TResult>>> selector )
+        public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TResult>>> selector)
         {
             var paramExpr = selector.Parameters.Single();
-            var bodyExpr =  selector.Body;
+            var bodyExpr = selector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
             return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQuery(nested, query.Expr));
         }
@@ -241,10 +296,10 @@ namespace LinqOptimizer.CSharp
         /// <param name="collectionSelector">A transform function to apply to each element of the input sequence.</param>
         /// <param name="resultSelector">A transform function to apply to each element of the intermediate sequence.</param>
         /// <returns>A query whose elements are the result of invoking the one-to-many transform function on each element of the input sequence and the result selector function on each element therein.</returns>
-        public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource,TCol,TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TCol>>> collectionSelector, Expression<Func<TSource, TCol, TResult>> resultSelector)
+        public static IQueryExpr<IEnumerable<TResult>> SelectMany<TSource, TCol, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, IEnumerable<TCol>>> collectionSelector, Expression<Func<TSource, TCol, TResult>> resultSelector)
         {
             var paramExpr = collectionSelector.Parameters.Single();
-            var bodyExpr =  collectionSelector.Body;
+            var bodyExpr = collectionSelector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
             return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQueryTransform(nested, resultSelector, query.Expr));
         }
@@ -268,7 +323,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="query">The query to return elements from.</param>
         /// <param name="predicate">A function to test each element for a condition.</param>
         /// <returns>A query that contains the elements from the input sequence that occur before the element at which the test no longer passes.</returns>
-        public static IQueryExpr<IEnumerable<TSource>> TakeWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource,bool>> predicate)
+        public static IQueryExpr<IEnumerable<TSource>> TakeWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
             return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTakeWhile(predicate, query.Expr));
         }
@@ -318,7 +373,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
+            return new QueryExpr<IEnumerable<IGrouping<TKey, TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey, TSource>)));
         }
 
         /// <summary>
@@ -409,6 +464,6 @@ namespace LinqOptimizer.CSharp
         {
             return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewGenerate(Expression.Constant(initialState), condition, iterate, resultSelector));
         }
-
+        #endregion
     }
 }

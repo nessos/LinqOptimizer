@@ -98,7 +98,7 @@
                                                     loop (block [] [addAssign indexVarExpr (constant 1); brachExpr]) loopBreak loopContinue]
                 { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr; LoopExpr = loopExpr; KeyType = keyType }
             
-        let rec compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) (optimize : Expression -> Expression) : Expression =
+        let rec private compileToSeqPipeline (queryExpr : QueryExpr) (context : QueryContext) (optimize : Expression -> Expression) : Expression =
             match queryExpr with
             | Source (ExprType (Array (_, 1)) as expr, t, _) ->
                     let indexVarExpr = var "___index___" typeof<int>
