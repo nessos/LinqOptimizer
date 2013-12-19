@@ -19,6 +19,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Gpu", "LinqOp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Gpu.CSharp", "LinqOptimizer.Gpu.CSharp\LinqOptimizer.Gpu.CSharp.csproj", "{36A2A39A-D980-46C3-A5E1-CB680763786B}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinOptimizer.Gpu.FSharp", "LinOptimizer.Gpu.FSharp\LinOptimizer.Gpu.FSharp.fsproj", "{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
