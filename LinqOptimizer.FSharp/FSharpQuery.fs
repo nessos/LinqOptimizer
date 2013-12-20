@@ -210,3 +210,53 @@
         static member takeWhile(predicate : Expression<Func<'T,bool>>) =
             fun (query : IQueryExpr<seq<'T>>) ->
                 new QueryExpr<seq<'T>>(TakeWhile(predicate, query.Expr)) :> IQueryExpr<_>
+
+
+
+
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
+        /// <typeparam name="R">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>, enableNonPublicMemberAccess : bool) =
+            let param = template.Parameters.Single()
+            let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
+            CoreHelpers.CompileTemplate<'T,'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        static member compile<'T>(template : Expression<Func<'T, IQueryExpr>>, enableNonPublicMemberAccess : bool) =
+            let param = template.Parameters.Single()
+            let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
+            CoreHelpers.CompileTemplate<'T>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
+        /// </summary>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        static member compile<'T>(template : Expression<Func<'T, IQueryExpr>>) =
+            Query.compile<'T>(template, false)
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
+        /// </summary>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
+        /// <typeparam name="R">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>) =
+            Query.compile<'T,'R>(template, false)

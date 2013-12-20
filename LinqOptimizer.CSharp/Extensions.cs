@@ -150,7 +150,6 @@ namespace LinqOptimizer.CSharp
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// </summary>
         /// <typeparam name="TSource">The type of the query parameter.</typeparam>
-        /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <returns>A delegate to the optimized query.</returns>
         public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template)

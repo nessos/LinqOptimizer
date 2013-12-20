@@ -135,3 +135,21 @@
                 let y = xs |> Seq.toArray
                 equal (Seq.sort x) (Seq.sort y)
             Check.QuickThrowOnFailure (TestInput.RunTest test) 
+
+        [<Test>]
+        member __.``precompile function``() =
+            let test (xs : seq<int>) =
+                let t = Query.compile(fun x -> Query.length (Query.ofSeq x) )
+                let x = t(xs)
+                let y = xs |> Seq.length
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``precompile function pipelined``() =
+            let test (xs : seq<int>) =
+                let t = Query.compile(fun x -> x |> Query.ofSeq |> Query.length )
+                let x = t(xs)
+                let y = xs |> Seq.length
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)

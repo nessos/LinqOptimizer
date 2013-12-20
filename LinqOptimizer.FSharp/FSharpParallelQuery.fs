@@ -126,3 +126,28 @@
         ///<returns>A parallel query that contains the array.</returns>
         static member toArray(query : IParallelQueryExpr<seq<'T>>) =
             ParallelQueryExpr<'T []>(ToArray(query.Expr))
+
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
+        /// <typeparam name="R">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>, enableNonPublicMemberAccess : bool) =
+            let param = template.Parameters.Single()
+            let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
+            CoreHelpers.CompileTemplateToParallel<'T,'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
+        /// </summary>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
+        /// <typeparam name="R">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>) =
+            PQuery.compile<'T,'R>(template, false)
