@@ -119,11 +119,11 @@ namespace LinqOptimizer.CSharp
 
         #region Compiled templates
         /// <summary>
-        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// </summary>
         /// <typeparam name="TSource">The type of the query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
-        /// <param name="template">The paramiterized query.</param>
+        /// <param name="template">The parameterized query.</param>
         /// <returns>A delegate to the optimized query.</returns>
         public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IQueryExpr<TResult>>> template)
         {
@@ -131,12 +131,12 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
-        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
         /// <typeparam name="TSource">The type of the query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
-        /// <param name="template">The paramiterized query.</param>
+        /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
         public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess)
@@ -147,11 +147,11 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
-        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// </summary>
         /// <typeparam name="TSource">The type of the query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
-        /// <param name="template">The paramiterized query.</param>
+        /// <param name="template">The parameterized query.</param>
         /// <returns>A delegate to the optimized query.</returns>
         public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template)
         {
@@ -159,11 +159,11 @@ namespace LinqOptimizer.CSharp
         }
 
         /// <summary>
-        /// Precompiles a paramiterized query to optimized code that can by invoked using a Func.
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
         /// <typeparam name="TSource">The type of the query parameter.</typeparam>
-        /// <param name="template">The paramiterized query.</param>
+        /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
         public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template, bool enableNonPublicMemberAccess)

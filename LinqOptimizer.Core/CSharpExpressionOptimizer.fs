@@ -11,6 +11,16 @@
     // C#/Linq call patterns
     // TODO: expr type checks
     module private CSharpExpressionOptimizerHelpers =
+        let private sourceOfExpr (expr : Expression) : QueryExpr =
+                if expr.Type.IsArray then
+                    Source (expr, expr.Type.GetElementType(), QueryExprType.Sequential)
+                elif expr.Type.IsGenericType && expr.Type.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
+                    Source(expr, expr.Type.GetGenericArguments().[0], QueryExprType.Sequential)
+                elif expr.Type.IsGenericType then
+                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0], QueryExprType.Sequential)
+                else
+                    failwithf "Not supported source %A" expr.Type
+        
         let rec toQueryExpr (expr : Expression) : QueryExpr =
             match expr with 
             | MethodCall (_, MethodName "Select" _, [expr'; LambdaOrQuote ([_], bodyExpr, f')]) -> 
@@ -75,22 +85,15 @@
                 ForEach(f', toQueryExpr expr')
 
             | MethodCall (_, MethodName "AsQueryExpr" _, [expr']) ->
-                toQueryExpr expr'
-
+                sourceOfExpr expr'
             | NotNull expr -> 
-                if expr.Type.IsArray then
-                    Source (expr, expr.Type.GetElementType(), QueryExprType.Sequential)
-                elif expr.Type.IsGenericType && expr.Type.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
-                    Source(expr, expr.Type.GetGenericArguments().[0], QueryExprType.Sequential)
-                elif expr.Type.IsGenericType then
-                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0], QueryExprType.Sequential)
-                else
-                    failwithf "Not supported source %A" expr.Type
+                sourceOfExpr expr
             | _ ->
                 invalidArg "expr" "Cannot extract QueryExpr from null Expression"
 
         and private transformer (expr : Expression) : Expression option =
             match expr with
+            | MethodCall (_, MethodName "AsQueryExpr" _,        [_              ])
             | MethodCall (_, MethodName "Select" _,             [_; LambdaOrQuote _ ]) 
             | MethodCall (_, MethodName "Select" _,             [_; LambdaOrQuote _ ]) 
             | MethodCall (_, MethodName "Where" _,              [_; LambdaOrQuote _ ])
