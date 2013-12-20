@@ -137,7 +137,7 @@
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>, enableNonPublicMemberAccess : bool) =
+        static member compile<'T,'R>(template : Expression<Func<'T, IParallelQueryExpr<'R>>>, enableNonPublicMemberAccess : bool) =
             let param = template.Parameters.Single()
             let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
             CoreHelpers.CompileTemplateToParallel<'T,'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
@@ -149,5 +149,5 @@
         /// <typeparam name="R">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>) =
+        static member compile<'T,'R>(template : Expression<Func<'T, IParallelQueryExpr<'R>>>) =
             PQuery.compile<'T,'R>(template, false)
