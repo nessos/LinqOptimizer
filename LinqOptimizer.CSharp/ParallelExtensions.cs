@@ -245,5 +245,37 @@ namespace LinqOptimizer.CSharp
         {
             return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
+
+
+        #region Compiled templates
+        /// <summary>
+        /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IParallelQueryExpr<TResult>>> template)
+        {
+            return ParallelExtensions.Compile<TSource, TResult>(template, false);
+        }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess)
+        {
+            var param = template.Parameters.Single();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return CoreHelpers.CompileTemplateToParallel<TSource, TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+        #endregion
+
     }
 }

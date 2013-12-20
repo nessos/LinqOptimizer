@@ -23,7 +23,9 @@ namespace LinqOptimizer.Tests
             //e1(10).ForEach(Console.WriteLine);
 
 
-            var e = Extensions.Compile<IEnumerable<int>, int>(nums => nums.Select(x => x * x).AsQueryExpr().Count());
+            //var e = Extensions.Compile<IEnumerable<int>, int>(nums => nums.Select(x => x * x).AsQueryExpr().Count());
+            
+            var e = ParallelExtensions.Compile<IEnumerable<int>, int>(nums => nums.AsParallelQueryExpr().Select(x => x).Count());
 
             var xs = e(Enumerable.Range(1, 10));
 

@@ -11,13 +11,13 @@
     // C#/Linq call patterns
     // TODO: expr type checks
     module private CSharpExpressionOptimizerHelpers =
-        let private sourceOfExpr (expr : Expression) : QueryExpr =
+        let private sourceOfExpr (expr : Expression) sourceType : QueryExpr =
                 if expr.Type.IsArray then
-                    Source (expr, expr.Type.GetElementType(), QueryExprType.Sequential)
+                    Source (expr, expr.Type.GetElementType(), sourceType)
                 elif expr.Type.IsGenericType && expr.Type.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
-                    Source(expr, expr.Type.GetGenericArguments().[0], QueryExprType.Sequential)
+                    Source(expr, expr.Type.GetGenericArguments().[0], sourceType)
                 elif expr.Type.IsGenericType then
-                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0], QueryExprType.Sequential)
+                    Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0], sourceType)
                 else
                     failwithf "Not supported source %A" expr.Type
         
@@ -85,9 +85,14 @@
                 ForEach(f', toQueryExpr expr')
 
             | MethodCall (_, MethodName "AsQueryExpr" _, [expr']) ->
-                sourceOfExpr expr'
-            | NotNull expr -> 
-                sourceOfExpr expr
+                sourceOfExpr expr' QueryExprType.Sequential
+
+            | MethodCall (_, MethodName "AsParallelQueryExpr" _, [expr']) ->
+                sourceOfExpr expr' QueryExprType.Parallel
+
+            | NotNull expr' -> 
+                sourceOfExpr expr' QueryExprType.Sequential
+
             | _ ->
                 invalidArg "expr" "Cannot extract QueryExpr from null Expression"
 

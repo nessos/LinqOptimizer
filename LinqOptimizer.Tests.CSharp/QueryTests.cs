@@ -702,6 +702,7 @@ namespace LinqOptimizer.Tests
                 return Enumerable.SequenceEqual(x,y);
             }).QuickCheckThrowOnFailure();
         }
+
         [Test]
         public void PreCompileAction()
         {

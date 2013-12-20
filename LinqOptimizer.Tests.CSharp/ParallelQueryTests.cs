@@ -331,5 +331,23 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
+        [Test]
+        public void PreCompileFunc()
+        {
+            Spec.ForAny<int>(i =>
+            {
+                if (i < 1) return true;
+
+                var t = ParallelExtensions.Compile<int, int>(m =>
+                            Enumerable.Range(1, m).AsParallelQueryExpr().Sum());
+
+                var x = t(i);
+
+                var y = Enumerable.Range(1, i).AsParallel().Sum();
+
+                return x == y;
+            }).QuickCheckThrowOnFailure();
+        }
+
     }
 }
