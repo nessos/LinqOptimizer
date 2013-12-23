@@ -40,9 +40,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">
+      <Project>{f21f83a3-bdbd-4965-87d6-94e65a069a7b}</Project>
+      <Name>LinqOptimizer.Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LinqOptimizer.Core\LinqOptimizer.Core.fsproj">
+      <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
+      <Name>LinqOptimizer.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LinqOptimizer.Gpu\LinqOptimizer.Gpu.fsproj">
       <Project>{edf3ce5f-18a2-443e-85e7-d3d877233aed}</Project>
       <Name>LinqOptimizer.Gpu</Name>

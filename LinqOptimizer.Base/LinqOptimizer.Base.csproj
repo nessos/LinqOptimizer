@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GpuQueryExpr.cs" />
     <Compile Include="ParallelQueryExpr.cs" />
     <Compile Include="QueryExpr.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

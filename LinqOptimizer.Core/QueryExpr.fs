@@ -20,7 +20,7 @@
 //    and ParallelQueryExprVoid(queryExpr : QueryExpr) =
 //        member self.QueryExpr = queryExpr 
     // Main Query representation
-    type QueryExprType = Sequential | Parallel
+    type QueryExprType = Sequential | Parallel | Gpu
     type Order = Ascending | Descending
     /// The type representing an query expression.
     and QueryExpr = 
@@ -83,6 +83,7 @@
                     match queryExprType with
                     | Sequential -> sprintf' "Source (%s, %s, Sequential)" <| str expr <| t.ToString()
                     | Parallel -> sprintf' "Source (%s, %s, Parallel)" <| str expr <| t.ToString()
+                    | Gpu -> sprintf' "Source (%s, %s, Gpu)" <| str expr <| t.ToString()
                 | Generate(expr1, expr2, expr3, expr4) -> 
                     sprintf' "Generate (%s, %s, %s, %s)" <| str expr1 <| str expr2 <| str expr3 <| str expr4
                 | Transform (lambda, query) -> 
