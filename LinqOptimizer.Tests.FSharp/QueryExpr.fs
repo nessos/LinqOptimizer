@@ -251,7 +251,7 @@
         [<Test>]
         member __.``precompile function``() =
             let test (xs : seq<int>) =
-                let t = Query.compile(fun x -> Query.length (Query.ofSeq x) )
+                let t = Query.compile(PrecompileHelpers.``fun x -> Query.length(Query.ofSeq x))``)
                 let x = t(xs)
                 let y = xs |> Seq.length
                 x = y
@@ -263,29 +263,7 @@
                 let a = ResizeArray<int>()
                 let b = ResizeArray<int>()
 
-                let t = Query.compile(fun x -> (Query.ofSeq x)|> Query.iter (fun m -> a.Add(m)))
-                t(xs)
-
-                xs |> Seq.iter b.Add
-                equal a b
-            Check.QuickThrowOnFailure (TestInput.RunTest test)
-
-        [<Test>]
-        member __.``precompile function pipelined``() =
-            let test (xs : seq<int>) =
-                let t = Query.compile(fun x -> x |> Query.ofSeq |> Query.length )
-                let x = t(xs)
-                let y = xs |> Seq.length
-                x = y
-            Check.QuickThrowOnFailure (TestInput.RunTest test)
-            
-        [<Test>]
-        member __.``precompile action pipelined``() =
-            let test (xs : seq<int>) =
-                let a = ResizeArray<int>()
-                let b = ResizeArray<int>()
-
-                let t = Query.compile(fun x -> x |> Query.ofSeq |> Query.iter (fun m -> a.Add(m)))
+                let t = Query.compile(fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x))
                 t(xs)
 
                 xs |> Seq.iter b.Add

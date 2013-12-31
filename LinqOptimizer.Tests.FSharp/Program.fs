@@ -10,9 +10,14 @@ module Program =
     [<EntryPoint>]
     let main argv = 
         
-        let test = new ``F# Query tests``()
-        let t = test.``precompile function``()
+//        let test = new ``F# Query tests``()
+//        let t = test.``precompile function``()
+//        let a = ResizeArray<int>([1..20])
+        
+//        let t = Query.compile(fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x))
+//        t([1..10]) 
 
+        //PrecompileHelpers.``fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x)``
 
 //        let a = ref 42
 //
