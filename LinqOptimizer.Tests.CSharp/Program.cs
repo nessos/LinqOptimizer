@@ -17,7 +17,13 @@ namespace LinqOptimizer.Tests
     {
         public static void Main(string[] args)
         {
-            (new GpuQueryTests()).Select();
+            //(new GpuQueryTests()).Select();
+            var rnd = new Random();
+            var input = Enumerable.Range(1, 100000000).Select(x => (float)x).ToArray();
+
+            var f = input.AsQueryExpr().Select(x => x * 2.0).Compile();
+            Measure(() => f());
+            //Measure(() => input.Select(x => x * 2.0).ToArray());
         }
 
         static void Measure(Action action)

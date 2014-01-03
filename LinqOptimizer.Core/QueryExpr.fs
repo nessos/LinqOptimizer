@@ -22,6 +22,11 @@
     // Main Query representation
     type QueryExprType = Sequential | Parallel | Gpu
     type Order = Ascending | Descending
+    type ReductionType = Map | Filter | Count | Sum | Aggregate | ToList | ToArray | Iter
+    type QueryContext = { CurrentVarExpr : ParameterExpression; AccVarExpr : ParameterExpression; 
+                                BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
+                                InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
+                                VarExprs : ParameterExpression list; Exprs : Expression list; ReductionType : ReductionType }
     /// The type representing an query expression.
     and QueryExpr = 
         | Source of Expression * Type * QueryExprType

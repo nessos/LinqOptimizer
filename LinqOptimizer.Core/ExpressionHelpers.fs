@@ -5,7 +5,7 @@ namespace LinqOptimizer.Core
     open System.Reflection
 
     [<AutoOpen>]
-    module internal ExpressionHelpers =
+    module ExpressionHelpers =
         // F# friendly Expression functions 
         let empty = Expression.Empty()
         let ``default`` t = Expression.Default(t)

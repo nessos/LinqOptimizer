@@ -16,11 +16,6 @@
         let continueLabel () = labelTarget "continue"
         let lookup name (varExprs : ParameterExpression list) =
             varExprs |> List.find (fun varExpr -> varExpr.Name = name)  
-
-        type QueryContext = { CurrentVarExpr : ParameterExpression; AccVarExpr : ParameterExpression; 
-                                BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
-                                InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
-                                VarExprs : ParameterExpression list; Exprs : Expression list }
         
         let collectorType = typedefof<ArrayCollector<_>>
         let toListContext (queryExpr : QueryExpr) =
@@ -29,7 +24,7 @@
             let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
             let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                             InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                            VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+                            VarExprs = [finalVarExpr; accVarExpr]; Exprs = []; ReductionType = ReductionType.ToList }
             context
         
         type KeyValueCollectRecord = { KeyVarArrayExpr : ParameterExpression; 
@@ -244,7 +239,7 @@
             | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
                 let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                     InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = []; Exprs = context.Exprs }
+                                    VarExprs = []; Exprs = context.Exprs; ReductionType = context.ReductionType }
 
                 let expr = compileToSeqPipeline nestedQueryExpr context' optimize
                 compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] } optimize
@@ -252,7 +247,8 @@
                 let bodyExpr = optimize bodyExpr
                 let context' = { CurrentVarExpr = colExpr; AccVarExpr = context.AccVarExpr; BreakLabel = context.BreakLabel; ContinueLabel = context.ContinueLabel; 
                                     InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = []; Exprs = assign valueExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
+                                    VarExprs = []; Exprs = assign valueExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs;
+                                    ReductionType = context.ReductionType  }
 
                 let expr = compileToSeqPipeline nestedQueryExpr context' optimize
                 compileToSeqPipeline queryExpr' { context with
@@ -265,7 +261,7 @@
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
                 let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                                    VarExprs = [finalVarExpr]; Exprs = []; ReductionType = ReductionType.ToList }
                 let expr = compileToSeqPipeline queryExpr' context' optimize
                 // Generate loop to extract keys
                 let { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr;
@@ -288,7 +284,7 @@
                 let initExpr, accExpr = assign accVarExpr (``new`` listType), call (listType.GetMethod("Add")) accVarExpr [finalVarExpr]
                 let context' = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                                    VarExprs = [finalVarExpr]; Exprs = []; ReductionType = ReductionType.ToList  }
                 let expr = compileToSeqPipeline queryExpr' context' optimize
                 // Generate loop to extract keys
                 let { KeyVarArrayExpr = keyVarArrayExpr; ValueVarArrayExpr = valueVarArrayExpr;
@@ -315,7 +311,7 @@
                 let accExpr = addAssign accVarExpr finalVarExpr
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = [] }
+                                VarExprs = [finalVarExpr; accVarExpr]; Exprs = []; ReductionType = ReductionType.Sum }
                 let expr = compileToSeqPipeline queryExpr' context optimize
                 expr 
             | Count (queryExpr') ->
@@ -326,7 +322,7 @@
                 let tmpVarExpr = var "___tmp___" t
                 let context = { CurrentVarExpr = tmpVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [tmpVarExpr; accVarExpr]; Exprs = [] }
+                                VarExprs = [tmpVarExpr; accVarExpr]; Exprs = []; ReductionType = ReductionType.Count  }
                 let expr = compileToSeqPipeline queryExpr' context optimize
                 expr 
             | Aggregate (seed, Lambda ([accVarExpr; varExpr], bodyExpr), queryExpr') ->
@@ -336,7 +332,7 @@
                 let accExpr = assign accVarExpr bodyExpr
                 let context = { CurrentVarExpr = varExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = empty; ReturnExpr = accVarExpr; 
-                                VarExprs = [varExpr; accVarExpr]; Exprs = [] }
+                                VarExprs = [varExpr; accVarExpr]; Exprs = []; ReductionType = ReductionType.Aggregate  }
                 let expr = compileToSeqPipeline queryExpr' context optimize
                 expr
             | ForEach (Lambda ([paramExpr], bodyExpr), queryExpr') ->
@@ -344,7 +340,7 @@
                 let context = { CurrentVarExpr = paramExpr; AccVarExpr = var "___empty___" typeof<unit>; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [assign paramExpr (``default`` paramExpr.Type)]; 
                                 AccExpr = bodyExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                VarExprs = [paramExpr]; Exprs = [] }
+                                VarExprs = [paramExpr]; Exprs = []; ReductionType = ReductionType.Iter }
                 let expr = compileToSeqPipeline queryExpr' context optimize
                 expr
             | ToArray queryExpr' ->
@@ -373,7 +369,7 @@
                 let returnExpr = lambda [|accVarExpr|] accVarExpr
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                     InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                    VarExprs = [finalVarExpr]; Exprs = [] }
+                                    VarExprs = [finalVarExpr]; Exprs = []; ReductionType = ReductionType.ToList  }
                 context
 
 
@@ -420,7 +416,7 @@
                 | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
                     let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                         InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                        VarExprs = []; Exprs = context.Exprs }
+                                        VarExprs = []; Exprs = context.Exprs; ReductionType = context.ReductionType  }
 
                     let expr = compileToSeqPipeline nestedQueryExpr context' optimize
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] }
@@ -428,7 +424,8 @@
                     let bodyExpr = optimize bodyExpr
                     let context' = { CurrentVarExpr = colExpr; AccVarExpr = context.AccVarExpr; BreakLabel = context.BreakLabel; ContinueLabel = context.ContinueLabel;  
                                         InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
-                                        VarExprs = []; Exprs = assign valueExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs }
+                                        VarExprs = []; Exprs = assign valueExpr paramExpr :: assign context.CurrentVarExpr bodyExpr :: context.Exprs;
+                                        ReductionType = context.ReductionType  }
 
                     let expr = compileToSeqPipeline nestedQueryExpr context' optimize
                     compile queryExpr' { context with CurrentVarExpr = paramExpr; 
@@ -479,7 +476,7 @@
                 let returnExpr = lambda [|accVarExpr|] accVarExpr
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                VarExprs = [finalVarExpr]; Exprs = [] }
+                                VarExprs = [finalVarExpr]; Exprs = []; ReductionType = ReductionType.Sum  }
                 let expr = compile queryExpr' context
                 expr 
             | Count (queryExpr') ->
@@ -493,7 +490,7 @@
                 let returnExpr = lambda [|accVarExpr|] accVarExpr
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = accVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
                                 InitExprs = [initExpr]; AccExpr = accExpr; CombinerExpr = combinerExpr; ReturnExpr = returnExpr; 
-                                VarExprs = [finalVarExpr]; Exprs = [] }
+                                VarExprs = [finalVarExpr]; Exprs = []; ReductionType = ReductionType.Count  }
                 let expr = compile queryExpr' context
                 expr 
             | ToArray queryExpr' ->
