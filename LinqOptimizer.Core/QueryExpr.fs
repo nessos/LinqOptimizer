@@ -46,7 +46,7 @@
         | ToArray of QueryExpr
         | RangeGenerator of Expression * Expression
         | RepeatGenerator of Expression * Expression
-//        | ZipWith of (Expression * Type) * (Expression * Type) * LambdaExpression
+        | ZipWith of Expression * Expression * LambdaExpression
         with
 
         member self.Type = 
@@ -73,7 +73,7 @@
             | ToArray q -> q.Type
             | RangeGenerator _ -> typeof<int>
             | RepeatGenerator (objExpr,_) -> objExpr.Type
-//            | ZipWith (_,_,f) -> f.ReturnType
+            | ZipWith (_,_,f) -> f.ReturnType
 
         override self.ToString() = 
             let str (expr : Expression ) = expr.ToString()
@@ -130,6 +130,8 @@
                     sprintf' "RangeGenerator (%s, %s)" <| str expr1 <| str expr2
                 | RepeatGenerator (expr1, expr2) -> 
                     sprintf' "RepeatGenerator (%s, %s)" <| str expr1 <| str expr2
+                | ZipWith(l,r,f) ->
+                    sprintf' "ZipWith (%s, %s, %s)" <| str l <| str r <| str f
 
             toString self 
             
@@ -151,12 +153,12 @@
 //                raise <| ArgumentOutOfRangeException("count")
 //            else 
 //                new QueryExpr<_>(RepeatGenerator(element, typeof<'T>, count))
-
+//
 //        static member Zip(left : IEnumerable<'T>, right : IEnumerable<'U>, 
-//                          func : Expression<Func<'T,'U,'R>>) : QueryExpr<IEnumerable<'R>> =
-//            let left  = Expression.Constant left  :> Expression , typeof<'T>
-//            let right = Expression.Constant right :> Expression , typeof<'U>
-//            new QueryExpr<_>(ZipWith(left, right, func))
+//                          func : Expression<Func<'T,'U,'R>>) : QueryExpr =
+//            let left  = Expression.Constant left  :> Expression 
+//            let right = Expression.Constant right :> Expression
+//            ZipWith(left, right, func)
 
             
 

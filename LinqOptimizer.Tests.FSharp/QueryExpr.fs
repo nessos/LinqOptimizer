@@ -217,6 +217,15 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
+        member __.``zipWith`` () =
+            let test (ms : seq<int>) = 
+                let x = Query.zipWith(ms, ms, fun  a b -> a - b)
+                        |> Query.run
+                let y = ms |> Seq.zip ms |> Seq.map (fun (a,b) -> a - b)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
+
+        [<Test>]
         member __.``toArray`` () =
             let test (xs : seq<'T>) =
                 let x = xs |> Query.ofSeq 

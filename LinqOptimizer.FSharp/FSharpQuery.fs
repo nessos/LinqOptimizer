@@ -211,6 +211,41 @@
             fun (query : IQueryExpr<seq<'T>>) ->
                 new QueryExpr<seq<'T>>(TakeWhile(predicate, query.Expr)) :> IQueryExpr<_>
 
+        /// <summary>
+        /// Creates a new query that generates a sequence of integral numbers within a specified range.
+        /// </summary>
+        /// <param name="start">The value of the first integer in the sequence.</param>
+        /// <param name="count">The number of sequential integers to generate.</param>
+        /// <returns>A query that contains a range of sequential integral numbers.</returns>
+        static member range(start : int, count : int) : IQueryExpr<IEnumerable<int>> =
+            if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 
+                raise <| ArgumentOutOfRangeException("count")
+            else
+                new QueryExpr<seq<int>>(RangeGenerator(Expression.Constant start, Expression.Constant count)) :> _
+
+        /// <summary>
+        /// Creates a new query that generates a sequence that contains one repeated value.
+        /// </summary>
+        /// <param name="element">The value to be repeated.</param>
+        /// <param name="count">The number of sequential integers to generate.</param>
+        /// <returns>A query that contains a repeated value.</returns>
+        static member repeat(element : 'T, count : int) : IQueryExpr<IEnumerable<'T>> =
+            if count < 0 then
+                raise <| ArgumentOutOfRangeException("count")
+            else 
+                new QueryExpr<seq<'T>>(RepeatGenerator(element, Expression.Constant count)) :> _
+
+        /// <summary>
+        /// Creates a query that applies a specified function to the corresponding elements of two sequences, producing a sequence of the results.
+        /// </summary>
+        /// <param name="first">The first sequence to merge.</param>
+        /// <param name="second">The first sequence to merge.</param>
+        /// <param name="func">A function that specifies how to merge the elements from the two sequences.</param>
+        /// <returns>A query that contains merged elements of two input sequences.</returns>
+        static member zipWith(left : IEnumerable<'T>, right : IEnumerable<'U>, func : Expression<Func<'T,'U,'R>>) : IQueryExpr<seq<'R>>  =
+            let left  = Expression.Constant left  :> Expression 
+            let right = Expression.Constant right :> Expression
+            new QueryExpr<seq<'R>>(ZipWith(left, right, func)) :> _
 
 
 

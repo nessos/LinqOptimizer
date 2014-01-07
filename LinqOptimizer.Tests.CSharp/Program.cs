@@ -7,7 +7,6 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LinqOptimizer.Core;
 using LinqOptimizer.CSharp;
 using LinqOptimizer.Base;
 
@@ -17,6 +16,9 @@ namespace LinqOptimizer.Tests
     {
         public static void Main(string[] args)
         {
+
+            var m = QueryExpr.Zip(Enumerable.Range(1, 10).ToArray(), Enumerable.Range(1, 10).ToArray(), (x, y) => x * y).Run();
+
             //var e1 = Extensions.CompileTemplate<int, List<int>>(
             //        t => Enumerable.Range(1, 10).AsQueryExpr().Select(x => x * t).ToList());
             
@@ -25,9 +27,9 @@ namespace LinqOptimizer.Tests
 
             //var e = Extensions.Compile<IEnumerable<int>, int>(nums => nums.Select(x => x * x).AsQueryExpr().Count());
             
-            var e = ParallelExtensions.Compile<IEnumerable<int>, int>(nums => nums.AsParallelQueryExpr().Select(x => x).Count());
+            //var e = ParallelExtensions.Compile<IEnumerable<int>, int>(nums => nums.AsParallelQueryExpr().Select(x => x).Count());
 
-            var xs = e(Enumerable.Range(1, 10));
+            //var xs = e(Enumerable.Range(1, 10));
 
             //var e2 = Extensions.Compile<IEnumerable<int>, int>(ls => ls.AsQueryExpr().Count());
 

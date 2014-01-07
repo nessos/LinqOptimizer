@@ -236,7 +236,7 @@ namespace LinqOptimizer.Tests
             {
                 if (max < 0) return true;
 
-                var x = (from a in Enumerable.Range(1, max).AsQueryExpr()
+                var x = (from a in QueryExpr.Range(1, max)
                          from b in Enumerable.Range(1, max)
                          from c in Enumerable.Range(1, max)
                          where a + b == c
@@ -259,7 +259,7 @@ namespace LinqOptimizer.Tests
             {
                 if (max < 0) return true;
 
-                var x = (from a in Enumerable.Range(1, max + 1).AsQueryExpr()
+                var x = (from a in QueryExpr.Range(1, max + 1)
                          from b in Enumerable.Range(a, max + 1 - a)
                          where a * a + b * b == b
                          select Tuple.Create(a, b)).ToArray().Run();
@@ -600,7 +600,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RangeTest()
         {
-            var result = Enumerable.Range(1, 10).AsQueryExpr();
+            var result = QueryExpr.Range(1, 10);
 
             Assert.AreEqual(Enumerable.Range(1, 10), result.Run());
         }
@@ -608,7 +608,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RepeatTest()
         {
-            var result = Enumerable.Repeat(42, 10).AsQueryExpr();
+            var result = QueryExpr.Repeat(42, 10);
 
             Assert.AreEqual(Enumerable.Repeat(42, 10), result.Run());
         }
@@ -617,7 +617,7 @@ namespace LinqOptimizer.Tests
         public void RepeatValueTypeCastTest()
         {
             var t = (object)DateTime.Now;
-            var result = Enumerable.Repeat(t, 10).AsQueryExpr();
+            var result = QueryExpr.Repeat(t, 10);
 
             Assert.AreEqual(Enumerable.Repeat(t, 10), result.Run());
         }
@@ -625,7 +625,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RangeWhereTest()
         {
-            var result = Enumerable.Range(1, 10).AsQueryExpr().Where(f => f < 5);
+            var result = QueryExpr.Range(1, 10).Where(f => f < 5);
 
             Assert.AreEqual(Enumerable.Range(1, 10).Where(f => f < 5), result.Run());
         }
@@ -633,7 +633,7 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RepeatWhereTest()
         {
-            var result = Enumerable.Repeat(42, 10).AsQueryExpr().Where(f => f < 5);
+            var result = QueryExpr.Repeat(42, 10).Where(f => f < 5);
 
             Assert.AreEqual(Enumerable.Repeat(42, 10).Where(f => f < 5), result.Run());
         }
@@ -641,25 +641,25 @@ namespace LinqOptimizer.Tests
         [Test]
         public void RangeInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(0, -1).AsQueryExpr().Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => QueryExpr.Range(0, -1).Run());
         }
 
         [Test]
         public void RepeatInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Repeat(0, -1).AsQueryExpr().Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => QueryExpr.Repeat(0, -1).Run());
         }
 
         [Test]
         public void NestedRangeInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Range(0, -1)).Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => QueryExpr.Range(1, 10).SelectMany(_ => Enumerable.Range(0, -1)).Run());
         }
 
         [Test]
         public void NestedRepeatInvalidArgTest()
         {
-            Assert.Catch(typeof(ArgumentOutOfRangeException), () => Enumerable.Range(1, 10).AsQueryExpr().SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
+            Assert.Catch(typeof(ArgumentOutOfRangeException), () => QueryExpr.Range(1, 10).SelectMany(_ => Enumerable.Repeat(0, -1)).Run());
         }
 
         private int UserDefinedAnonymousTypeTest(bool enable)
@@ -667,7 +667,7 @@ namespace LinqOptimizer.Tests
             var anon = new { A = 1, B = "42" };
             try
             {
-                var t = Enumerable.Range(1, 42).AsQueryExpr().Select(_ => anon.A).Sum().Run(enable);
+                var t = QueryExpr.Range(1, 42).Select(_ => anon.A).Sum().Run(enable);
                 return t;
             }
             catch (Exception ex)
@@ -692,8 +692,8 @@ namespace LinqOptimizer.Tests
             {
                 if (i < 1) return true;
 
-                var t = Extensions.Compile<int, IEnumerable<string>>(m => 
-                        Enumerable.Range(1, m).AsQueryExpr().Select(n => n.ToString()));
+                var t = Extensions.Compile<int, IEnumerable<string>>(m =>
+                        QueryExpr.Range(1, m).Select(n => n.ToString()));
 
                 var x = t(i);
 
@@ -711,13 +711,25 @@ namespace LinqOptimizer.Tests
                 if (i < 1) return true;
 
                 var xs = new List<int>();
-                Expression<Func<int, IQueryExpr>> lam = m => Enumerable.Range(1, m).AsQueryExpr().ForEach(n => xs.Add(n));
+                Expression<Func<int, IQueryExpr>> lam = m => QueryExpr.Range(1, m).ForEach(n => xs.Add(n));
                 Action<int> t = Extensions.Compile<int>(lam);
 
                 t(i);
 
                 var ys = new List<int>();
                 Enumerable.Range(1, i).ToList().ForEach(n => ys.Add(n));
+
+                return Enumerable.SequenceEqual(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void Zip()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = QueryExpr.Zip(ms, ms, (a, b) => a * b).Run();
+                var ys = Enumerable.Zip(ms, ms, (a, b) => a * b);
 
                 return Enumerable.SequenceEqual(xs, ys);
             }).QuickCheckThrowOnFailure();

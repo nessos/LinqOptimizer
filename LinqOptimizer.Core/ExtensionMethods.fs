@@ -17,19 +17,20 @@ namespace LinqOptimizer.Core
         
 
         static member AsQueryExpr(enumerable : IEnumerable, ty : Type) : QueryExpr = 
-            // Hack to optimize Enumerable.Range and Enumerable.Repeat calls
-            // TODO : check Mono generated types
-            let t = enumerable.GetType()
-            match t.FullName with
-            | s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
-                let start = t.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
-                let count = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                RangeGenerator(constant start , constant count)
-            | s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
-                let element = t.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
-                let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                RepeatGenerator(Expression.Convert(constant element, ty) , constant count)
-            | _ -> 
+            // Hack removed
+            //// Hack to optimize Enumerable.Range and Enumerable.Repeat calls
+            //// TODO : check Mono generated types
+            //let t = enumerable.GetType()
+            //match t.FullName with
+            //| s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
+            //    let start = t.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
+            //    let count = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+            //    RangeGenerator(constant start , constant count)
+            //| s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
+            //    let element = t.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
+            //    let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+            //    RepeatGenerator(Expression.Convert(constant element, ty) , constant count)
+            //| _ -> 
                 Source (constant enumerable, ty, QueryExprType.Sequential)
 
         static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
