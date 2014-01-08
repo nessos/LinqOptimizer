@@ -212,7 +212,7 @@
                 new QueryExpr<seq<'T>>(TakeWhile(predicate, query.Expr)) :> IQueryExpr<_>
 
         /// <summary>
-        /// Creates a new query that generates a sequence of integral numbers within a specified range.
+        /// Constructs a query that generates a sequence of integral numbers within a specified range.
         /// </summary>
         /// <param name="start">The value of the first integer in the sequence.</param>
         /// <param name="count">The number of sequential integers to generate.</param>
@@ -224,7 +224,7 @@
                 new QueryExpr<seq<int>>(RangeGenerator(Expression.Constant start, Expression.Constant count)) :> _
 
         /// <summary>
-        /// Creates a new query that generates a sequence that contains one repeated value.
+        /// Constructs a query that generates a sequence that contains one repeated value.
         /// </summary>
         /// <param name="element">The value to be repeated.</param>
         /// <param name="count">The number of sequential integers to generate.</param>
@@ -233,10 +233,10 @@
             if count < 0 then
                 raise <| ArgumentOutOfRangeException("count")
             else 
-                new QueryExpr<seq<'T>>(RepeatGenerator(element, Expression.Constant count)) :> _
+                new QueryExpr<seq<'T>>(RepeatGenerator(Expression.Constant(element, typeof<'T>), Expression.Constant count)) :> _
 
         /// <summary>
-        /// Creates a query that applies a specified function to the corresponding elements of two sequences, producing a sequence of the results.
+        /// Constructs a query that applies a specified function to the corresponding elements of two sequences, producing a sequence of the results.
         /// </summary>
         /// <param name="first">The first sequence to merge.</param>
         /// <param name="second">The first sequence to merge.</param>

@@ -141,27 +141,5 @@
             | OrderBy (keySelectorOrderPairs, queryExpr') ->
                 OrderBy ((keySelector, order) :: keySelectorOrderPairs, queryExpr')
             | _ -> OrderBy ([keySelector, order], queryExpr)
-            
-//        static member Range(start : int, count : int) : QueryExpr<IEnumerable<int>> =
-//            if count < 0 || (int64 start + int64 count) - 1L > int64 Int32.MaxValue then 
-//                raise <| ArgumentOutOfRangeException("count")
-//            else
-//                new QueryExpr<IEnumerable<int>>(RangeGenerator(start, count))
-//
-//        static member Repeat(element : 'T, count : int) : QueryExpr<IEnumerable<'T>> =
-//            if count < 0 then
-//                raise <| ArgumentOutOfRangeException("count")
-//            else 
-//                new QueryExpr<_>(RepeatGenerator(element, typeof<'T>, count))
-//
-//        static member Zip(left : IEnumerable<'T>, right : IEnumerable<'U>, 
-//                          func : Expression<Func<'T,'U,'R>>) : QueryExpr =
-//            let left  = Expression.Constant left  :> Expression 
-//            let right = Expression.Constant right :> Expression
-//            ZipWith(left, right, func)
 
-            
-
-
-        
         

@@ -17,8 +17,8 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            var m = QueryExpr.Zip(Enumerable.Range(1, 10).ToArray(), Enumerable.Range(1, 10).ToArray(), (x, y) => x * y).Run();
-
+            //var m = QueryExpr.Zip(Enumerable.Range(1, 10).ToArray(), Enumerable.Range(1, 10).ToArray(), (x, y) => x * Enumerable.Range(1,10).Count()).Run();
+            var x = QueryExpr.Range(1, 0).ToArray().Run();
             //var e1 = Extensions.CompileTemplate<int, List<int>>(
             //        t => Enumerable.Range(1, 10).AsQueryExpr().Select(x => x * t).ToList());
             

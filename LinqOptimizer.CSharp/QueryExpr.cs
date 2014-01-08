@@ -38,7 +38,7 @@ namespace LinqOptimizer.CSharp
             if (count < 0)
                 throw new ArgumentOutOfRangeException("count");
             else
-                return new QueryExpr<IEnumerable<TResult>>(QExpr.NewRepeatGenerator(Expression.Constant(element), Expression.Constant(count)));
+                return new QueryExpr<IEnumerable<TResult>>(QExpr.NewRepeatGenerator(Expression.Constant(element, typeof(TResult)), Expression.Constant(count)));
         }
 
         /// <summary>

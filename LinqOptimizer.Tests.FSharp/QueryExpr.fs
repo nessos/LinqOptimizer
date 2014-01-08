@@ -278,3 +278,28 @@
                 xs |> Seq.iter b.Add
                 equal a b
             Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``range``() =
+            let test (n : int) =
+                if n >= 0 then
+                    let x = Query.range(1, n) |> Query.toArray |> Query.run
+                    let y = [|1..n|]
+
+                    equal x y
+                else 
+                    true
+            Check.QuickThrowOnFailure  test
+
+        [<Test>]
+        member __.``repeat``() =
+            let test (n : int) =
+                if n >= 0 then
+                    let o = DateTime.Now :> obj
+                    let x = Query.repeat(o, n) |> Query.toArray |> Query.run
+                    let y = Array.create n o
+
+                    equal x y
+                else 
+                    true
+            Check.QuickThrowOnFailure  test
