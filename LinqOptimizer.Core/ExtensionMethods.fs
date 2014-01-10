@@ -78,11 +78,11 @@ namespace LinqOptimizer.Core
             Func<obj[], obj>(
                 fun (args : obj[]) -> 
                     try mi.Invoke(null, args) 
-                with :? TargetInvocationException as ex -> 
-                    if ex.InnerException :? MemberAccessException 
-                    then raise <| Exception(
-                                        "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.",
-                                        ex.InnerException)
+                    with :? TargetInvocationException as ex -> 
+                        if ex.InnerException :? MemberAccessException 
+                        then raise <| Exception(
+                                            "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.",
+                                            ex.InnerException)
                         else raise ex.InnerException )
 
         static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
@@ -127,7 +127,7 @@ namespace LinqOptimizer.Core
                             let expr = Compiler.compileToSequential query optimize.Invoke
                             let lam = lambda [|parameter|] expr
                             lam :> Expression) 
-            else
+                else
                     CoreHelpers.CompileToMethod(template, 
                         fun query -> 
                             let expr = Compiler.compileToSequential query optimize.Invoke

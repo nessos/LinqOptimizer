@@ -23,7 +23,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that returns the elements of the source sequence.</returns>
         public static IParallelQueryExpr<IEnumerable<TSource>> AsParallelQueryExpr<TSource>(this IEnumerable<TSource> source)
         {
-            return new ParallelQueryExpr<IEnumerable<TSource>>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource)));
+            return new ParallelQueryExpr<IEnumerable<TSource>>(QExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Parallel));
         }
 
         /// <summary>
@@ -276,5 +276,6 @@ namespace LinqOptimizer.CSharp
             var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
             return CoreHelpers.CompileTemplateToParallel<TSource, TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
+        #endregion
     }
 }

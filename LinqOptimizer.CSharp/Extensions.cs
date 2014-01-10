@@ -373,7 +373,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
+            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
         }
 
         /// <summary>
@@ -386,7 +386,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted according to a key.</returns>
         public static IQueryExpr<IOrderedEnumerable<TSource>> OrderBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
