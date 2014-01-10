@@ -19,12 +19,12 @@ module Program =
                 Enumerable.Range(a, max + 1 - a)
                 |> Seq.collect(fun b ->
                     Enumerable.Range(b, max + 1 - b)
-                    |> Seq.map (fun c -> a, b, c)))
-            |> Query.filter (fun (a,b,c) -> a * a + b * b = c * c)
+                    |> Seq.map (fun c -> let t = a, b, c in box t :?> System.Tuple<int,int,int>)))
+            |> Query.filter (fun t -> t.Item1 * t.Item1 + t.Item2 * t.Item2 = t.Item3 * t.Item3)
             |> Query.length
             |> Query.run
 
-        let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
+        //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
 
 //        let test = new ``F# Query tests``()
 //        let t = test.``precompile function``()

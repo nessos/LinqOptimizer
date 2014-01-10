@@ -14,11 +14,40 @@ namespace LinqOptimizer.Tests
 {
     public class Program
     {
+        public static bool Foo(Tuple<int,int,int> t)
+        {
+            var b =  t.Item1 * t.Item1 + t.Item2 * t.Item2 == t.Item3 * t.Item3;
+            if (b)
+                return b;
+            return b;
+        }
+
         public static void Main(string[] args)
         {
+            var max = 100;
+            var mm =
+                QueryExpr.Range(1, max + 1)
+                    .SelectMany(a =>
+                        Enumerable.Range(a, max + 1 - a)
+                            .SelectMany(b =>
+                                Enumerable.Range(b, max + 1 - b)
+                                    .Select(c => new Tuple<int,int,int>(a,b,c)))
+                    .Where(t => Foo(t)))
+                    .Count()
+                    .Run();
+
+            //var ll = 
+            //Enumerable.Range(1, max + 1)
+            //    .SelectMany(a =>
+            //        Enumerable.Range(a, max + 1 - a)
+            //            .SelectMany(b =>
+            //                Enumerable.Range(b, max + 1 - b)
+            //                    .Select(c => new Tuple<int, int, int>(a, b, c)))
+            //    .Where(t => Foo(t)))
+            //    .Count();
 
             //var m = QueryExpr.Zip(Enumerable.Range(1, 10).ToArray(), Enumerable.Range(1, 10).ToArray(), (x, y) => x * Enumerable.Range(1,10).Count()).Run();
-            var x = QueryExpr.Range(1, 0).ToArray().Run();
+            //var x = QueryExpr.Range(1, 0).ToArray().Run();
             //var e1 = Extensions.CompileTemplate<int, List<int>>(
             //        t => Enumerable.Range(1, 10).AsQueryExpr().Select(x => x * t).ToList());
             

@@ -12,8 +12,17 @@
         let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
 
-        let breakLabel () = labelTarget "break"
-        let continueLabel () = labelTarget "continue"
+        let breakLabel = 
+            let x = ref -1
+            fun () -> 
+                incr x
+                labelTarget (sprintf "break%d" !x)
+        let continueLabel =
+            let x = ref -1
+            fun () -> 
+                incr x
+                labelTarget (sprintf "continue%d" !x)
+
         let lookup name (varExprs : ParameterExpression list) =
             varExprs |> List.find (fun varExpr -> varExpr.Name = name)  
 
@@ -341,12 +350,12 @@
                 let exprs' = addAssign countVarExpr (constant 1) :: ifThenElse (lessThanOrEqual countVarExpr countExpr) (``continue`` context.ContinueLabel) empty :: context.Exprs
                 compileToSeqPipeline queryExpr' { context with InitExprs = assign countVarExpr (constant 0) :: context.InitExprs ; VarExprs = countVarExpr :: context.VarExprs; Exprs = exprs' } optimize
             | NestedQuery ((paramExpr, nestedQueryExpr), queryExpr') ->
-                let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                let context' = { CurrentVarExpr = context.CurrentVarExpr; AccVarExpr = context.AccVarExpr; BreakLabel = context.BreakLabel; ContinueLabel = context.ContinueLabel; 
                                     InitExprs = [empty]; AccExpr = context.AccExpr; CombinerExpr = empty; ReturnExpr = empty; 
                                     VarExprs = []; Exprs = context.Exprs }
 
                 let expr = compileToSeqPipeline nestedQueryExpr context' optimize
-                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr] } optimize
+                compileToSeqPipeline queryExpr' { context with CurrentVarExpr = paramExpr; AccExpr = empty; VarExprs = paramExpr :: context.VarExprs; Exprs = [expr]; BreakLabel = breakLabel (); ContinueLabel = continueLabel (); } optimize
             | NestedQueryTransform ((paramExpr, nestedQueryExpr), Lambda ([valueExpr; colExpr], bodyExpr), queryExpr') ->
                 let bodyExpr = optimize bodyExpr
                 let context' = { CurrentVarExpr = colExpr; AccVarExpr = context.AccVarExpr; BreakLabel = context.BreakLabel; ContinueLabel = context.ContinueLabel; 
