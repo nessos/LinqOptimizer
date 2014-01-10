@@ -24,6 +24,8 @@ module Program =
             |> Query.length
             |> Query.run
 
+        let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
+
 //        let test = new ``F# Query tests``()
 //        let t = test.``precompile function``()
 //        let a = ResizeArray<int>([1..20])
