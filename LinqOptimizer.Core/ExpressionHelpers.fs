@@ -107,5 +107,10 @@ namespace LinqOptimizer.Core
 
         let (|ExprType|) (expr : Expression) = ExprType expr.Type
 
+        let (|Constant|_|) (expr : Expression) = 
+            match expr with
+            | :? ConstantExpression as constExpr -> Some constExpr
+            | _ -> None
+
         type internal Expression with
             static member ofFSharpFunc<'T,'R>(func : Expression<Func<'T,'R>>) = func

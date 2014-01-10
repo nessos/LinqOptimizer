@@ -7,12 +7,19 @@
 
     type GpuHelpers =
         
+        
+
         static member Compile(queryExpr : QueryExpr) : Func<obj[], obj> =
-            let kernel = Compiler.compile queryExpr
-            let env = "*".CreateCLEnvironment()
+            let kernelSrc = Compiler.compile queryExpr
+            use env = "*".CreateCLEnvironment()
             // var a = Cl.CreateBuffer(env.Context, MemFlags.ReadWrite | MemFlags.None | MemFlags.UseHostPtr, (IntPtr)(ArrayLength * 4), input, out error);
-//            var program = Cl.CreateProgramWithSource(env.Context, 1u, new string[] { kernelSrc }, null, out error);
-//
+            match Cl.CreateProgramWithSource(env.Context, 1u, [| kernelSrc |], null) with
+            | program, ErrorCode.Success ->
+                match Cl.BuildProgram(program, uint32 env.Devices.Length, env.Devices, " -cl-fast-relaxed-math  -cl-mad-enable ", null, IntPtr.Zero) with
+                | ErrorCode.Success -> ()
+                | error -> failwithf "OpenCL.BuildProgram failed with error code %A" error
+            | _, error -> failwithf "OpenCL.CreateProgramWithSource failed with error code %A" error
+//  
 //            error = Cl.BuildProgram(program, (uint)env.Devices.Length, env.Devices, " -cl-fast-relaxed-math  -cl-mad-enable ", null, IntPtr.Zero);
 //            var info = Cl.GetProgramBuildInfo(program, env.Devices[0], ProgramBuildInfo.Log, out error);
 //
