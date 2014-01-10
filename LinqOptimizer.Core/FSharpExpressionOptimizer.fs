@@ -75,6 +75,12 @@
             | MethodCall (_, MethodName "length" _, [expr']) -> 
                 Count (toQueryExpr expr')
 
+            | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
+                RangeGenerator(startExpr, countExpr) 
+
+            | MethodCall (_, MethodName "Repeat" _, [objExpr; countExpr]) ->
+                RepeatGenerator(objExpr, countExpr) 
+
             | MethodCall (_, MethodName "GroupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) 
             | MethodCall (_, MethodName "groupBy" _, [ MethodCall(_, MethodName "ToFSharpFunc" _, [Lambda ([paramExpr], bodyExpr) as f']) ; expr']) -> 
                 let query' = GroupBy (f' :?> LambdaExpression, toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type |])
