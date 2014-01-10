@@ -301,7 +301,7 @@ namespace LinqOptimizer.Tests
                          .ThenBy(d => d.Day)
                          .Run();
 
-                var y = ds.AsParallel()
+                var y = ds.AsParallel().AsOrdered()
                           .OrderBy(d => d.Year)
                           .ThenBy(d => d.Month)
                           .ThenBy(d => d.Day);

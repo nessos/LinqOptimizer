@@ -6,11 +6,12 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using LinqOptimizer.Base;
 using LinqOptimizer.Core;
+using QExpr = LinqOptimizer.Core.QueryExpr;
 
 namespace LinqOptimizer.CSharp
 {
     /// <summary>
-    /// Provides a set of static methods for querying objects that implement IParallelQueryExpr.
+    /// Provides a set of static methods for querying objects that implement IParallelQExpr.
     /// </summary>
     public static class ParallelExtensions
     {
@@ -18,11 +19,11 @@ namespace LinqOptimizer.CSharp
         /// Enables the optimization of a query in a parallel fashion.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
-        /// <param name="source">An IEnumerable to convert to an IQueryExpr.</param>
+        /// <param name="source">An IEnumerable to convert to an IQExpr.</param>
         /// <returns>A parallel query that returns the elements of the source sequence.</returns>
         public static IParallelQueryExpr<IEnumerable<TSource>> AsParallelQueryExpr<TSource>(this IEnumerable<TSource> source)
         {
-            return new ParallelQueryExpr<IEnumerable<TSource>>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Parallel));
+            return new ParallelQueryExpr<IEnumerable<TSource>>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource)));
         }
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source, in parallel.</returns>
         public static IParallelQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TResult>> selector)
         {
-            return new ParallelQueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
+            return new ParallelQueryExpr<IEnumerable<TResult>>(QExpr.NewTransform(selector, query.Expr));
         }
 
         /// <summary>
@@ -91,7 +92,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that contains elements from the input query that satisfy the condition.</returns>
         public static IParallelQueryExpr<IEnumerable<TSource>> Where<TSource>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
-            return new ParallelQueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
+            return new ParallelQueryExpr<IEnumerable<TSource>>(QExpr.NewFilter(predicate, query.Expr));
         }
 
         /// <summary>
@@ -101,7 +102,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that returns the sum of the values in the sequence.</returns>
         public static IParallelQueryExpr<double> Sum(this IParallelQueryExpr<IEnumerable<double>> query)
         {
-            return new ParallelQueryExpr<double>(QueryExpr.NewSum(query.Expr));
+            return new ParallelQueryExpr<double>(QExpr.NewSum(query.Expr));
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that returns the sum of the values in the sequence.</returns>
         public static IParallelQueryExpr<int> Sum(this IParallelQueryExpr<IEnumerable<int>> query)
         {
-            return new ParallelQueryExpr<int>(QueryExpr.NewSum(query.Expr));
+            return new ParallelQueryExpr<int>(QExpr.NewSum(query.Expr));
         }
 
         /// <summary>
@@ -127,7 +128,7 @@ namespace LinqOptimizer.CSharp
             var paramExpr = selector.Parameters.Single();
             var bodyExpr =  selector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            return new ParallelQueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQuery(nested, query.Expr));
+            return new ParallelQueryExpr<IEnumerable<TResult>>(QExpr.NewNestedQuery(nested, query.Expr));
         }
 
         /// <summary>
@@ -145,7 +146,7 @@ namespace LinqOptimizer.CSharp
             var paramExpr = collectionSelector.Parameters.Single();
             var bodyExpr =  collectionSelector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            return new ParallelQueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQueryTransform(nested, resultSelector, query.Expr));
+            return new ParallelQueryExpr<IEnumerable<TResult>>(QExpr.NewNestedQueryTransform(nested, resultSelector, query.Expr));
         }
 
         /// <summary>
@@ -158,7 +159,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IParallelQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IEnumerable<IGrouping<TKey, TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey, TSource>)));
+            return new ParallelQueryExpr<IEnumerable<IGrouping<TKey, TSource>>>(QExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey, TSource>)));
         }
 
         /// <summary>
@@ -171,7 +172,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query whose elements are sorted according to a key.</returns>
         public static IParallelQueryExpr<IOrderedEnumerable<TSource>> OrderBy<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -184,7 +185,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query whose elements are sorted in descending according to a key.</returns>
         public static IParallelQueryExpr<IOrderedEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IParallelQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
         /// <summary>
@@ -195,7 +196,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that returns the number of elements in the input sequence.</returns>
         public static IParallelQueryExpr<int> Count<TSource>(this IParallelQueryExpr<IEnumerable<TSource>> query)
         {
-            return new ParallelQueryExpr<int>(QueryExpr.NewCount(query.Expr));
+            return new ParallelQueryExpr<int>(QExpr.NewCount(query.Expr));
         }
 
         /// <summary>
@@ -206,7 +207,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that contains elements from the input sequence in a List form.</returns>
         public static IParallelQueryExpr<List<TSource>> ToList<TSource>(this IParallelQueryExpr<IEnumerable<TSource>> query)
         {
-            return new ParallelQueryExpr<List<TSource>>(QueryExpr.NewToList(query.Expr));
+            return new ParallelQueryExpr<List<TSource>>(QExpr.NewToList(query.Expr));
         }
 
         /// <summary>
@@ -217,7 +218,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query that contains elements from the input sequence in an array form.</returns>
         public static IParallelQueryExpr<TSource[]> ToArray<TSource>(this IParallelQueryExpr<IEnumerable<TSource>> query)
         {
-            return new ParallelQueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
+            return new ParallelQueryExpr<TSource[]>(QExpr.NewToArray(query.Expr));
         }
 
         /// <summary>
@@ -230,7 +231,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query whose elements are sorted according to a key.</returns>
         public static IParallelQueryExpr<IOrderedEnumerable<TSource>> ThenBy<TSource, TKey>(this IParallelQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -243,7 +244,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A parallel query whose elements are sorted according to a key.</returns>
         public static IParallelQueryExpr<IOrderedEnumerable<TSource>> ThenByDescending<TSource, TKey>(this IParallelQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+            return new ParallelQueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
 
@@ -275,7 +276,5 @@ namespace LinqOptimizer.CSharp
             var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
             return CoreHelpers.CompileTemplateToParallel<TSource, TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
-        #endregion
-
     }
 }

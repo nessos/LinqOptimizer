@@ -48,6 +48,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="ParallelExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryExpr.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">

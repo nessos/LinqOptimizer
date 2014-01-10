@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using LinqOptimizer.Base;
 using LinqOptimizer.Core;
+using QExpr = LinqOptimizer.Core.QueryExpr;
 
 namespace LinqOptimizer.CSharp
 {
@@ -31,7 +32,7 @@ namespace LinqOptimizer.CSharp
         /// </summary>
         /// <param name="query">The query to compile</param>
         /// <returns>A Func containing optimized code.</returns>
-        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query)
+        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query) 
         {
             return CoreHelpers.Compile<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
@@ -68,7 +69,7 @@ namespace LinqOptimizer.CSharp
         public static Action Compile(this IQueryExpr query, bool enableNonPublicMemberAccess)
         {
             return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
-        } 
+        }
         #endregion
 
         #region Run methods
@@ -102,7 +103,7 @@ namespace LinqOptimizer.CSharp
         public static void Run(this IQueryExpr query)
         {
             query.Compile().Invoke();
-        } 
+        }
 
         /// <summary>
         /// Compiles a query to optimized code, runs the code and returns the result.<para/>
@@ -184,7 +185,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TResult>> selector)
         {
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QExpr.NewTransform(selector, query.Expr));
         }
 
         /// <summary>
@@ -196,8 +197,8 @@ namespace LinqOptimizer.CSharp
         /// <param name="selector">A transform function to apply to each source element; the second parameter of the function represents the index of the source element.</param>
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, TResult>> selector)
-        {
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewTransformIndexed(selector, query.Expr));
+        { 
+            return new QueryExpr<IEnumerable<TResult>>(QExpr.NewTransformIndexed(selector, query.Expr));
         }
 
         /// <summary>
@@ -209,9 +210,9 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
         public static IQueryExpr<IEnumerable<TSource>> Where<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QExpr.NewFilter(predicate, query.Expr));
         }
-
+        
         /// <summary>
         /// Creates a new query that filters a sequence of values based on a predicate. Each element's index is used in the logic of the predicate function.
         /// </summary>
@@ -221,7 +222,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
         public static IQueryExpr<IEnumerable<TSource>> Where<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, bool>> predicate)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewFilterIndexed(predicate, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QExpr.NewFilterIndexed(predicate, query.Expr));
         }
 
         /// <summary>
@@ -235,7 +236,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns the final accumulator value.</returns>
         public static IQueryExpr<TAcc> Aggregate<TSource, TAcc>(this IQueryExpr<IEnumerable<TSource>> query, TAcc seed, Expression<Func<TAcc, TSource, TAcc>> func)
         {
-            return new QueryExpr<TAcc>(QueryExpr.NewAggregate(Expression.Constant(seed), func, query.Expr));
+            return new QueryExpr<TAcc>(QExpr.NewAggregate(Expression.Constant(seed), func, query.Expr));
         }
 
         /// <summary>
@@ -245,7 +246,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns the sum of the values in the sequence.</returns>
         public static IQueryExpr<double> Sum(this IQueryExpr<IEnumerable<double>> query)
         {
-            return new QueryExpr<double>(QueryExpr.NewSum(query.Expr));
+            return new QueryExpr<double>(QExpr.NewSum(query.Expr));
         }
 
         /// <summary>
@@ -255,7 +256,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns the sum of the values in the sequence.</returns>
         public static IQueryExpr<int> Sum(this IQueryExpr<IEnumerable<int>> query)
         {
-            return new QueryExpr<int>(QueryExpr.NewSum(query.Expr));
+            return new QueryExpr<int>(QExpr.NewSum(query.Expr));
         }
 
         /// <summary>
@@ -266,7 +267,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns the number of elements in the input sequence.</returns>
         public static IQueryExpr<int> Count<TSource>(this IQueryExpr<IEnumerable<TSource>> query)
         {
-            return new QueryExpr<int>(QueryExpr.NewCount(query.Expr));
+            return new QueryExpr<int>(QExpr.NewCount(query.Expr));
         }
 
         /// <summary>
@@ -282,7 +283,7 @@ namespace LinqOptimizer.CSharp
             var paramExpr = selector.Parameters.Single();
             var bodyExpr = selector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQuery(nested, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QExpr.NewNestedQuery(nested, query.Expr));
         }
 
         /// <summary>
@@ -300,7 +301,7 @@ namespace LinqOptimizer.CSharp
             var paramExpr = collectionSelector.Parameters.Single();
             var bodyExpr = collectionSelector.Body;
             var nested = Tuple.Create(paramExpr, CSharpExpressionOptimizer.ToQueryExpr(bodyExpr));
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewNestedQueryTransform(nested, resultSelector, query.Expr));
+            return new QueryExpr<IEnumerable<TResult>>(QExpr.NewNestedQueryTransform(nested, resultSelector, query.Expr));
         }
 
         /// <summary>
@@ -312,7 +313,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns a sequence containing the specified number of elements from the start of the input sequence.</returns>
         public static IQueryExpr<IEnumerable<TSource>> Take<TSource>(this IQueryExpr<IEnumerable<TSource>> query, int count)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTake(Expression.Constant(count), query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QExpr.NewTake(Expression.Constant(count), query.Expr));
         }
 
         /// <summary>
@@ -324,7 +325,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains the elements from the input sequence that occur before the element at which the test no longer passes.</returns>
         public static IQueryExpr<IEnumerable<TSource>> TakeWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewTakeWhile(predicate, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QExpr.NewTakeWhile(predicate, query.Expr));
         }
 
         /// <summary>
@@ -336,7 +337,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains the elements from the input sequence starting at the first element in the linear series that does not pass the test specified by predicate.</returns>
         public static IQueryExpr<IEnumerable<TSource>> SkipWhile<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, bool>> predicate)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewSkipWhile(predicate, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QExpr.NewSkipWhile(predicate, query.Expr));
         }
 
         /// <summary>
@@ -348,7 +349,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that returns a sequence containing the elements that occur after the specified index in the input sequence.</returns>
         public static IQueryExpr<IEnumerable<TSource>> Skip<TSource>(this IQueryExpr<IEnumerable<TSource>> query, int count)
         {
-            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.NewSkip(Expression.Constant(count), query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QExpr.NewSkip(Expression.Constant(count), query.Expr));
         }
 
         /// <summary>
@@ -359,7 +360,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that performs the action on each element.</returns>
         public static IQueryExpr ForEach<TSource>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Action<TSource>> action)
         {
-            return new QueryExprVoid(QueryExpr.NewForEach(action, query.Expr));
+            return new QueryExprVoid(QExpr.NewForEach(action, query.Expr));
         }
 
         /// <summary>
@@ -372,7 +373,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<IGrouping<TKey, TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey, TSource>)));
+            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QueryExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
         }
 
         /// <summary>
@@ -385,7 +386,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted according to a key.</returns>
         public static IQueryExpr<IOrderedEnumerable<TSource>> OrderBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new QueryExpr<IEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -398,7 +399,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted in descending according to a key.</returns>
         public static IQueryExpr<IOrderedEnumerable<TSource>> OrderByDescending<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
         /// <summary>
@@ -409,7 +410,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains elements from the input sequence in a List form.</returns>
         public static IQueryExpr<List<TSource>> ToList<TSource>(this IQueryExpr<IEnumerable<TSource>> query)
         {
-            return new QueryExpr<List<TSource>>(QueryExpr.NewToList(query.Expr));
+            return new QueryExpr<List<TSource>>(QExpr.NewToList(query.Expr));
         }
 
         /// <summary>
@@ -420,7 +421,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query that contains elements from the input sequence in an array form.</returns>
         public static IQueryExpr<TSource[]> ToArray<TSource>(this IQueryExpr<IEnumerable<TSource>> query)
         {
-            return new QueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
+            return new QueryExpr<TSource[]>(QExpr.NewToArray(query.Expr));
         }
 
         /// <summary>
@@ -433,7 +434,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted according to a key.</returns>
         public static IQueryExpr<IOrderedEnumerable<TSource>> ThenBy<TSource, TKey>(this IQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Ascending, query.Expr));
         }
 
         /// <summary>
@@ -446,7 +447,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are sorted according to a key.</returns>
         public static IQueryExpr<IOrderedEnumerable<TSource>> ThenByDescending<TSource, TKey>(this IQueryExpr<IOrderedEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IOrderedEnumerable<TSource>>(QueryExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
+            return new QueryExpr<IOrderedEnumerable<TSource>>(QExpr.AddOrderBy(keySelector, Order.Descending, query.Expr));
         }
 
         /// <summary>        
@@ -461,7 +462,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query whose elements are obtained by running the generator loop, yielding computed elements.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Generate<TState, TResult>(TState initialState, Expression<Func<TState, bool>> condition, Expression<Func<TState, TState>> iterate, Expression<Func<TState, TResult>> resultSelector)
         {
-            return new QueryExpr<IEnumerable<TResult>>(QueryExpr.NewGenerate(Expression.Constant(initialState), condition, iterate, resultSelector));
+            return new QueryExpr<IEnumerable<TResult>>(QExpr.NewGenerate(Expression.Constant(initialState), condition, iterate, resultSelector));
         }
         #endregion
     }

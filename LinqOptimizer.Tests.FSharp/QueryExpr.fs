@@ -217,6 +217,15 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
+        member __.``zipWith`` () =
+            let test (ms : seq<int>) = 
+                let x = Query.zipWith(ms, ms, fun  a b -> a - b)
+                        |> Query.run
+                let y = ms |> Seq.zip ms |> Seq.map (fun (a,b) -> a - b)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest<int> test)
+
+        [<Test>]
         member __.``toArray`` () =
             let test (xs : seq<'T>) =
                 let x = xs |> Query.ofSeq 
@@ -251,7 +260,7 @@
         [<Test>]
         member __.``precompile function``() =
             let test (xs : seq<int>) =
-                let t = Query.compile(fun x -> Query.length (Query.ofSeq x) )
+                let t = Query.compile(PrecompileHelpers.``fun x -> Query.length(Query.ofSeq x))``)
                 let x = t(xs)
                 let y = xs |> Seq.length
                 x = y
@@ -263,7 +272,7 @@
                 let a = ResizeArray<int>()
                 let b = ResizeArray<int>()
 
-                let t = Query.compile(fun x -> (Query.ofSeq x)|> Query.iter (fun m -> a.Add(m)))
+                let t = Query.compile(fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x))
                 t(xs)
 
                 xs |> Seq.iter b.Add
@@ -271,23 +280,26 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``precompile function pipelined``() =
-            let test (xs : seq<int>) =
-                let t = Query.compile(fun x -> x |> Query.ofSeq |> Query.length )
-                let x = t(xs)
-                let y = xs |> Seq.length
-                x = y
-            Check.QuickThrowOnFailure (TestInput.RunTest test)
-            
+        member __.``range``() =
+            let test (n : int) =
+                if n >= 0 then
+                    let x = Query.range(1, n) |> Query.toArray |> Query.run
+                    let y = [|1..n|]
+
+                    equal x y
+                else 
+                    true
+            Check.QuickThrowOnFailure  test
+
         [<Test>]
-        member __.``precompile action pipelined``() =
-            let test (xs : seq<int>) =
-                let a = ResizeArray<int>()
-                let b = ResizeArray<int>()
+        member __.``repeat``() =
+            let test (n : int) =
+                if n >= 0 then
+                    let o = DateTime.Now :> obj
+                    let x = Query.repeat(o, n) |> Query.toArray |> Query.run
+                    let y = Array.create n o
 
-                let t = Query.compile(fun x -> x |> Query.ofSeq |> Query.iter (fun m -> a.Add(m)))
-                t(xs)
-
-                xs |> Seq.iter b.Add
-                equal a b
-            Check.QuickThrowOnFailure (TestInput.RunTest test)
+                    equal x y
+                else 
+                    true
+            Check.QuickThrowOnFailure  test

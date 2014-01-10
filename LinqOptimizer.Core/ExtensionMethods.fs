@@ -17,19 +17,20 @@ namespace LinqOptimizer.Core
         
 
         static member AsQueryExpr(enumerable : IEnumerable, ty : Type) : QueryExpr = 
-            // Hack to optimize Enumerable.Range and Enumerable.Repeat calls
-            // TODO : check Mono generated types
-            let t = enumerable.GetType()
-            match t.FullName with
-            | s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
-                let start = t.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
-                let count = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                RangeGenerator(constant start , constant count)
-            | s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
-                let element = t.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
-                let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
-                RepeatGenerator(Expression.Convert(constant element, ty) , constant count)
-            | _ -> 
+            // Hack removed
+            //// Hack to optimize Enumerable.Range and Enumerable.Repeat calls
+            //// TODO : check Mono generated types
+            //let t = enumerable.GetType()
+            //match t.FullName with
+            //| s when s.StartsWith "System.Linq.Enumerable+<RangeIterator>"  ->
+            //    let start = t.GetFields().First(fun f -> f.Name.EndsWith "__start").GetValue(enumerable)
+            //    let count = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+            //    RangeGenerator(constant start , constant count)
+            //| s when s.StartsWith "System.Linq.Enumerable+<RepeatIterator>"  ->
+            //    let element = t.GetFields().First(fun f -> f.Name.EndsWith "__element").GetValue(enumerable)
+            //    let count   = t.GetFields().First(fun f -> f.Name.EndsWith "__count").GetValue(enumerable)
+            //    RepeatGenerator(Expression.Convert(constant element, ty) , constant count)
+            //| _ -> 
                 Source (constant enumerable, ty, QueryExprType.Sequential)
 
         static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
@@ -56,7 +57,7 @@ namespace LinqOptimizer.Core
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = sprintf "allowNonPublicMemberAccess query (%s)" <| query.ToString()
             let expr = compile query
-            
+
             let eraser = AnonymousTypeEraser()
             let expr = eraser.Visit(expr)
             
@@ -77,11 +78,11 @@ namespace LinqOptimizer.Core
             Func<obj[], obj>(
                 fun (args : obj[]) -> 
                     try mi.Invoke(null, args) 
-                    with :? TargetInvocationException as ex -> 
-                        if ex.InnerException :? MemberAccessException 
-                        then raise <| Exception(
-                                            "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.",
-                                            ex.InnerException)
+                with :? TargetInvocationException as ex -> 
+                    if ex.InnerException :? MemberAccessException 
+                    then raise <| Exception(
+                                        "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.",
+                                        ex.InnerException)
                         else raise ex.InnerException )
 
         static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
@@ -126,7 +127,7 @@ namespace LinqOptimizer.Core
                             let expr = Compiler.compileToSequential query optimize.Invoke
                             let lam = lambda [|parameter|] expr
                             lam :> Expression) 
-                else
+            else
                     CoreHelpers.CompileToMethod(template, 
                         fun query -> 
                             let expr = Compiler.compileToSequential query optimize.Invoke

@@ -53,6 +53,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PrecompileHelpers.fs" />
     <Compile Include="QueryExpr.fs" />
     <Compile Include="PQuery.fs" />
     <Compile Include="Program.fs" />

@@ -139,16 +139,7 @@
         [<Test>]
         member __.``precompile function``() =
             let test (xs : seq<int>) =
-                let t = PQuery.compile(fun x -> PQuery.length (PQuery.ofSeq x) )
-                let x = t(xs)
-                let y = xs |> Seq.length
-                x = y
-            Check.QuickThrowOnFailure (TestInput.RunTest test)
-
-        [<Test>]
-        member __.``precompile function pipelined``() =
-            let test (xs : seq<int>) =
-                let t = PQuery.compile(fun x -> x |> PQuery.ofSeq |> PQuery.length )
+                let t = PQuery.compile(PrecompileHelpers.``fun x -> PQuery.length (PQuery.ofSeq x)``)
                 let x = t(xs)
                 let y = xs |> Seq.length
                 x = y

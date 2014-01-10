@@ -38,3 +38,6 @@
             elif t.IsPointer
             then Ptr(false, t.GetElementType())
             else failwith "MSDN says this can’t happen"
+
+        let getIEnumerableType (ty : Type) =
+            ty.GetInterface("IEnumerable`1").GetGenericArguments().[0]
