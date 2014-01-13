@@ -26,7 +26,7 @@ namespace LinqOptimizer.Tests
         {
             var max = 100;
             var mm =
-                QueryExpr.Range(1, max + 1)
+                Enumerable.Range(1, max + 1).AsParallelQueryExpr()
                     .SelectMany(a =>
                         Enumerable.Range(a, max + 1 - a)
                             .SelectMany(b =>

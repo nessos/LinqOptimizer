@@ -14,15 +14,16 @@ module Program =
         
         let max = 100
         let x =
-            Query.range(1, max + 1)
-            |> Query.collect(fun a ->
+            Enumerable.Range(1, max + 1)
+            |> PQuery.ofSeq
+            |> PQuery.collect(fun a ->
                 Enumerable.Range(a, max + 1 - a)
                 |> Seq.collect(fun b ->
                     Enumerable.Range(b, max + 1 - b)
                     |> Seq.map (fun c -> let t = a, b, c in box t :?> System.Tuple<int,int,int>)))
-            |> Query.filter (fun t -> t.Item1 * t.Item1 + t.Item2 * t.Item2 = t.Item3 * t.Item3)
-            |> Query.length
-            |> Query.run
+            |> PQuery.filter (fun t -> t.Item1 * t.Item1 + t.Item2 * t.Item2 = t.Item3 * t.Item3)
+            |> PQuery.length
+            |> PQuery.run
 
         //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
 
