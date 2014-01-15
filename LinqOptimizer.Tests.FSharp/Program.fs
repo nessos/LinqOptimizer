@@ -6,24 +6,27 @@ namespace LinqOptimizer.Tests
 open LinqOptimizer.FSharp
 open System.Linq
 open System.Collections.Generic
+open System.Diagnostics
 
 module Program = 
 
+    let time f = 
+        let sw = Stopwatch()
+        sw.Start()
+        let r = f()
+        sw.Stop()
+        printfn "Result : %A\nElapsed : %A" r sw.Elapsed
+
     [<EntryPoint>]
     let main argv = 
-        
-        let max = 100
-        let x =
-            Enumerable.Range(1, max + 1)
-            |> PQuery.ofSeq
-            |> PQuery.collect(fun a ->
-                Enumerable.Range(a, max + 1 - a)
-                |> Seq.collect(fun b ->
-                    Enumerable.Range(b, max + 1 - b)
-                    |> Seq.map (fun c -> let t = a, b, c in box t :?> System.Tuple<int,int,int>)))
-            |> PQuery.filter (fun t -> t.Item1 * t.Item1 + t.Item2 * t.Item2 = t.Item3 * t.Item3)
-            |> PQuery.length
-            |> PQuery.run
+        time(fun () ->
+              let x = 
+                Query.range(1, 100000000) 
+                |> Query.map(fun i -> i,i) 
+                |> Query.map(fun (a,b) -> a - b)
+                |> Query.length
+                |> Query.run
+              x )
 
         //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
 

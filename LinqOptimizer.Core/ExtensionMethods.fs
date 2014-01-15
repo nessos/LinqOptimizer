@@ -37,18 +37,21 @@ namespace LinqOptimizer.Core
             let source = query.ToString()
             let expr = compile query
             
+//            let te = TupleEliminator()
+//            let expr = te.Visit(expr)
+
             let eraser = AnonymousTypeEraser()
             let expr = eraser.Visit(expr)
             
             let csv = ConstantLiftingTransformer()
-            let expr' = csv.Visit(expr)
+            let expr = csv.Visit(expr)
             let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
 
             if CompiledThunks.cache.ContainsKey(source) then
                 let func = CompiledThunks.cache.[source] :?> Func<obj[], obj>
                 Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
             else
-                let lambda = Expression.Lambda(expr', pms)
+                let lambda = Expression.Lambda(expr, pms)
                 let methodInfo = Session.Compile(lambda)
                 let func = CoreHelpers.WrapInvocation(methodInfo) 
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
