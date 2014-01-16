@@ -48,7 +48,7 @@
     <Compile Include="ExpressionTransformer.fs" />
     <Compile Include="ConstantLiftingTransformer.fs" />
     <Compile Include="AnonymousTypeEraser.fs" />
-    <Compile Include="TupleEliminator.fs" />
+    <Compile Include="TupleEraser.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionOptimizer.fs" />
     <Compile Include="FSharpExpressionOptimizer.fs" />

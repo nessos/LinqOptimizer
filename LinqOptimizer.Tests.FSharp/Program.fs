@@ -19,14 +19,24 @@ module Program =
 
     [<EntryPoint>]
     let main argv = 
-        time(fun () ->
-              let x = 
-                Query.range(1, 100000000) 
-                |> Query.map(fun i -> i,i) 
-                |> Query.map(fun (a,b) -> a - b)
-                |> Query.length
-                |> Query.run
-              x )
+        let x = 
+            Query.range(1, 1000) 
+            |> Query.map(fun i -> i, i * i) 
+            |> Query.take 10
+            |> Query.map(fun (a,b) -> a - b)
+            |> Query.run
+
+        let y =
+            Query.range(1,10)
+            |> Query.map(fun i -> i,i * i)
+            |> Query.map(fun t -> snd t)
+            |> Query.run
+
+        let z =
+            Query.range(1,10)
+            |> Query.map(fun i -> i,i * i)
+            |> Query.map(fun ((a,b) as tt) -> snd tt)
+            |> Query.run
 
         //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
 
