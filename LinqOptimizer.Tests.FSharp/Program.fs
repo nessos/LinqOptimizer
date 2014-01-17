@@ -19,6 +19,18 @@ module Program =
 
     [<EntryPoint>]
     let main argv = 
+
+//        let m = Query.range(1, 1000) 
+//                |> Query.groupBy (fun x -> string x)
+//                |> Query.map (fun (_,x) -> Seq.sum x)
+//                |> Query.run
+
+        let xs = [|1..10|]
+        let n = Query.ofSeq xs
+                |> Query.collect (fun n -> xs |> Seq.groupBy (fun x -> x))
+                |> Query.map (fun (_,x)  -> x |> Seq.sum)
+                |> Query.run
+
         let x = 
             Query.range(1, 1000) 
             |> Query.map(fun i -> i, i * i) 
