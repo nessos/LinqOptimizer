@@ -20,10 +20,10 @@ module Program =
     [<EntryPoint>]
     let main argv = 
 
-//        let m = Query.range(1, 1000) 
-//                |> Query.groupBy (fun x -> string x)
-//                |> Query.map (fun (_,x) -> Seq.sum x)
-//                |> Query.run
+        let m = Query.range(1, 1000) 
+                |> Query.groupBy (fun x -> string x)
+                |> Query.map (fun (_,x) -> Seq.sum x)
+                |> Query.run
 
 //        let m = Query.range(1,10)
 //                |> Query.map (fun i -> i, i + 1)
@@ -50,11 +50,11 @@ module Program =
 //            |> Query.map(fun t -> snd t)
 //            |> Query.run
 
-        let z =
-            Query.range(1,10)
-            |> Query.map(fun i -> i,i * i)
-            |> Query.map(fun ((a,b) as tt) -> snd tt)
-            |> Query.run
+//        let z =
+//            Query.range(1,10)
+//            |> Query.map(fun i -> i,i * i)
+//            |> Query.map(fun ((a,b) as tt) -> a + snd tt)
+//            |> Query.run
 
         //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
 

@@ -37,7 +37,7 @@ namespace LinqOptimizer.Core
             let source = query.ToString()
             let expr = compile query
             
-            //let expr = TupleEraser.visit(expr)
+            let expr = TupleEraser.visit(expr)
 
             let eraser = AnonymousTypeEraser()
             let expr = eraser.Visit(expr)

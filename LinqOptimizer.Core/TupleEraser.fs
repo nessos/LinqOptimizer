@@ -65,7 +65,7 @@
         inherit ExpressionVisitor() with
 
             // $a <-> tupledArg.Item$i
-            let mappings = new Dictionary<ParameterExpression, Expression>()
+            let mappings = new Stack<Dictionary<ParameterExpression, Expression>>()
 
             let tm = new Dictionary<ParameterExpression * string, ParameterExpression>() 
             member __.TupleMappings with get () = tm
@@ -91,7 +91,7 @@
                         match arg with 
                         | SpecialTupleArgExpression(tupledArg, mi) when isInvoke -> 
                             if not <| isWildcardParameter param then
-                                mappings.Add(param, arg)
+                                mappings.Peek().Add(param, arg)
                                 this.TupleMappings.Add((tupledArg, mi.Name), param)
                             this.Visit(lambda.Body)
 //                        | :? ParameterExpression as arg when isWildcardParameter arg ->
@@ -112,12 +112,13 @@
 //                let beforeVisited = this.Visit(before)
 //                let assignExpr = expr.Expressions |> Seq.find isTupledArgAssignment
 
+                mappings.Push(new Dictionary<_,_>())
                 let exprs = this.Visit(expr.Expressions)
+                let current = mappings.Pop()
 
-                let parameters = Seq.toArray mappings.Keys
+                let parameters = Seq.toArray current.Keys
                 let vars = Seq.append expr.Variables parameters
-                mappings.Clear()
-                
+
                 Expression.Block(vars, exprs ) :> _
 
     // Convert $tupledArg = new ($x, $y) to:
@@ -153,4 +154,4 @@
             let expr = tle.Visit(expr)
             let tae = TupleAssignmentEraser(tle.TupleMappings)
             let expr = tae.Visit(expr)
-            expr
+            expr 
