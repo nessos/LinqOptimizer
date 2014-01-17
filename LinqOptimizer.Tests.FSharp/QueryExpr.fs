@@ -303,3 +303,79 @@
                 else 
                     true
             Check.QuickThrowOnFailure  test
+
+        [<Test>]
+        member __.``detuple #1`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map (fun i -> i, i + 1)
+                        |> Query.map (fun (a,b) -> a, a * a, b * b)
+                        |> Query.map (fun (x,y,z) -> x + y + z)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map (fun i -> i, i + 1)
+                        |> Seq.map (fun (a,b) -> a, a * a, b * b)
+                        |> Seq.map (fun (x,y,z) -> x + y + z)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #2`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map (fun i -> i, i + 1)
+                        |> Query.map (fun (_,b) -> b, b, b * b)
+                        |> Query.map (fun (x,_,z) -> x + z)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map (fun i -> i, i + 1)
+                        |> Seq.map (fun (_,b) -> b, b, b * b)
+                        |> Seq.map (fun (x,_,z) -> x + z)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #3`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map(fun i -> i, i * i) 
+                        |> Query.take (xs.Count() / 2)
+                        |> Query.map(fun (a,b) -> a - b)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map(fun i -> i, i * i) 
+                        |> Seq.take (xs.Count() / 2)
+                        |> Seq.map(fun (a,b) -> a - b)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #4`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map(fun i -> i,i * i)
+                        |> Query.map(fun t -> snd t)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map(fun i -> i,i * i)
+                        |> Seq.map(fun t -> snd t)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #5`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map(fun i -> i,i * i)
+                        |> Query.map(fun ((a,b) as tt) -> snd tt)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map(fun i -> i,i * i)
+                        |> Seq.map(fun ((a,b) as tt) -> snd tt)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)

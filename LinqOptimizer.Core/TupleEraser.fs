@@ -28,6 +28,11 @@
                 ty.IsGenericType 
                 && tupleTypes.Contains(ty.GetGenericTypeDefinition())
 
+            let isWildcardParameter (expr : ParameterExpression) =
+                expr.Name.StartsWith "_arg" && 
+                    match Int32.TryParse(expr.Name.Substring(4)) with | b, _ -> b
+
+
             // Check if $tupledArg.Item$i
             let (|SpecialTupleArgExpression|_|) (expr : Expression) = 
                 match expr with
@@ -84,45 +89,28 @@
                         let invoke = funcTy.GetMethod("Invoke")
                         let isInvoke = expr.Method = invoke
                         match arg with 
-                        |SpecialTupleArgExpression(tupledArg, mi) when isInvoke -> 
-                            mappings.Add(param, arg)
-                            this.TupleMappings.Add((tupledArg, mi.Name), param)
+                        | SpecialTupleArgExpression(tupledArg, mi) when isInvoke -> 
+                            if not <| isWildcardParameter param then
+                                mappings.Add(param, arg)
+                                this.TupleMappings.Add((tupledArg, mi.Name), param)
                             this.Visit(lambda.Body)
+//                        | :? ParameterExpression as arg when isWildcardParameter arg ->
+//                            mappings.Add(param, arg)
+//                            this.Visit(lambda.Body)
                         | _ -> pass()
                     | _ ->  
                         pass()
                 else
                     pass()
 
-//            override this.VisitParameter(expr : ParameterExpression) =
-//                match mappings.TryGetValue(expr) with
-//                | true, expr' -> expr'
-//                | false, _    -> expr :> _
-
-//            override this.VisitBinary(expr : BinaryExpression) =
-//                match expr.NodeType with
-//                | ExpressionType.Assign ->
-//                    match expr.Left with
-//                    | :? ParameterExpression as left when left.Name = specialTupleName ->
-//                        
-//                    | _ -> expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _
-//                | _ -> 
-//                    expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _
-
             override this.VisitBlock(expr : BlockExpression) =
                 //System.Diagnostics.Debugger.Break()
 
 //                let toReadOnly c = ReadOnlyCollection(Seq.toArray c)      
-//
 //                let before = Seq.takeWhile (fun e -> not(isTupledArgAssignment e)) expr.Expressions
 //                             |> toReadOnly
-//
 //                let beforeVisited = this.Visit(before)
-//
 //                let assignExpr = expr.Expressions |> Seq.find isTupledArgAssignment
-//
-//                
-//                Unchecked.defaultof<_>
 
                 let exprs = this.Visit(expr.Expressions)
 
@@ -145,7 +133,13 @@
             override this.VisitBinary(expr : BinaryExpression) =
                 match expr with
                 | TupledArgAssignment(tupledArg, args) ->
-                    let exprs = args |> Seq.mapi (fun i arg -> Expression.Assign(mappings.[tupledArg, sprintf "Item%d" (i+1)], arg) :> Expression)
+                    let exprs = args 
+                                |> Seq.mapi (fun i arg -> 
+                                    match mappings.TryGetValue((tupledArg, sprintf "Item%d" (i+1))) with
+                                    | true, pexpr -> Some(Expression.Assign(pexpr, arg) :> Expression)
+                                    | false, _ -> None)
+                                |> Seq.filter Option.isSome
+                                |> Seq.map Option.get
                     Expression.Block(exprs) :> _
                 | _ -> expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> Expression
 

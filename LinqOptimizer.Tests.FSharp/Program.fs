@@ -25,24 +25,30 @@ module Program =
 //                |> Query.map (fun (_,x) -> Seq.sum x)
 //                |> Query.run
 
-        let xs = [|1..10|]
-        let n = Query.ofSeq xs
-                |> Query.collect (fun n -> xs |> Seq.groupBy (fun x -> x))
-                |> Query.map (fun (_,x)  -> x |> Seq.sum)
-                |> Query.run
+//        let m = Query.range(1,10)
+//                |> Query.map (fun i -> i, i + 1)
+//                |> Query.map (fun (a,b) -> a, a * a, b * b)
+//                |> Query.map (fun (x,y,z) -> x + y + z)
+//                |> Query.run
 
-        let x = 
-            Query.range(1, 1000) 
-            |> Query.map(fun i -> i, i * i) 
-            |> Query.take 10
-            |> Query.map(fun (a,b) -> a - b)
-            |> Query.run
-
-        let y =
-            Query.range(1,10)
-            |> Query.map(fun i -> i,i * i)
-            |> Query.map(fun t -> snd t)
-            |> Query.run
+//        let p = Query.range(1,10)
+//                |> Query.map (fun i -> i, i + 1)
+//                |> Query.map (fun (_,b) -> b, b, b * b)
+//                |> Query.map (fun (x,_,z) -> x + z)
+//                |> Query.run
+//
+//        let x = 
+//            Query.range(1, 1000) 
+//            |> Query.map(fun i -> i, i * i) 
+//            |> Query.take 10
+//            |> Query.map(fun (a,b) -> a - b)
+//            |> Query.run
+//
+//        let y =
+//            Query.range(1,10)
+//            |> Query.map(fun i -> i,i * i)
+//            |> Query.map(fun t -> snd t)
+//            |> Query.run
 
         let z =
             Query.range(1,10)
