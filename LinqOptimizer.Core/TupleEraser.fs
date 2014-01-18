@@ -84,12 +84,8 @@
             let tm = new Dictionary<ParameterExpression * string, ParameterExpression>() 
             member __.TupleMappings with get () = tm
 
-            //let cm = new Dictionary<ParameterExpression, Expression>() 
-            //member __.CurryMappings with get () = cm
-
             override this.VisitMethodCall(expr : MethodCallExpression) =
-                //System.Diagnostics.Debugger.Break()
-                
+
                 // Looking for pattern ($id => %body).Invoke($tupledArg.Item$i)
                 // and substitute with %body
                 
@@ -112,23 +108,13 @@
                                 this.TupleMappings.Add((tupledArg, mi.Name), param)
                             this.Visit(lambda.Body)
                         | arg ->
-                            //this.CurryMappings.Add(param, arg)
-                            Expression.Block([param], Expression.Assign(param, arg), this.Visit(lambda.Body)).Reduce() :> _
-                        //| _ -> pass()
+                            Expression.Block([param], Expression.Assign(param, arg), this.Visit(lambda.Body)) :> _
                     | _ ->  
                         pass()
                 else
                     pass()
 
             override this.VisitBlock(expr : BlockExpression) =
-                //System.Diagnostics.Debugger.Break()
-
-//                let toReadOnly c = ReadOnlyCollection(Seq.toArray c)      
-//                let before = Seq.takeWhile (fun e -> not(isTupledArgAssignment e)) expr.Expressions
-//                             |> toReadOnly
-//                let beforeVisited = this.Visit(before)
-//                let assignExpr = expr.Expressions |> Seq.find isTupledArgAssignment
-
                 tupleMappings.Push(new Dictionary<_,_>())
                 let exprs = this.Visit(expr.Expressions)
                 let current = tupleMappings.Pop()
@@ -151,7 +137,6 @@
             override this.VisitBinary(expr : BinaryExpression) =
                 match expr with
                 | TupledArgAssignment(tupledArg, args) ->
-                    //System.Diagnostics.Debugger.Break()
                     let exprs = args 
                                 |> Seq.mapi (fun i arg -> 
                                     match tupleMappings.TryGetValue((tupledArg, sprintf "Item%d" (i+1))) with
@@ -160,16 +145,6 @@
                                 |> Seq.filter Option.isSome
                                 |> Seq.map Option.get
                     Expression.Block(exprs) :> _
-//                | TupleAssignment(param, args) ->
-//                    System.Diagnostics.Debugger.Break()
-//                    let exprs = args 
-//                                |> Seq.mapi (fun i arg -> 
-//                                    match curryMappings.TryGetValue(param) with
-//                                    | true, pexpr -> Some(Expression.Assign(pexpr, arg) :> Expression)
-//                                    | false, _ -> None)
-//                                |> Seq.filter Option.isSome
-//                                |> Seq.map Option.get
-//                    Expression.Block(exprs) :> _
                 | _ -> expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> Expression
 
             override this.VisitBlock(expr : BlockExpression) =
@@ -177,7 +152,7 @@
                 Expression.Block(vars, this.Visit expr.Expressions) :> _
 
     module TupleEraser =
-        let visit (expr : Expression) =
+        let apply (expr : Expression) =
             let tle = TupleLambdaEraser()
             let expr = tle.Visit(expr)
             let tae = TupleAssignmentEraser(tle.TupleMappings)

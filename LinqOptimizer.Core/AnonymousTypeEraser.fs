@@ -11,7 +11,7 @@
 
     // Transform anonymous type access and transparent identifiers
     // to local variables.
-    type AnonymousTypeEraser () =
+    type private AnonymousTypeEraserVisitor () =
         inherit ExpressionVisitor() with
 
             // http://stackoverflow.com/questions/1650681/determining-whether-a-type-is-an-anonymous-type
@@ -97,3 +97,8 @@
                             |> Seq.map (fun p -> if mappings.ContainsKey(p) then mappings.[p] else p)
                             |> Seq.filter (fun p -> not(Seq.exists ((=) p) redundants))
                 Expression.Block(vars, exprs ) :> _
+
+    module AnonymousTypeEraser =
+        let apply(expr : Expression) =
+            let ate = new AnonymousTypeEraserVisitor()
+            ate.Visit(expr)
