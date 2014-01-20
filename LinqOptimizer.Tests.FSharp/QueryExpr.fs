@@ -379,3 +379,17 @@
                         |> Seq.map(fun ((a,b) as tt) -> snd tt)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #6`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map(fun i -> i,i * i)
+                        |> Query.filter(fun (a,b) -> a % 2 = 0)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map(fun i -> i,i * i)
+                        |> Seq.filter(fun (a,b) -> a % 2 = 0)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)

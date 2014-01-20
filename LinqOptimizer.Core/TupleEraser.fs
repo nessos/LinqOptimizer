@@ -144,11 +144,12 @@
                                     | false, _ -> None)
                                 |> Seq.filter Option.isSome
                                 |> Seq.map Option.get
-                    Expression.Block(exprs) :> _
+                                |> Seq.toList
+                    Expression.Block((expr :> Expression) :: exprs) :> _
                 | _ -> expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> Expression
 
             override this.VisitBlock(expr : BlockExpression) =
-                let vars = expr.Variables |> Seq.filter (fun p -> not <| tupleArgParameters.Contains(p))
+                let vars = expr.Variables //|> Seq.filter (fun p -> not <| tupleArgParameters.Contains(p))
                 Expression.Block(vars, this.Visit expr.Expressions) :> _
 
     module TupleEraser =
