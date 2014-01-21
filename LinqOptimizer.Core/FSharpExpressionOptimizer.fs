@@ -75,6 +75,10 @@
             | MethodCall (_, MethodName "length" _, [expr']) -> 
                 Count (toQueryExpr expr')
 
+            | MethodCall (_, MethodName "sum" _, [expr']) 
+            | MethodCall (_, MethodName "Sum" _, [expr']) -> 
+                Sum (toQueryExpr expr')
+
             | MethodCall (_, MethodName "Range" _, [startExpr; countExpr]) ->
                 RangeGenerator(startExpr, countExpr) 
 
@@ -141,6 +145,10 @@
             | PipedMethodCall0(expr', MethodName "length" _) ->
                 Count (toQueryExpr expr')
 
+            | PipedMethodCall0(expr', MethodName "Sum" _) 
+            | PipedMethodCall0(expr', MethodName "sum" _) ->
+                Sum (toQueryExpr expr')
+
             | PipedMethodCall1(expr', MethodName "GroupBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ LambdaOrQuote ([paramExpr],bodyExpr, f') ])))
             | PipedMethodCall1(expr', MethodName "groupBy" _, (MethodCall(_, MethodName "ToFSharpFunc" _, [ LambdaOrQuote ([paramExpr],bodyExpr, f') ]))) ->
                 let query' = GroupBy (f', toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type |])
@@ -191,6 +199,7 @@
             | MethodCall (_, MethodName "Sort" _,           [_])
             | MethodCall (_, MethodName "SortBy" _,         [ MethodCall(_, MethodName "ToFSharpFunc" _, [LambdaOrQuote _ ]) ; _])
             | MethodCall (_, MethodName "Length" _,         [_]) 
+            | MethodCall (_, MethodName "Sum" _,            [_]) 
             | MethodCall (_, MethodName "GroupBy" _,        [ MethodCall(_, MethodName "ToFSharpFunc" _, [LambdaOrQuote _ ]) ; _]) ->
                 let query = toQueryExpr expr
                 let expr = (Compiler.compileToSequential query optimize)
@@ -208,6 +217,7 @@
             | PipedMethodCall0(_, MethodName "Sort" _) 
             | PipedMethodCall1(_, MethodName "SortBy" _,        (MethodCall(_, MethodName "ToFSharpFunc" _, [ LambdaOrQuote _ ]))) 
             | PipedMethodCall0(_, MethodName "Length" _) 
+            | PipedMethodCall0(_, MethodName "Sum" _) 
             | PipedMethodCall1(_, MethodName "GroupBy" _,       (MethodCall(_, MethodName "ToFSharpFunc" _, [ LambdaOrQuote _ ]))) ->
                 let query = toQueryExpr expr
                 let expr = (Compiler.compileToSequential query optimize)

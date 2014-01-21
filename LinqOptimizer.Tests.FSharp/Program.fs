@@ -6,42 +6,47 @@ namespace LinqOptimizer.Tests
 open LinqOptimizer.FSharp
 open System.Linq
 open System.Collections.Generic
+open System.Diagnostics
 
 module Program = 
 
+    let time f = 
+        let sw = Stopwatch()
+        sw.Start()
+        let r = f()
+        sw.Stop()
+        printfn "Result : %A\nElapsed : %A" r sw.Elapsed
+
     [<EntryPoint>]
     let main argv = 
-        
-        let max = 100
-        let x =
+
+//        let z =
+//            Query.range(1,10)
+//            |> Query.map(fun i -> i,i * i)
+//            |> Query.map(fun ((a,b) as tt) -> a + snd tt)
+//            |> Query.run
+
+        let max = 10
+        let x = 
             Query.range(1, max + 1)
-            |> Query.collect(fun a ->
-                Enumerable.Range(a, max + 1 - a)
-                |> Seq.collect(fun b ->
-                    Enumerable.Range(b, max + 1 - b)
-                    |> Seq.map (fun c -> let t = a, b, c in box t :?> System.Tuple<int,int,int>)))
-            |> Query.filter (fun t -> t.Item1 * t.Item1 + t.Item2 * t.Item2 = t.Item3 * t.Item3)
+            |> Query.map(fun i -> i, i + 1, i + 2)
+            |> Query.filter (fun (a,b,c) -> a * a + b * b = c * c)
             |> Query.length
             |> Query.run
 
-        //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
+        let x = 
+            Query.range(1, max + 1)
+            |> Query.map(fun i -> i, i + 1, i + 2)
+            //|> Query.map(fun (a,b,c) -> (b,c,a))
+            |> Query.filter (fun (a,b,c) -> a * a + b * b = c * c)
+            |> Query.map(fun (a,b,c) -> (b,c,a))
+            |> Query.length
+            |> Query.run
 
-//        let test = new ``F# Query tests``()
-//        let t = test.``precompile function``()
-//        let a = ResizeArray<int>([1..20])
-        
-//        let t = Query.compile(fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x))
-//        t([1..10]) 
-
-        //PrecompileHelpers.``fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x)``
-
-//        let a = ref 42
-//
-//        let xs = 
-//            [1..10]
-//            |> Query.ofSeq
-//            |> Query.map (fun x -> ())
-//            |> Query.run
-           
-            
         0 // return an integer exit code
+
+        //            |> Query.collect(fun a ->
+//                Enumerable.Range(a, max + 1 - a)
+//                |> Seq.collect(fun b ->
+//                    Enumerable.Range(b, max + 1 - b)
+//                    |> Seq.map (fun c -> a, b, c)))

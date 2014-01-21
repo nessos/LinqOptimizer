@@ -36,19 +36,15 @@ namespace LinqOptimizer.Core
         static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = query.ToString()
             let expr = compile query
+            let expr = TupleEraser.apply(expr)
+            let expr = AnonymousTypeEraser.apply(expr)
+            let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
             
-            let eraser = AnonymousTypeEraser()
-            let expr = eraser.Visit(expr)
-            
-            let csv = ConstantLiftingTransformer()
-            let expr' = csv.Visit(expr)
-            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
-
             if CompiledThunks.cache.ContainsKey(source) then
                 let func = CompiledThunks.cache.[source] :?> Func<obj[], obj>
                 Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
             else
-                let lambda = Expression.Lambda(expr', pms)
+                let lambda = Expression.Lambda(expr, pms)
                 let methodInfo = Session.Compile(lambda)
                 let func = CoreHelpers.WrapInvocation(methodInfo) 
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
@@ -57,19 +53,15 @@ namespace LinqOptimizer.Core
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = sprintf "allowNonPublicMemberAccess query (%s)" <| query.ToString()
             let expr = compile query
-
-            let eraser = AnonymousTypeEraser()
-            let expr = eraser.Visit(expr)
-            
-            let csv = ConstantLiftingTransformer()
-            let expr' = csv.Visit(expr)
-            let objs, pms = csv.Environment.Values.ToArray(), csv.Environment.Keys
+            let expr = TupleEraser.apply(expr)
+            let expr = AnonymousTypeEraser.apply(expr)
+            let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
 
             if CompiledThunks.cache.ContainsKey(source) then
                 let func = CompiledThunks.cache.[source]
                 Func<'T>(fun () -> func.DynamicInvoke(objs) :?> 'T)
             else
-                let lambda = Expression.Lambda(expr', pms)
+                let lambda = Expression.Lambda(expr, pms)
                 let func = lambda.Compile()
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
                 Func<'T>(fun () -> func.DynamicInvoke(objs) :?> 'T)

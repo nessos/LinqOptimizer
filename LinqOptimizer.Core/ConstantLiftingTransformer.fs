@@ -10,7 +10,7 @@
 
     // Lift constants and member access into parameters
     // due to the live-object limitation.
-    type ConstantLiftingTransformer () =
+    type private ConstantLiftingVisitor () =
         inherit ExpressionVisitor() with
             let mutable x = 0
             let getName () = 
@@ -50,3 +50,9 @@
                     p :> _
                 else
                     expr.Update(this.Visit expr.Expression) :> _
+
+    module ConstantLiftingTransformer =
+        let apply(expr : Expression) =
+            let clv = new ConstantLiftingVisitor()
+            let expr = clv.Visit(expr)
+            expr, clv.Environment.Keys.ToArray(), clv.Environment.Values.ToArray()
