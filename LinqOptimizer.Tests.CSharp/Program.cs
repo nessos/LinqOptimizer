@@ -24,7 +24,7 @@ namespace LinqOptimizer.Tests
 
             //var test = new int[] { 1, 2, 3 }.AsGpuQueryExpr().Select(x => x + 1).Run();
 
-            (new GpuQueryTests()).Select();
+            (new GpuQueryTests()).Pipelined();
 
         }
 

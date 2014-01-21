@@ -22,7 +22,23 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
-       
 
+        [Test]
+        public void Pipelined()
+        {
+            Spec.ForAny<int[]>(xs =>
+            {
+                var x = xs.AsGpuQueryExpr()
+                        .Select(n => n * 2)
+                        .Select(n => n + 1)
+                        .Run();
+
+                var y = xs
+                        .Select(n => n * 2)
+                        .Select(n => n + 1);
+
+                return x.SequenceEqual(y);
+            }).QuickCheckThrowOnFailure();
+        }
     }
 }

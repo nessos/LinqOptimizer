@@ -26,7 +26,7 @@
                 | TypeCheck doubleType _ -> "float"
                 | TypeCheck byteType _ -> "byte"
                 | _ -> failwithf "Not supported %A" t
-            let varExprToStr (varExpr : ParameterExpression) = varExpr.ToString()
+            let varExprToStr (varExpr : ParameterExpression) = sprintf "%s%d" (varExpr.ToString()) (varExpr.GetHashCode())
 
             let rec exprToStr (expr : Expression) =
                 match expr with
@@ -42,7 +42,7 @@
 
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) =
                 match queryExpr with
-                | Source (Constant (value, Array (_, 1)) as expr, t, QueryExprType.Gpu) ->
+                | Source (Constant (value, Array (_, 1)) as expr, sourceType, QueryExprType.Gpu) ->
                     match context.ReductionType with
                     | ReductionType.Map ->
                         let kernelTemplate = sprintf "
@@ -54,7 +54,7 @@
                                 %s
                                 ___result___[___id___] = %s;
                             }"
-                        let sourceTypeStr = typeToStr t
+                        let sourceTypeStr = typeToStr sourceType
                         let resultType = context.CurrentVarExpr.Type
                         let resultTypeStr = typeToStr resultType
                         let sourceLength = (value :?> Array).Length
@@ -66,7 +66,7 @@
                                        |> List.map (fun expr -> sprintf "%s;" (exprToStr expr))
                                        |> List.reduce (fun first second -> sprintf "%s%s%s" first Environment.NewLine second)
                         let source = kernelTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr)
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value, t, sourceLength, Marshal.SizeOf(t)); 
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (value, sourceType, sourceLength, Marshal.SizeOf(sourceType)); 
                                                                                             (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
                     | _ -> failwithf "Not supported %A" queryExpr 
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
