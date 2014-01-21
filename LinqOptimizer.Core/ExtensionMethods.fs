@@ -36,7 +36,8 @@ namespace LinqOptimizer.Core
         static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = query.ToString()
             let expr = compile query
-            let expr = TupleEraser.apply(expr)
+            //let expr = TupleEraser.apply(expr)
+            let expr = TupleElimination.apply(expr)
             let expr = AnonymousTypeEraser.apply(expr)
             let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
 
@@ -53,7 +54,8 @@ namespace LinqOptimizer.Core
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = sprintf "allowNonPublicMemberAccess query (%s)" <| query.ToString()
             let expr = compile query
-            let expr = TupleEraser.apply(expr)
+            //let expr = TupleEraser.apply(expr)
+            let expr = TupleElimination.apply(expr)
             let expr = AnonymousTypeEraser.apply(expr)
             let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
 

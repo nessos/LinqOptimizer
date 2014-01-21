@@ -30,18 +30,19 @@ module Program =
         let x = 
             Query.range(1, max + 1)
             |> Query.map(fun i -> i, i + 1, i + 2)
-            |> Query.filter (fun (a,b,c) -> a * a + b * b = c * c)
+            |> Query.map(fun y -> id y)
+            |> Query.filter (fun (a,b,c) -> a + b + c = 3 * a + 3)
             |> Query.length
             |> Query.run
-
-        let x = 
-            Query.range(1, max + 1)
-            |> Query.map(fun i -> i, i + 1, i + 2)
-            //|> Query.map(fun (a,b,c) -> (b,c,a))
-            |> Query.filter (fun (a,b,c) -> a * a + b * b = c * c)
-            |> Query.map(fun (a,b,c) -> (b,c,a))
-            |> Query.length
-            |> Query.run
+//
+//        let x = 
+//            Query.range(1, max + 1)
+//            |> Query.map(fun i -> i, i + 1, i + 2)
+//            //|> Query.map(fun (a,b,c) -> (b,c,a))
+//            |> Query.filter (fun (a,b,c) -> a * a + b * b = c * c)
+//            |> Query.map(fun (a,b,c) -> (b,c,a))
+//            |> Query.length
+//            |> Query.run
 
         0 // return an integer exit code
 
