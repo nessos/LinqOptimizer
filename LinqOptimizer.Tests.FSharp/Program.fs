@@ -4,12 +4,28 @@
 namespace LinqOptimizer.Tests
 
 open LinqOptimizer.FSharp
+open System.Linq
+open System.Collections.Generic
 
 module Program = 
 
     [<EntryPoint>]
     let main argv = 
         
+        let max = 100
+        let x =
+            Query.range(1, max + 1)
+            |> Query.collect(fun a ->
+                Enumerable.Range(a, max + 1 - a)
+                |> Seq.collect(fun b ->
+                    Enumerable.Range(b, max + 1 - b)
+                    |> Seq.map (fun c -> let t = a, b, c in box t :?> System.Tuple<int,int,int>)))
+            |> Query.filter (fun t -> t.Item1 * t.Item1 + t.Item2 * t.Item2 = t.Item3 * t.Item3)
+            |> Query.length
+            |> Query.run
+
+        //let y = Query.range(1,10) |> Query.where(fun m -> m % 2 = 0) |> Query.run
+
 //        let test = new ``F# Query tests``()
 //        let t = test.``precompile function``()
 //        let a = ResizeArray<int>([1..20])
