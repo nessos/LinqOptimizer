@@ -9,23 +9,59 @@
         
         
 
-        static member Compile(queryExpr : QueryExpr) : Func<obj[], obj> =
-            let kernelSrc = Compiler.compile queryExpr
+        static member Run(queryExpr : QueryExpr) : obj =
+            let compilerResult = Compiler.compile queryExpr
+            
             use env = "*".CreateCLEnvironment()
-            // var a = Cl.CreateBuffer(env.Context, MemFlags.ReadWrite | MemFlags.None | MemFlags.UseHostPtr, (IntPtr)(ArrayLength * 4), input, out error);
-            match Cl.CreateProgramWithSource(env.Context, 1u, [| kernelSrc |], null) with
+            
+            match Cl.CreateProgramWithSource(env.Context, 1u, [| compilerResult.Source |], null) with
             | program, ErrorCode.Success ->
+                use program = program
                 match Cl.BuildProgram(program, uint32 env.Devices.Length, env.Devices, " -cl-fast-relaxed-math  -cl-mad-enable ", null, IntPtr.Zero) with
-                | ErrorCode.Success -> ()
+                | ErrorCode.Success -> 
+                    match Cl.GetProgramBuildInfo(program, env.Devices.[0], ProgramBuildInfo.Log) with
+                    | info, ErrorCode.Success -> 
+                        use info = info
+                        match Cl.CreateKernel(program, "kernelCode") with
+                        | kernel, ErrorCode.Success -> 
+                            use kernel = kernel
+                            let inputBuffers = new System.Collections.Generic.List<IMem>()
+                            try
+                                for input, t, length, size in compilerResult.Args do
+                                    match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.UseHostPtr, new IntPtr(if length = 0 then size else length * size), input) with
+                                    | inputBuffer, ErrorCode.Success -> inputBuffers.Add(inputBuffer)
+                                    | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
+                                inputBuffers |> Seq.iteri (fun i inputBuffer -> 
+                                                                            match Cl.SetKernelArg(kernel, uint32 i, inputBuffer) with
+                                                                            | ErrorCode.Success -> ()
+                                                                            | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error)
+                                match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(100) |], [| new IntPtr(1) |], uint32 0, null) with
+                                | ErrorCode.Success, event ->
+                                    use event = event
+                                    // last arg is the output buffer
+                                    let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
+                                    let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                    match t with
+                                    | TypeCheck Compiler.intType _ -> 
+                                        let output = output :?> int[]
+                                        if output.Length <> 0 then
+                                            env.CommandQueues.[0].ReadFromBuffer(outputBuffer, output, 0, int64 -1)
+                                    | TypeCheck Compiler.floatType _ ->  
+                                        let output = output :?> float[]
+                                        if output.Length <> 0 then
+                                            env.CommandQueues.[0].ReadFromBuffer(outputBuffer, output, 0, int64 -1)
+                                    | _ -> failwithf "Not supported result type %A" t
+                                | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                            finally
+                                inputBuffers |> Seq.iter (fun inputBuffer -> try inputBuffer.Dispose() with _ -> ())
+                        | _, error -> failwithf "OpenCL.CreateKernel failed with error code %A" error
+                    | _, error -> failwithf "OpenCL.GetProgramBuildInfo failed with error code %A" error
                 | error -> failwithf "OpenCL.BuildProgram failed with error code %A" error
             | _, error -> failwithf "OpenCL.CreateProgramWithSource failed with error code %A" error
-//  
-//            error = Cl.BuildProgram(program, (uint)env.Devices.Length, env.Devices, " -cl-fast-relaxed-math  -cl-mad-enable ", null, IntPtr.Zero);
-//            var info = Cl.GetProgramBuildInfo(program, env.Devices[0], ProgramBuildInfo.Log, out error);
-//
-//            var kernel = Cl.CreateKernel(program, "doSomething", out error);
-            //error = Cl.SetKernelArg(kernel, 0, a);
-            //error = Cl.EnqueueNDRangeKernel(env.CommandQueues[0], kernel, (uint)1, null, new IntPtr[] { (IntPtr)100 }, new IntPtr[] { (IntPtr)20 }, (uint)0, null, out eventID);
-            // env.CommandQueues[0].ReadFromBuffer(b, results);
-            raise <| new NotImplementedException()
+
+            //  
+            let (output, _, _, _) = compilerResult.Args.[compilerResult.Args.Length - 1]
+            output
+            
+            
 

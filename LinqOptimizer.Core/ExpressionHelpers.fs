@@ -109,7 +109,30 @@ namespace LinqOptimizer.Core
 
         let (|Constant|_|) (expr : Expression) = 
             match expr with
-            | :? ConstantExpression as constExpr -> Some constExpr
+            | :? ConstantExpression as constExpr -> Some (constExpr.Value, constExpr.Type)
+            | _ -> None
+
+        let (|Parameter|_|) (expr : Expression) = 
+            match expr with
+            | :? ParameterExpression as paramExpr -> Some (paramExpr)
+            | _ -> None
+
+        let (|Assign|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as assignExpr 
+                when assignExpr.NodeType = ExpressionType.Assign -> Some (assignExpr.Left, assignExpr.Right)
+            | _ -> None
+
+        let (|Plus|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as plusExpr 
+                when plusExpr.NodeType = ExpressionType.Add -> Some (plusExpr.Left, plusExpr.Right)
+            | _ -> None
+
+        let (|Times|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as plusExpr 
+                when plusExpr.NodeType = ExpressionType.Multiply -> Some (plusExpr.Left, plusExpr.Right)
             | _ -> None
 
         type internal Expression with

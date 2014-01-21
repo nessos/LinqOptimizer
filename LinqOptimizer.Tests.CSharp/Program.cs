@@ -8,31 +8,24 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LinqOptimizer.CSharp;
+using LinqOptimizer.Gpu.CSharp;
 using LinqOptimizer.Base;
+using System.Runtime.InteropServices;
+using System.IO.MemoryMappedFiles;
+using System.IO;
 
 namespace LinqOptimizer.Tests
 {
     public class Program
     {
+
         public static void Main(string[] args)
         {
-            (new GpuQueryTests()).Select();
-            //var rnd = new Random();
-            //var input = Enumerable.Range(1, 100000000).Select(x => (float)x).ToArray();
-            
-            //var f = input.AsQueryExpr().Select(x => x * 2.0).Compile();
-            //Measure(() => f());
-            ////Measure(() => input.Select(x => x * 2.0).ToArray());
 
-            //Measure(() =>
-            //{
-            //    var s2 = 0;
-            //    for (int i = 0; i < 10000; i++)
-            //    {
-            //        s2 += Enumerable.Range(0, i).AsQueryExpr().Count().Run();
-            //    }
-            //    Console.WriteLine(s2);
-            //});
+            //var test = new int[] { 1, 2, 3 }.AsGpuQueryExpr().Select(x => x + 1).Run();
+
+            (new GpuQueryTests()).Select();
+
         }
 
         static void Measure(Action action)

@@ -8,7 +8,7 @@ using LinqOptimizer.Base;
 using LinqOptimizer.Core;
 using LinqOptimizer.Gpu;
 
-namespace LinqOptimizer.CSharp.Gpu
+namespace LinqOptimizer.Gpu.CSharp
 {
     /// <summary>
     /// Provides a set of static methods for querying objects that implement IGpuQueryExpr.
@@ -36,8 +36,7 @@ namespace LinqOptimizer.CSharp.Gpu
         /// <returns>The result of the query.</returns>
         public static TQuery Run<TQuery>(this IGpuQueryExpr<TQuery> query)
         {
-            Func<object[], object> func = GpuHelpers.Compile(query.Expr);
-            return (TQuery)func(new object[0]);
+            return (TQuery)GpuHelpers.Run(query.Expr);
         }
 
 

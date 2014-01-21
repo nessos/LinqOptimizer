@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using LinqOptimizer.CSharp.Gpu;
+using LinqOptimizer.Gpu.CSharp;
 using FsCheck.Fluent;
 
 namespace LinqOptimizer.Tests
@@ -18,7 +18,7 @@ namespace LinqOptimizer.Tests
             {
                 var x = xs.AsGpuQueryExpr().Select(n => n * 2).Run();
                 var y = xs.Select(n => n * 2).ToArray();
-                return x == y;
+                return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
 
