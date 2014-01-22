@@ -27,13 +27,23 @@ module Program =
 //            |> Query.run
 
         let max = 10
+//        let x = 
+//            Query.range(1, max + 1)
+//            |> Query.map(fun i -> i,i + 1)
+//            |> Query.map(fun (a,b) -> a, b, a + b)
+//            |> Query.filter(fun (k,l,m) -> true)
+//            |> Query.map(fun (x,y,z) -> (x,y,z))
+//            |> Query.run
+
         let x = 
             Query.range(1, max + 1)
-            |> Query.map(fun i -> i, i + 1, i + 2)
-            |> Query.map(fun y -> id y)
-            |> Query.filter (fun (a,b,c) -> a + b + c = 3 * a + 3)
-            |> Query.length
+            |> Query.map(fun i -> i,i + 1)
+            |> Query.filter(fun (a,b) -> true)
+            //|> Query.map(fun (x,y) -> (x,y))
+            |> Query.map(fun t -> t)
             |> Query.run
+
+        0 // return an integer exit code
 //
 //        let x = 
 //            Query.range(1, max + 1)
@@ -44,7 +54,6 @@ module Program =
 //            |> Query.length
 //            |> Query.run
 
-        0 // return an integer exit code
 
         //            |> Query.collect(fun a ->
 //                Enumerable.Range(a, max + 1 - a)

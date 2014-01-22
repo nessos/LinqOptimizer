@@ -16,10 +16,10 @@
         Expr            : ParameterExpression
         Aliases         : List<Parameter>
         mutable Escapes : bool
-        MemberMappings  : Dictionary<Expression, ParameterExpression> } 
+        MemberMappings  : List<Expression> } 
     with 
         static member create (expr : ParameterExpression) =
-            {Expr = expr; Aliases = new List<_>(); Escapes = false; MemberMappings = new Dictionary<_,_>() }
+            {Expr = expr; Aliases = new List<_>(); Escapes = false; MemberMappings = new List<_>() }
 
         static member aliasesEscape (parameter : Parameter) =
             parameter.Aliases |> Seq.exists (fun p -> p.Escapes || Parameter.aliasesEscape p)
@@ -43,27 +43,8 @@
                 ty.IsGenericType 
                 && tupleTypes.Contains(ty.GetGenericTypeDefinition())
 
-            let isWildcardParameter (expr : ParameterExpression) =
-                expr.Name.StartsWith "_arg" && 
-                    match Int32.TryParse(expr.Name.Substring(4)) with | b, _ -> b
-
-
-            // Check if $tupledArg.Item$i
-            let (|SpecialTupleArgExpression|_|) (expr : Expression) = 
-                match expr with
-                | :? MemberExpression as mexpr -> 
-                    match mexpr.Expression with
-                    | :? ParameterExpression as param ->
-                        let ty = param.Type.GetGenericTypeDefinition()
-                        if param.Name = specialTupleName && tupleTypes.Contains(ty) then
-                            Some(param, mexpr.Member)
-                        else
-                            None
-                    | _ -> None
-                | _ -> None
-
             // Check if $id = new Tuple($e1, ...., $en)
-            let (|TupleAssignment|_|) (expr : Expression) =
+            let (|TupleNewAssignment|_|) (expr : Expression) =
                 match expr with
                 | :? BinaryExpression as expr 
                     when expr.NodeType = ExpressionType.Assign 
@@ -76,22 +57,39 @@
                     else None
                 | _ -> None
 
-    type private EscapeAnalysisVisitor () =
+            // $foo.Item$id -> $id
+            let getItemPosition(expr : MemberExpression) =
+                int(expr.Member.Name.Substring(4))
+
+    type private ReshapeVisitor () =
         inherit ExpressionVisitor() with
 
-            let parameters = new List<Parameter>()
-
-            member this.Parameters with get () = parameters
+            let env = new Stack<List<ParameterExpression>>()
+            let memberAssignments = new Dictionary<ParameterExpression, Expression list>()
 
             // Populate parameters list
             override this.VisitBlock(expr : BlockExpression) =
+                //Diagnostics.Debugger.Break()
+                
                 let blockVars = expr.Variables
-                blockVars |> Seq.filter (fun v -> isTupleType v.Type)
-                          |> Seq.iter   (fun v -> parameters.Add(Parameter.create(v)))
+ 
+                env.Push(new List<_>())
+                let newExprs = this.Visit(expr.Expressions)
+                let newBlockVars = Seq.append blockVars (env.Pop())
+                let flat = 
+                    newExprs 
+                    |> Seq.collect (fun expr ->
+                        match expr with
+                        | TupleNewAssignment(left, _) ->
+                            match memberAssignments.TryGetValue(left) with
+                            | true, xs -> expr :: xs
+                            | false, _ -> [expr]
+                        | _ -> [expr])
+                    |> Seq.toArray
 
-                Expression.Block(blockVars, this.Visit expr.Expressions) :> _
+                Expression.Block(newBlockVars, flat) :> _
 
-            // Remova the weird lambdas and keep mappings
+            // Remove the weird lambdas and keep mappings
             // Looking for pattern ($id => %body).Invoke($var.Item$i)
             // and substitute with %body
             override this.VisitMethodCall(expr : MethodCallExpression) =
@@ -113,12 +111,43 @@
                         let isInvoke = expr.Method = invoke
 
                         if isInvoke then 
-                            this.Visit(Expression.Block([param], Expression.Assign(param, arg), this.Visit(lambda.Body)))
+                            env.Peek().Add(param)
+
+                            let target = 
+                                match arg with
+                                | :? MemberExpression as me -> me.Expression :?> ParameterExpression
+                                | :? ParameterExpression as pe -> pe 
+                                | _ -> failwithf "Invalid target %A" arg
+
+                            match memberAssignments.TryGetValue(target) with
+                            | true, xs -> memberAssignments.[target] <- Expression.Assign(param, arg) :> _ :: xs
+                            | false, _ -> memberAssignments.Add(target, [Expression.Assign(param, arg)])
+                            this.Visit(lambda.Body)
                         else pass ()
                     | _ ->  
                         pass()
                 else
                     pass()
+
+    type private EscapeAnalysisVisitor () =
+        inherit ExpressionVisitor() with
+
+            let parameters = new Dictionary<ParameterExpression, Parameter>()
+
+            member this.GetNotEscapingParameters() =
+                Diagnostics.Debugger.Break()
+                parameters.Values
+                |> Seq.filter(fun p -> not p.Escapes && not (Parameter.aliasesEscape p))
+                |> Seq.toArray
+
+            // Populate parameters list
+            override this.VisitBlock(expr : BlockExpression) =
+                let blockVars = expr.Variables
+                blockVars |> Seq.filter (fun v -> isTupleType v.Type)
+                          |> Seq.iter   (fun v -> parameters.Add(v, Parameter.create(v)))
+
+                Expression.Block(blockVars, this.Visit expr.Expressions) :> _
+
 
             // Check for aliases %alias = %parameter
             override this.VisitBinary(expr : BinaryExpression) =
@@ -126,49 +155,70 @@
                 | ExpressionType.Assign when isTupleType expr.Left.Type && (expr.Left :? ParameterExpression) && (expr.Right :? ParameterExpression) ->
                     let left  = expr.Left  :?> ParameterExpression
                     let right = expr.Right :?> ParameterExpression
-                    let lpar = parameters.Find(fun p -> p.Expr = left)
-                    let rpar = parameters.Find(fun p -> p.Expr = right)
+                    let lpar = parameters.[left]
+                    let rpar = parameters.[right]
                     rpar.Aliases.Add(lpar)
                     expr :> _
-                | ExpressionType.Assign when isTupleType expr.Left.Type && (expr.Left :? ParameterExpression) ->
-                    // left does not escape
-                    //Diagnostics.Debugger.Break()
-                    expr.Update(expr.Left, null, this.Visit(expr.Right)) :> _
-                | _ -> 
-                    expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _
+                | _ ->
+                    match expr with
+                    | TupleNewAssignment(left, arguments) ->
+                        // left does not escape
+                        let p = parameters.[left]
+                        arguments 
+                        |> Seq.iter(fun arg -> p.MemberMappings.Add(arg))
+                        expr.Update(expr.Left, null, this.Visit(expr.Right)) :> _
+                    | _ -> 
+                        //Diagnostics.Debugger.Break()
+                        expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _
 
             // Standalone appearance of ParameterExpression implies escape.
             override this.VisitParameter(expr : ParameterExpression) =
-                //Diagnostics.Debugger.Break()
-                
-                match Seq.tryFind (fun p -> p.Expr = expr) parameters with
-                | Some param -> 
-                    //Diagnostics.Debugger.Break()
+                match parameters.TryGetValue(expr) with
+                | true, param -> 
                     param.Escapes <- true
-                | None -> ()
+                | false, _ -> ()
                 expr :> _
 
             // &tuple.Item$i 
             override this.VisitMember(expr : MemberExpression) =
-                //Diagnostics.Debugger.Break()
-                
                 expr.Update(expr.Expression) :> _
 
-
-    type private TupleEliminationVisitor (parameters : List<Parameter>) =
+    type private TupleEliminationVisitor (parameters : Parameter []) =
         inherit ExpressionVisitor() with
 
-            let parameterExprs = parameters |> Seq.map(fun p -> p.Expr) |> Seq.toArray
+            let parameterExprs = parameters |> Array.map(fun p -> p.Expr)
 
+            // Remove non-escaping parameters from block variables
             override this.VisitBlock(expr : BlockExpression) =
                 let blockVars = expr.Variables |> Seq.filter(fun v -> not(parameterExprs.Contains(v))) |> Seq.toArray
                 Expression.Block(blockVars, this.Visit(expr.Expressions)) :> _
 
+            // Remove any assignments to those parameters
+            override this.VisitBinary(expr : BinaryExpression) =
+                let pass () = expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> Expression
+                match expr.NodeType with
+                | ExpressionType.Assign when (expr.Left :? ParameterExpression) ->
+                    let left = expr.Left :?> ParameterExpression
+                    if parameterExprs.Contains(left) then
+                        Expression.Empty() :> _
+                    else
+                        pass ()
+                | _ -> pass ()
+
+            override this.VisitMember(expr : MemberExpression) =
+                if expr.Expression <> null && expr.Expression :? ParameterExpression && parameterExprs.Contains(expr.Expression :?> ParameterExpression) then
+                    let par = parameters.First(fun p -> p.Expr = (expr.Expression :?> ParameterExpression))
+                    par.MemberMappings.[getItemPosition expr - 1]
+                else
+                    expr.Update(this.Visit(expr.Expression)) :> _
 
     module TupleElimination =
         let apply(expr : Expression) =
-            let te = new EscapeAnalysisVisitor()
-            let expr = te.Visit(expr)
-            let ps = te.Parameters
-            let pps = te.Parameters.Select(fun p -> Parameter.aliasesEscape p).ToArray()
+            let rsv = new ReshapeVisitor()
+            let expr = rsv.Visit(expr)
+            let eav = new EscapeAnalysisVisitor()
+            let expr = eav.Visit(expr)
+            let ps = eav.GetNotEscapingParameters()
+            let tev = new TupleEliminationVisitor(ps)
+            let expr = tev.Visit(expr)
             expr
