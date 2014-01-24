@@ -16,15 +16,26 @@ using System.IO;
 
 namespace LinqOptimizer.Tests
 {
+
+
+
     public class Program
     {
+
+
 
         public static void Main(string[] args)
         {
 
-            //var test = new int[] { 1, 2, 3 }.AsGpuQueryExpr().Select(x => x + 1).Run();
+            //var input = Enumerable.Range(1, 10).ToArray();
 
-            (new GpuQueryTests()).Pipelined();
+            //var result = input.AsGpuQueryExpr().Where(x => x % 2 == 0).Select(x => x + 1).Run();
+
+            //Measure(() => input.AsQueryExpr().Select(x => x * 2).Run());
+            //Measure(() => input.AsParallelQueryExpr().Select(x => x * 2).Run());
+            //Measure(() => input.AsGpuQueryExpr().Select(x => x * 2).Run());
+
+            (new GpuQueryTests()).Where();
 
         }
 

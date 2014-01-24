@@ -12,6 +12,11 @@
         let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
 
+        type QueryContext = { CurrentVarExpr : ParameterExpression; AccVarExpr : ParameterExpression; 
+                                BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
+                                InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
+                                VarExprs : ParameterExpression list; Exprs : Expression list; ReductionType : ReductionType }
+
         let breakLabel = 
             let x = ref -1
             fun () -> 

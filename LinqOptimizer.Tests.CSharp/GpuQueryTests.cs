@@ -40,5 +40,23 @@ namespace LinqOptimizer.Tests
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
         }
+
+        [Test]
+        public void Where()
+        {
+            Spec.ForAny<int[]>(xs =>
+            {
+                var x = (from n in xs.AsGpuQueryExpr()
+                         where n % 2 == 0
+                         select n + 1).Run();
+                var y = (from n in xs
+                         where n % 2 == 0
+                         select n + 1).ToArray();
+
+                return Enumerable.SequenceEqual(x, y);
+            }).QuickCheckThrowOnFailure();
+        }
+
+
     }
 }

@@ -135,5 +135,39 @@ namespace LinqOptimizer.Core
                 when plusExpr.NodeType = ExpressionType.Multiply -> Some (plusExpr.Left, plusExpr.Right)
             | _ -> None
 
+        let (|Modulo|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as plusExpr 
+                when plusExpr.NodeType = ExpressionType.Modulo -> Some (plusExpr.Left, plusExpr.Right)
+            | _ -> None
+
+        let (|IFThenElse|_|) (expr : Expression) = 
+            match expr with
+            | :? ConditionalExpression as contExpr -> 
+                Some (contExpr.Test, contExpr.IfTrue, contExpr.IfFalse)
+            | _ -> None
+
+
+        let (|Equal|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as equalExpr 
+                when equalExpr.NodeType = ExpressionType.Equal -> Some (equalExpr.Left, equalExpr.Right) 
+            | _ -> None
+
+        let (|Nop|_|) (expr : Expression) = 
+            match expr with
+            | :? DefaultExpression as defaultExpr -> Some (defaultExpr) 
+            | _ -> None
+
+        let (|Goto|_|) (expr : Expression) = 
+            match expr with
+            | :? GotoExpression as gotoExpr -> Some (gotoExpr.Kind, gotoExpr.Target, gotoExpr.Value) 
+            | _ -> None
+
+        let (|Block|_|) (expr : Expression) = 
+            match expr with
+            | :? BlockExpression as blockExpr -> Some (blockExpr.Variables, blockExpr.Expressions, blockExpr.Result) 
+            | _ -> None
+
         type internal Expression with
             static member ofFSharpFunc<'T,'R>(func : Expression<Func<'T,'R>>) = func

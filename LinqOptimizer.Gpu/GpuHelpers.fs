@@ -10,10 +10,40 @@
         
 
         static member Run(queryExpr : QueryExpr) : obj =
+            let readFromBuffer (queue : CommandQueue) (t : Type) (outputBuffer : IMem) (output : obj) =
+                match t with
+                | TypeCheck Compiler.intType _ -> 
+                    let output = output :?> int[]
+                    if output.Length <> 0 then
+                        queue.ReadFromBuffer(outputBuffer, output, 0, int64 -1)
+                | TypeCheck Compiler.floatType _ ->  
+                    let output = output :?> float[]
+                    if output.Length <> 0 then
+                        queue.ReadFromBuffer(outputBuffer, output, 0, int64 -1)
+                | _ -> failwithf "Not supported result type %A" t
+
+            let createDynamicArray (t : Type) (flags : int[]) (output : obj) : obj =
+                match t with
+                | TypeCheck Compiler.intType _ -> 
+                    let output = output :?> int[]
+                    let result = new System.Collections.Generic.List<int>()
+                    for i = 0 to flags.Length - 1 do
+                        if flags.[i] = 0 then
+                            result.Add(output.[i])
+                    result.ToArray() :> _
+                | TypeCheck Compiler.floatType _ ->  
+                    let output = output :?> float[]
+                    let result = new System.Collections.Generic.List<float>()
+                    for i = 0 to flags.Length - 1 do
+                        if flags.[i] = 0 then
+                            result.Add(output.[i])
+                    result.ToArray() :> _
+                | _ -> failwithf "Not supported result type %A" t
+
+
             let compilerResult = Compiler.compile queryExpr
-            
             use env = "*".CreateCLEnvironment()
-            
+            // boilerplate
             match Cl.CreateProgramWithSource(env.Context, 1u, [| compilerResult.Source |], null) with
             | program, ErrorCode.Success ->
                 use program = program
@@ -38,19 +68,24 @@
                                 match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(100) |], [| new IntPtr(1) |], uint32 0, null) with
                                 | ErrorCode.Success, event ->
                                     use event = event
-                                    // last arg is the output buffer
-                                    let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
-                                    let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
-                                    match t with
-                                    | TypeCheck Compiler.intType _ -> 
-                                        let output = output :?> int[]
-                                        if output.Length <> 0 then
-                                            env.CommandQueues.[0].ReadFromBuffer(outputBuffer, output, 0, int64 -1)
-                                    | TypeCheck Compiler.floatType _ ->  
-                                        let output = output :?> float[]
-                                        if output.Length <> 0 then
-                                            env.CommandQueues.[0].ReadFromBuffer(outputBuffer, output, 0, int64 -1)
-                                    | _ -> failwithf "Not supported result type %A" t
+                                    // collect result
+                                    match compilerResult.ReductionType with
+                                    | ReductionType.Map -> 
+                                        // last arg is the output buffer
+                                        let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
+                                        let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                        readFromBuffer env.CommandQueues.[0] t outputBuffer output 
+                                        output
+                                    | ReductionType.Filter -> 
+                                        // last arg is the output buffer
+                                        let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
+                                        let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                        readFromBuffer env.CommandQueues.[0] t outputBuffer output 
+                                        let (flags, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 2]
+                                        let flagsBuffer = inputBuffers.[inputBuffers.Count - 2]
+                                        readFromBuffer env.CommandQueues.[0] t flagsBuffer flags
+                                        createDynamicArray t (flags :?> int[]) output 
+                                    | reductionType -> failwith "Invalid ReductionType %A" reductionType
                                 | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
                             finally
                                 inputBuffers |> Seq.iter (fun inputBuffer -> try inputBuffer.Dispose() with _ -> ())
@@ -58,10 +93,6 @@
                     | _, error -> failwithf "OpenCL.GetProgramBuildInfo failed with error code %A" error
                 | error -> failwithf "OpenCL.BuildProgram failed with error code %A" error
             | _, error -> failwithf "OpenCL.CreateProgramWithSource failed with error code %A" error
-
-            //  
-            let (output, _, _, _) = compilerResult.Args.[compilerResult.Args.Length - 1]
-            output
             
             
 

@@ -59,6 +59,19 @@ namespace LinqOptimizer.Gpu.CSharp
             return new GpuQueryExpr<TResult[]>(QueryExpr.NewTransform(selector, query.Expr));
         }
 
+
+        /// <summary>
+        /// Creates a new query that filters a sequence of values based on a predicate.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">An query whose values to filter.</param>
+        /// <param name="predicate">A function to test each element for a condition.</param>
+        /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
+        public static IGpuQueryExpr<TSource[]> Where<TSource>(this IGpuQueryExpr<TSource[]> query, Expression<Func<TSource, bool>> predicate)
+        {
+            return new GpuQueryExpr<TSource[]>(QueryExpr.NewFilter(predicate, query.Expr));
+        }
+
         #endregion
     }
 }
