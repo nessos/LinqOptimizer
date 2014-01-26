@@ -21,42 +21,48 @@ module Program =
     let main argv = 
 
         let max = 10
+// OK
 //        let z =
 //            Query.range(1,max + 1)
 //            |> Query.map(fun i -> i,i * i)
 //            |> Query.map(fun ((a,b) as tt) -> a + snd tt)
 //            |> Query.run
 
-
+// OK
 //        let w = 
 //            Query.range(1, max + 1)
 //            |> Query.map(fun i -> i,i + 1)
 //            |> Query.map(fun (a,b) -> a, b, b)
 //            |> Query.map(fun (a,b,c) -> a, b, c, c)
 //            |> Query.map(fun (a,b,c,d) -> a, b, c,d,d)
-//            |> Query.length
 //            |> Query.run
 
-//-------
-//        let x = 
-//            Query.range(1, max + 1)
-//            |> Query.map(fun i -> i,i + 1)
-//            |> Query.filter(fun (a,b) -> a = b + 1)
-//            |> Query.map(fun (x,y) -> x,y)
-//            |> Query.filter(fun (c,d) -> c = d + 1)
-//            |> Query.run
-
-        let y = 
+        let x = 
             Query.range(1, max + 1)
             |> Query.map(fun i -> i,i + 1)
-            |> Query.filter(fun (a,b) -> true)
-            |> Query.map(fun (x,y) -> (x,y))
-            |> Query.map(fun t -> t)
+            |> Query.filter(fun (a,b) -> a = b + 1)
+            |> Query.map(fun (x,y) -> x,y)
+            |> Query.filter(fun (c,d) -> c = d + 1)
             |> Query.run
 
-        let z = Query.range(1, max + 1)
-                |> Query.map(fun i -> i,i * i)
-                |> Query.filter(fun ((a,b) as mm) -> a % 2 = 0)
-                |> Query.run
+//        let y = 
+//            Query.range(1, max + 1)
+//            |> Query.map(fun i -> i,i + 1)
+//            |> Query.filter(fun (a,b) -> true)
+//            |> Query.map(fun (x,y) -> (x,y))
+//            |> Query.map(fun t -> t)
+//            |> Query.run
+
+// OK
+//        let x = Query.range(1, max + 1)
+//                |> Query.map(fun i -> i,i * i)
+//                |> Query.filter(fun ((a,b) as mm) -> a % 2 = 0)
+//                |> Query.run
+
+// OK
+//        let z = Query.range(1, max + 1)
+//                |> Query.map(fun i -> i,i * i)
+//                |> Query.filter(fun ((a,b) as mm) -> a % 2 = 0)
+//                |> Query.run
 
         0 // return an integer exit code
