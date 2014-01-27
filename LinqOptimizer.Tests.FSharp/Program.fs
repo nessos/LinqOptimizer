@@ -21,7 +21,13 @@ module Program =
     let main argv = 
 
         let max = 10
-// OK
+
+//        let q = Query.range(1, max + 1)
+//                |> Query.map(fun i -> i, -i)
+//                |> Query.map(fun t -> [t])
+//                |> Query.run
+
+//OK
 //        let z =
 //            Query.range(1,max + 1)
 //            |> Query.map(fun i -> i,i * i)
@@ -37,20 +43,14 @@ module Program =
 //            |> Query.map(fun (a,b,c,d) -> a, b, c,d,d)
 //            |> Query.run
 
-        let x = 
-            Query.range(1, max + 1)
-            |> Query.map(fun i -> i,i + 1)
-            |> Query.filter(fun (a,b) -> a = b + 1)
-            |> Query.map(fun (x,y) -> x,y)
-            |> Query.filter(fun (c,d) -> c = d + 1)
-            |> Query.run
-
-//        let y = 
+// OK
+//        let x = 
 //            Query.range(1, max + 1)
-//            |> Query.map(fun i -> i,i + 1)
-//            |> Query.filter(fun (a,b) -> true)
-//            |> Query.map(fun (x,y) -> (x,y))
-//            |> Query.map(fun t -> t)
+//            |> Query.map(fun i -> i,-i)
+//            |> Query.filter(fun (a,b) -> a = -b)
+//            |> Query.map(fun (x,y) -> x,y)
+//            |> Query.filter(fun (c,d) -> c = -d)
+//            |> Query.length
 //            |> Query.run
 
 // OK

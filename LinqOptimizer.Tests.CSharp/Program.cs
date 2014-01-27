@@ -12,6 +12,8 @@ using LinqOptimizer.Base;
 
 namespace LinqOptimizer.Tests
 {
+    class Foo { }
+
     public class Program
     {
         public static bool Foo(Tuple<int,int,int> t)
@@ -24,17 +26,30 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-            var max = 100;
-            var mm =
-                Enumerable.Range(1, max + 1).AsParallelQueryExpr()
-                    .SelectMany(a =>
-                        Enumerable.Range(a, max + 1 - a)
-                            .SelectMany(b =>
-                                Enumerable.Range(b, max + 1 - b)
-                                    .Select(c => new Tuple<int,int,int>(a,b,c)))
-                    .Where(t => Foo(t)))
-                    .Count()
-                    .Run();
+            var max = 10;
+
+            //var mm = QueryExpr.Range(1, max)
+            //         .Select(i => new Tuple<int, int>(i, i + 1))
+            //         .Select(t => new Tuple<int, int, int>(t.Item1 + 1, t.Item2 + 1, t.Item2 + 1))
+            //         .Select(m => new Tuple<int, int, int, int>(m.Item1 + 2, m.Item2 + 2, m.Item3 + 2, m.Item3 + 2))
+            //         .Run();
+
+            var mm = QueryExpr.Range(1, max)
+                     .Select(i => new Tuple<int, int>(i, i + 1))
+                     .Where(t => t.Item1 == t.Item2 + 1)
+                     .Count()
+                     .Run();
+
+            //var mm =
+            //    Enumerable.Range(1, max + 1).AsParallelQueryExpr()
+            //        .SelectMany(a =>
+            //            Enumerable.Range(a, max + 1 - a)
+            //                .SelectMany(b =>
+            //                    Enumerable.Range(b, max + 1 - b)
+            //                        .Select(c => new Tuple<int,int,int>(a,b,c)))
+            //        .Where(t => Foo(t)))
+            //        .Count()
+            //        .Run();
 
             //var ll = 
             //Enumerable.Range(1, max + 1)
