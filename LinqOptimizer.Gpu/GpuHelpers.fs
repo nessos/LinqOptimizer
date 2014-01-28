@@ -7,8 +7,6 @@
 
     type GpuHelpers =
         
-        
-
         static member Run(queryExpr : QueryExpr) : obj =
             let readFromBuffer (queue : CommandQueue) (t : Type) (outputBuffer : IMem) (output : obj) =
                 match t with
@@ -24,16 +22,17 @@
 
             let createDynamicArray (t : Type) (flags : int[]) (output : obj) : obj =
                 match t with
-                | TypeCheck Compiler.intType _ -> 
+                | TypeCheck Compiler.intType _ ->
                     let output = output :?> int[]
-                    let result = new System.Collections.Generic.List<int>()
+                    let result = new System.Collections.Generic.List<int>(flags.Length)
                     for i = 0 to flags.Length - 1 do
                         if flags.[i] = 0 then
                             result.Add(output.[i])
-                    result.ToArray() :> _
+                    let result = result.ToArray() 
+                    result :> _
                 | TypeCheck Compiler.floatType _ ->  
                     let output = output :?> float[]
-                    let result = new System.Collections.Generic.List<float>()
+                    let result = new System.Collections.Generic.List<float>(flags.Length)
                     for i = 0 to flags.Length - 1 do
                         if flags.[i] = 0 then
                             result.Add(output.[i])
@@ -55,6 +54,7 @@
                         match Cl.CreateKernel(program, "kernelCode") with
                         | kernel, ErrorCode.Success -> 
                             use kernel = kernel
+                            
                             let inputBuffers = new System.Collections.Generic.List<IMem>()
                             try
                                 for input, t, length, size in compilerResult.Args do
@@ -65,28 +65,35 @@
                                                                             match Cl.SetKernelArg(kernel, uint32 i, inputBuffer) with
                                                                             | ErrorCode.Success -> ()
                                                                             | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error)
-                                match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(100) |], [| new IntPtr(1) |], uint32 0, null) with
-                                | ErrorCode.Success, event ->
-                                    use event = event
-                                    // collect result
-                                    match compilerResult.ReductionType with
-                                    | ReductionType.Map -> 
-                                        // last arg is the output buffer
-                                        let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
-                                        let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                
+                                
+                                
+                                match compilerResult.ReductionType with
+                                | ReductionType.Map -> 
+                                    // last arg is the output buffer
+                                    let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
+                                    let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                    match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(length) |], [| new IntPtr(1) |], uint32 0, null) with
+                                    | ErrorCode.Success, event ->
+                                        use event = event
                                         readFromBuffer env.CommandQueues.[0] t outputBuffer output 
                                         output
-                                    | ReductionType.Filter -> 
-                                        // last arg is the output buffer
-                                        let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
-                                        let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                    | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                                | ReductionType.Filter -> 
+                                    // last arg is the output buffer and 
+                                    let (output, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 1]
+                                    let outputBuffer = inputBuffers.[inputBuffers.Count - 1]
+                                    let (flags, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 2]
+                                    let flagsBuffer = inputBuffers.[inputBuffers.Count - 2]
+                                    match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(length) |], [| new IntPtr(1) |], uint32 0, null) with
+                                    | ErrorCode.Success, event ->
+                                        use event = event
                                         readFromBuffer env.CommandQueues.[0] t outputBuffer output 
-                                        let (flags, t, length, size) = compilerResult.Args.[compilerResult.Args.Length - 2]
-                                        let flagsBuffer = inputBuffers.[inputBuffers.Count - 2]
                                         readFromBuffer env.CommandQueues.[0] t flagsBuffer flags
-                                        createDynamicArray t (flags :?> int[]) output 
-                                    | reductionType -> failwith "Invalid ReductionType %A" reductionType
-                                | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                                        let result = createDynamicArray t (flags :?> int[]) output
+                                        result
+                                    | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                                | reductionType -> failwith "Invalid ReductionType %A" reductionType
                             finally
                                 inputBuffers |> Seq.iter (fun inputBuffer -> try inputBuffer.Dispose() with _ -> ())
                         | _, error -> failwithf "OpenCL.CreateKernel failed with error code %A" error
