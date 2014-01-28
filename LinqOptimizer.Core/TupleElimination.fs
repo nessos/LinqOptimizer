@@ -106,7 +106,7 @@
                         match h with
                         | TupleNewAssignment (left, args) ->
                             match memberAssignments.TryGetValue(left) with
-                            | true, xs -> flatten ((List.rev xs) @ t) (h :: acc)
+                            | true, xs -> flatten ((List.rev xs) @ t) (h :: acc) //t (h :: xs @ acc)
                             | false, _ -> 
                                 // Generate some assignments (usually in C# this is not done)
                                 let ys = args 
@@ -153,14 +153,16 @@
 
                             let target = 
                                 match arg with
-                                | :? MemberExpression as me -> me.Expression :?> ParameterExpression
-                                | :? ParameterExpression as pe -> pe 
-                                | _ -> failwithf "Invalid target %A" arg
-
-                            match memberAssignments.TryGetValue(target) with
-                            | true, xs -> memberAssignments.[target] <- Expression.Assign(param, arg) :> _ :: xs
-                            | false, _ -> memberAssignments.Add(target, [Expression.Assign(param, arg)])
-                            this.Visit(lambda.Body)
+                                | :? MemberExpression as me -> Some(me.Expression :?> ParameterExpression)
+                                | :? ParameterExpression as pe -> Some pe 
+                                | _ -> None //failwithf "Invalid target %A" arg
+                            if target = None then pass ()
+                            else
+                                let target = target.Value
+                                match memberAssignments.TryGetValue(target) with
+                                | true, xs -> memberAssignments.[target] <- Expression.Assign(param, arg) :> _ :: xs
+                                | false, _ -> memberAssignments.Add(target, [Expression.Assign(param, arg)])
+                                this.Visit(lambda.Body)
                         else pass ()
                     | _ ->  
                         pass()

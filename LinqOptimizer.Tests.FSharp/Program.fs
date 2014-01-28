@@ -22,14 +22,24 @@ module Program =
 
         let max = 10
 
+        let t = LinqOptimizer.Tests.``F# Query tests``()
+        t.``detuple #1``()
+        t.``detuple #2``()
+        t.``detuple #3``()
+        t.``detuple #4``()
+        t.``detuple #5``()
+        t.``detuple #6``()
+        t.``detuple #7``()
+
+// ΟΚ
 //        let q = Query.range(1, max + 1)
 //                |> Query.map(fun i -> i, -i)
 //                |> Query.map(fun t -> [t])
 //                |> Query.run
 
-//OK
 //        let z =
-//            Query.range(1,max + 1)
+//            [|0|]
+//            |> Query.ofSeq
 //            |> Query.map(fun i -> i,i * i)
 //            |> Query.map(fun ((a,b) as tt) -> a + snd tt)
 //            |> Query.run
