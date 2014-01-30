@@ -12,21 +12,35 @@ using LinqOptimizer.Base;
 
 namespace LinqOptimizer.Tests
 {
-    class Foo { }
+
+    internal struct MyStruct
+    {
+
+    }
+
+    class FooT : IFoo
+    {
+        public FooT() { }
+    }
+
+    internal interface IFoo { }
+
+    public class Foo 
+    {
+        internal int Foobar() { return 42; }
+        internal int thefield = 42;
+        internal int TheProp { get; set; }
+
+        public object GetMyStruct() { return new MyStruct(); }
+    }
+
 
     public class Program
     {
-        public static bool Foo(Tuple<int,int,int> t)
-        {
-            var b =  t.Item1 * t.Item1 + t.Item2 * t.Item2 == t.Item3 * t.Item3;
-            if (b)
-                return b;
-            return b;
-        }
 
         public static void Main(string[] args)
         {
-            var max = 10;
+            var max = 100;
 
             //var mm = QueryExpr.Range(1, max)
             //         .Select(i => new Tuple<int, int>(i, i + 1))
@@ -34,22 +48,24 @@ namespace LinqOptimizer.Tests
             //         .Select(m => new Tuple<int, int, int, int>(m.Item1 + 2, m.Item2 + 2, m.Item3 + 2, m.Item3 + 2))
             //         .Run();
 
+
             var mm = QueryExpr.Range(1, max)
-                     .Select(i => new Tuple<int, int>(i, i + 1))
-                     .Where(t => t.Item1 == t.Item2 + 1)
-                     .Count()
+                     .Select(i => new FooT())
+                     .Select(m => m)
                      .Run();
 
+            //Func<int, int, int, bool> f = (x, y, z) => x * x + y * y == z * z;
+
             //var mm =
-            //    Enumerable.Range(1, max + 1).AsParallelQueryExpr()
-            //        .SelectMany(a =>
-            //            Enumerable.Range(a, max + 1 - a)
-            //                .SelectMany(b =>
-            //                    Enumerable.Range(b, max + 1 - b)
-            //                        .Select(c => new Tuple<int,int,int>(a,b,c)))
-            //        .Where(t => Foo(t)))
-            //        .Count()
-            //        .Run();
+                //Enumerable.Range(1, max + 1).AsQueryExpr()
+                //    .SelectMany(a =>
+                //        Enumerable.Range(a, max + 1 - a)
+                //            .SelectMany(b =>
+                //                Enumerable.Range(b, max + 1 - b)
+                //                    .Select(c => new Tuple<int, int, int>(a, b, c))))
+                //    .Where(t => f(t.Item1, t.Item2, t.Item3))
+                //    .ForEach(t => Console.WriteLine("{0} {1} {2}",t.Item1, t.Item2, t.Item3))
+                //    .Run();
 
             //var ll = 
             //Enumerable.Range(1, max + 1)
@@ -116,6 +132,4 @@ namespace LinqOptimizer.Tests
             Console.WriteLine(watch.Elapsed);
         }
     }
-
-    
 }

@@ -50,6 +50,7 @@
     <Compile Include="AnonymousTypeEraser.fs" />
     <Compile Include="TupleEraser.fs" />
     <Compile Include="TupleElimination.fs" />
+    <Compile Include="AccessChecker.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionOptimizer.fs" />
     <Compile Include="FSharpExpressionOptimizer.fs" />

@@ -36,7 +36,6 @@ namespace LinqOptimizer.Core
         static member private CompileToMethod(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = query.ToString()
             let expr = compile query
-            //let expr = TupleEraser.apply(expr)
             let expr = TupleElimination.apply(expr)
             let expr = AnonymousTypeEraser.apply(expr)
             let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
@@ -47,14 +46,14 @@ namespace LinqOptimizer.Core
             else
                 let lambda = Expression.Lambda(expr, pms)
                 let methodInfo = Session.Compile(lambda)
-                let func = CoreHelpers.WrapInvocation(methodInfo) 
+                let iaccs = AccessChecker.check lambda
+                let func = CoreHelpers.WrapInvocation(methodInfo, iaccs) 
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
                 Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
 
         static member private Compile(query : QueryExpr, compile : QueryExpr -> Expression) : Func<'T> =
             let source = sprintf "allowNonPublicMemberAccess query (%s)" <| query.ToString()
             let expr = compile query
-            //let expr = TupleEraser.apply(expr)
             let expr = TupleElimination.apply(expr)
             let expr = AnonymousTypeEraser.apply(expr)
             let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
@@ -68,15 +67,24 @@ namespace LinqOptimizer.Core
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
                 Func<'T>(fun () -> func.DynamicInvoke(objs) :?> 'T)
 
-        static member private WrapInvocation<'T>(mi : MethodInfo) : Func<obj [], obj> =
+        static member private WrapInvocation<'T>(mi : MethodInfo, iaccs : seq<Expression * (string option)> option) : Func<obj [], obj> =
             Func<obj[], obj>(
                 fun (args : obj[]) -> 
                     try mi.Invoke(null, args) 
                     with :? TargetInvocationException as ex -> 
-                        if ex.InnerException :? MemberAccessException 
-                        then raise <| Exception(
-                                            "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.",
-                                            ex.InnerException)
+                        if ex.InnerException :? MemberAccessException then 
+                            let msg =
+                                "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.\n" +
+                                match iaccs with
+                                | None -> String.Empty
+                                | Some iaccs ->
+                                    "Possible invalid accesses :\n" +
+                                        (iaccs 
+                                        |> Seq.map (fun (expr, msg) -> 
+                                                let msg = match msg with None -> String.Empty | Some msg -> msg
+                                                sprintf "At expression : %A, %s" expr msg)
+                                        |> String.concat "\n")
+                            raise <| Exception(msg, ex.InnerException)
                         else raise ex.InnerException )
 
         static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
