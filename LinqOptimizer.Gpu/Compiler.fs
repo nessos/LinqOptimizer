@@ -17,7 +17,7 @@
         type CompilerResult = { Source : string; ReductionType : ReductionType; Args : (obj * Type * Length * Size) [] }
         
         let intType = typeof<int>
-        let floatType = typeof<float>
+        let floatType = typeof<single>
         let doubleType = typeof<double>
         let byteType = typeof<byte>
 
@@ -25,37 +25,7 @@
         let continueLabel () = labelTarget "cont"
 
         let compile (queryExpr : QueryExpr) : CompilerResult = 
-            let typeToStr (t : Type) = 
-                match t with
-                | TypeCheck intType _ -> "int"
-                | TypeCheck floatType _ -> "float"
-                | TypeCheck doubleType _ -> "float"
-                | TypeCheck byteType _ -> "byte"
-                | _ -> failwithf "Not supported %A" t
-            let varExprToStr (varExpr : ParameterExpression) = sprintf "%s%d" (varExpr.ToString()) (varExpr.GetHashCode())
-
-            let rec exprToStr (expr : Expression) =
-                match expr with
-                | Constant (value, TypeCheck intType _) -> sprintf "%A" value
-                | Constant (value, TypeCheck floatType _) -> sprintf "%A" value
-                | Constant (value, TypeCheck doubleType _) -> sprintf "%A" value
-                | Constant (value, TypeCheck byteType _) -> sprintf "%A" value
-                | Parameter (paramExpr) -> varExprToStr paramExpr
-                | Assign (Parameter (paramExpr), expr') -> sprintf "%s = %s" (varExprToStr paramExpr) (exprToStr expr')
-                | Plus (leftExpr, rightExpr) -> sprintf "(%s + %s)" (exprToStr leftExpr) (exprToStr rightExpr)
-                | Times (leftExpr, rightExpr) -> sprintf "(%s * %s)" (exprToStr leftExpr) (exprToStr rightExpr)
-                | Modulo (leftExpr, rightExpr) -> sprintf "(%s %% %s)" (exprToStr leftExpr) (exprToStr rightExpr)
-                | Equal (leftExpr, rightExpr) -> sprintf "(%s == %s)" (exprToStr leftExpr) (exprToStr rightExpr)
-                | IFThenElse (testExpr, thenExpr, elseExpr) -> 
-                    sprintf "if (%s) { %s; } else { %s; }" (exprToStr testExpr) (exprToStr thenExpr) (exprToStr elseExpr)
-                | Goto (kind, target, value) when kind = GotoExpressionKind.Continue -> sprintf "goto %s" target.Name 
-                | Block (_, exprs, _) -> 
-                    exprs
-                        |> Seq.map (fun expr -> sprintf "%s" (exprToStr expr))
-                        |> Seq.reduce (fun first second -> sprintf "%s;%s%s" first Environment.NewLine second)
-                | Nop _ -> ""
-                | _ -> failwithf "Not supported %A" expr
-
+            
             let mapTemplate = sprintf "
                             __kernel void kernelCode(__global %s* ___input___, __global %s* ___result___)
                             {
@@ -79,6 +49,40 @@
                             }"
 
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) =
+                let typeToStr (t : Type) = 
+                    match t with
+                    | TypeCheck intType _ -> "int"
+                    | TypeCheck floatType _ -> "float"
+                    | TypeCheck doubleType _ -> "float"
+                    | TypeCheck byteType _ -> "byte"
+                    | _ -> failwithf "Not supported %A" t
+                let varExprToStr (varExpr : ParameterExpression) = 
+                    let index = context.VarExprs |> List.findIndex (fun varExpr' -> varExpr = varExpr')
+                    sprintf "%s%d" (varExpr.ToString()) index
+
+                let rec exprToStr (expr : Expression) =
+                    match expr with
+                    | Constant (value, TypeCheck intType _) -> sprintf "%A" value
+                    | Constant (value, TypeCheck floatType _) -> sprintf "%A" value
+                    | Constant (value, TypeCheck doubleType _) -> sprintf "%A" value
+                    | Constant (value, TypeCheck byteType _) -> sprintf "%A" value
+                    | Parameter (paramExpr) -> varExprToStr paramExpr
+                    | Assign (Parameter (paramExpr), expr') -> sprintf "%s = %s" (varExprToStr paramExpr) (exprToStr expr')
+                    | Plus (leftExpr, rightExpr) -> sprintf "(%s + %s)" (exprToStr leftExpr) (exprToStr rightExpr)
+                    | Times (leftExpr, rightExpr) -> sprintf "(%s * %s)" (exprToStr leftExpr) (exprToStr rightExpr)
+                    | Modulo (leftExpr, rightExpr) -> sprintf "(%s %% %s)" (exprToStr leftExpr) (exprToStr rightExpr)
+                    | Equal (leftExpr, rightExpr) -> sprintf "(%s == %s)" (exprToStr leftExpr) (exprToStr rightExpr)
+                    | IFThenElse (testExpr, thenExpr, elseExpr) -> 
+                        sprintf "if (%s) { %s; } else { %s; }" (exprToStr testExpr) (exprToStr thenExpr) (exprToStr elseExpr)
+                    | Goto (kind, target, value) when kind = GotoExpressionKind.Continue -> sprintf "goto %s" target.Name 
+                    | Block (_, exprs, _) -> 
+                        exprs
+                            |> Seq.map (fun expr -> sprintf "%s" (exprToStr expr))
+                            |> Seq.reduce (fun first second -> sprintf "%s;%s%s" first Environment.NewLine second)
+                    | Nop _ -> ""
+                    | _ -> failwithf "Not supported %A" expr
+
+
                 match queryExpr with
                 | Source (Constant (value, Array (_, 1)) as expr, sourceType, QueryExprType.Gpu) ->
                     let sourceTypeStr = typeToStr sourceType

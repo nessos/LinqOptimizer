@@ -77,6 +77,10 @@
       <Project>{36a2a39a-d980-46c3-a5e1-cb680763786b}</Project>
       <Name>LinqOptimizer.Gpu.CSharp</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LinqOptimizer.Gpu\LinqOptimizer.Gpu.fsproj">
+      <Project>{edf3ce5f-18a2-443e-85e7-d3d877233aed}</Project>
+      <Name>LinqOptimizer.Gpu</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LinqOptimizer.Tests.FSharp\LinqOptimizer.Tests.FSharp.fsproj">
       <Project>{38a228d2-764c-4103-9ac2-58452630cba2}</Project>
       <Name>LinqOptimizer.Tests.FSharp</Name>

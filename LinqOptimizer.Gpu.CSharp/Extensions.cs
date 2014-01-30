@@ -26,25 +26,6 @@ namespace LinqOptimizer.Gpu.CSharp
             return new GpuQueryExpr<TSource[]>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Gpu));
         }
 
-        
-
-        #region Run methods
-        /// <summary>
-        /// Compiles a gpu query to gpu kernel code, runs the kernel and returns the result.
-        /// </summary>
-        /// <param name="query">The query to run.</param>
-        /// <returns>The result of the query.</returns>
-        public static TQuery Run<TQuery>(this IGpuQueryExpr<TQuery> query)
-        {
-            return (TQuery)GpuHelpers.Run(query.Expr);
-        }
-
-
-      
-        #endregion
-
-        
-
         #region Combinators
         /// <summary>
         /// Creates a new query that projects each element of a sequence into a new form.

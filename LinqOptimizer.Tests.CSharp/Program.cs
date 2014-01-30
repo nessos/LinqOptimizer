@@ -27,13 +27,46 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            //var input = Enumerable.Range(1, 10).ToArray();
+            var input = Enumerable.Range(1, 65000000).Select(x => (double)x).ToArray();
 
             //var result = input.AsGpuQueryExpr().Where(x => x % 2 == 0).Select(x => x + 1).Run();
 
-            //Measure(() => input.AsQueryExpr().Select(x => x * 2).Run());
-            //Measure(() => input.AsParallelQueryExpr().Select(x => x * 2).Run());
-            //Measure(() => input.AsGpuQueryExpr().Select(x => x * 2).Run());
+
+            //Measure(() => input.AsParallelQueryExpr()
+            //                    //.Where(x => x % 2 == 0)
+            //                    .Select(x => x * 2).Run());
+            //Measure(() => input.AsParallelQueryExpr()
+            //        //.Where(x => x % 2 == 0)
+            //        .Select(x => x * 2).Run());
+            //Measure(() => input.AsQueryExpr()
+            //        .Select(x => x * 2).Select(x => x * 2).Select(x => x * 2).Sum().Run());
+            //Measure(() => input.AsQueryExpr()
+            //                .Select(x => x * 2).Select(x => x * 2).Select(x => x * 2).Sum().Run());
+
+            //Measure(() => input.AsParallelQueryExpr()
+            //        .Select(x => x * 2).Select(x => x * 2).Select(x => x * 2).Sum().Run());
+            //Measure(() => input.AsParallelQueryExpr()
+            //                    .Select(x => x * 2).Select(x => x * 2).Select(x => x * 2).Sum().Run());
+
+            //Measure(() => input.Select(x => x * 2).Select(x => x * 2).Select(x => x * 2).Sum());
+
+            //Measure(() => input.AsParallel()
+            //                    .Select(x => x * 2).Select(x => x * 2).Select(x => x * 2).Sum());
+            
+            //Measure(() => input.AsParallel().Where(x => x % 2 == 0).Select(x => x * 2).ToArray());
+            //Measure(() => input.Where(x => x % 2 == 0).Select(x => x * 2).ToArray());
+            //Measure(() => input.AsGpuQueryExpr()
+            //                    .Select(x => x).Run());
+            //Measure(() => input.AsGpuQueryExpr()
+            //                    .Select(x => x).Run());
+
+            //Measure(() => input.AsGpuQueryExpr()
+            //    //.Where(x => x % 2 == 0)
+            //        .Select(x => x * 2).Run());
+            //Measure(() => input.AsGpuQueryExpr()
+            //    //.Where(x => x % 2 == 0)
+            //                .Select(x => x * 2).Run());
+
 
             (new GpuQueryTests()).Where();
 

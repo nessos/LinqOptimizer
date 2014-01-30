@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using LinqOptimizer.Gpu;
 using LinqOptimizer.Gpu.CSharp;
 using FsCheck.Fluent;
+using System.Threading;
 
 namespace LinqOptimizer.Tests
 {
@@ -14,47 +16,59 @@ namespace LinqOptimizer.Tests
         [Test]
         public void Select()
         {
-            Spec.ForAny<int[]>(xs =>
+            using (var context = new GpuContext())
             {
-                var x = xs.AsGpuQueryExpr().Select(n => n * 2).Run();
-                var y = xs.Select(n => n * 2).ToArray();
-                return x.SequenceEqual(y);
-            }).QuickCheckThrowOnFailure();
+                Spec.ForAny<int[]>(xs =>
+                {
+                    var x = context.Run(xs.AsGpuQueryExpr().Select(n => n * 2));
+                    var y = xs.Select(n => n * 2).ToArray();
+                    return x.SequenceEqual(y);
+                }).QuickCheckThrowOnFailure();    
+            }
         }
 
 
         [Test]
         public void Pipelined()
         {
-            Spec.ForAny<int[]>(xs =>
+            using (var context = new GpuContext())
             {
-                var x = xs.AsGpuQueryExpr()
-                        .Select(n => n * 2)
-                        .Select(n => n + 1)
-                        .Run();
+                Spec.ForAny<int[]>(xs =>
+                {
 
-                var y = xs
-                        .Select(n => n * 2)
-                        .Select(n => n + 1);
+                    var x = context.Run(xs.AsGpuQueryExpr()
+                                          .Select(n => n * 2)
+                                          .Select(n => n + 1));
 
-                return x.SequenceEqual(y);
-            }).QuickCheckThrowOnFailure();
+                    var y = xs
+                            .Select(n => n * 2)
+                            .Select(n => n + 1);
+
+                    return x.SequenceEqual(y);
+
+                }).QuickCheckThrowOnFailure();
+            }
         }
 
         [Test]
         public void Where()
         {
-            Spec.ForAny<int[]>(xs =>
+            using (var context = new GpuContext())
             {
-                var x = (from n in xs.AsGpuQueryExpr()
-                         where n % 2 == 0
-                         select n + 1).Run();
-                var y = (from n in xs
-                         where n % 2 == 0
-                         select n + 1).ToArray();
+                Spec.ForAny<int[]>(xs =>
+                {
 
-                return Enumerable.SequenceEqual(x, y);
-            }).QuickCheckThrowOnFailure();
+                    var x = context.Run(from n in xs.AsGpuQueryExpr()
+                                        where n % 2 == 0
+                                        select n + 1);
+                    var y = (from n in xs
+                             where n % 2 == 0
+                             select n + 1).ToArray();
+
+                    return x.SequenceEqual(y);
+
+                }).QuickCheckThrowOnFailure();
+            }
         }
 
 
