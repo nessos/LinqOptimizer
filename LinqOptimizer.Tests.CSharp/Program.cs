@@ -50,8 +50,8 @@ namespace LinqOptimizer.Tests
 
 
             var mm = QueryExpr.Range(1, max)
-                     .Select(i => new FooT())
-                     .Select(m => m)
+                     .Select(i => Tuple.Create(i, i * i))
+                     .Count()
                      .Run();
 
             //Func<int, int, int, bool> f = (x, y, z) => x * x + y * y == z * z;

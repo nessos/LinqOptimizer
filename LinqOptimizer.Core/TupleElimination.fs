@@ -50,6 +50,7 @@
                 && tupleTypes.Contains(ty.GetGenericTypeDefinition())
 
             // Check if $id = new Tuple($e1, ...., $en)
+            // or       $id = Tuple.Create($e1, ...., $en)
             let (|TupleNewAssignment|_|) (expr : Expression) =
                 match expr with
                 | :? BinaryExpression as expr 
@@ -60,6 +61,16 @@
                     let right = expr.Right :?> NewExpression
                     if isTupleType left.Type then
                         Some (left, right.Arguments)
+                    else None
+                | :? BinaryExpression as expr 
+                    when expr.NodeType = ExpressionType.Assign 
+                         && expr.Left.NodeType = ExpressionType.Parameter
+                         && expr.Right.NodeType = ExpressionType.Call ->
+                    let left = expr.Left :?> ParameterExpression
+                    let right = expr.Right :?> MethodCallExpression
+                    let isTuple = right.Method.DeclaringType = typedefof<System.Tuple>
+                    if isTuple && right.Method.Name = "Create" then
+                        Some(left, right.Arguments)
                     else None
                 | _ -> None
 
