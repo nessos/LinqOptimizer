@@ -407,3 +407,31 @@
                         |> Seq.filter(fun ((a,b) as mm) -> a % 2 = 0)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #8`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.fold(fun (a,b) i -> (b, a + b)) (0,1)
+                        |> Query.run
+                let y = xs
+                        |> Seq.fold(fun (a,b) i -> (b, a + b)) (0,1)
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #9`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.fold(fun t i -> let a = fst t
+                                                 let b = snd t 
+                                                 (b, a + b)) (0,1)
+                        |> Query.run
+                let y = xs
+                        |> Seq.fold(fun t i -> let a = fst t
+                                               let b = snd t 
+                                               (b, a + b)) (0,1)
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)

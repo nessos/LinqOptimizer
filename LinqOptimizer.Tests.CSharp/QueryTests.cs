@@ -811,5 +811,21 @@ namespace LinqOptimizer.Tests
             }).QuickCheckThrowOnFailure();
         }
 
+        [Test]
+        public void Detuple5()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Aggregate(Tuple.Create(0,1), (t,_) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
+                         .Run();
+
+                var ys = ms
+                         .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2));
+
+                return Tuple.Equals(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
+
     }
 }

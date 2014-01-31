@@ -40,7 +40,7 @@ namespace LinqOptimizer.Tests
 
         public static void Main(string[] args)
         {
-            var max = 100;
+            var max = 10;
 
             //var mm = QueryExpr.Range(1, max)
             //         .Select(i => new Tuple<int, int>(i, i + 1))
@@ -49,10 +49,12 @@ namespace LinqOptimizer.Tests
             //         .Run();
 
 
-            var mm = QueryExpr.Range(1, max)
-                     .Select(i => Tuple.Create(i, i * i))
-                     .Count()
-                     .Run();
+            //var mm = QueryExpr.Range(1, max)
+            //         .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
+            //         .Run();
+
+            var t = new QueryTests();
+            t.Detuple5();
 
             //Func<int, int, int, bool> f = (x, y, z) => x * x + y * y == z * z;
 
