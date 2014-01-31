@@ -74,6 +74,19 @@
                     else None
                 | _ -> None
 
+            let (|TupleConstAssignment|_|) (expr : Expression) =
+                match expr with
+                | :? BinaryExpression as expr 
+                    when expr.NodeType = ExpressionType.Assign 
+                         && expr.Left.NodeType = ExpressionType.Parameter
+                         && expr.Right.NodeType = ExpressionType.Constant ->
+                    let left = expr.Left :?> ParameterExpression
+                    let right = expr.Right :?> ConstantExpression
+                    if isTupleType left.Type then
+                        Some left
+                    else None
+                | _ -> None
+
             let (|TupleAssignment|_|) (expr : Expression) =
                 match expr with
                 | :? BinaryExpression as expr 
@@ -101,6 +114,7 @@
 
             let env = new Stack<List<ParameterExpression>>()
             let memberAssignments = new Dictionary<ParameterExpression, Expression list>()
+            let assignCount = HashSet<ParameterExpression>()
 
             // Populate parameters list
             override this.VisitBlock(expr : BlockExpression) =
@@ -110,14 +124,19 @@
                 env.Push(new List<_>())
                 let newExprs = this.Visit(expr.Expressions)
 
-                let rec flatten exprs acc =
+                let rec flatten exprs acc  =
                     match exprs with
                     | [] -> List.rev acc
                     | h :: t ->
+                        //Diagnostics.Debugger.Break()
                         match h with
                         | TupleNewAssignment (left, args) ->
                             match memberAssignments.TryGetValue(left) with
-                            | true, xs -> flatten ((List.rev xs) @ t) (h :: acc) //t (h :: xs @ acc)
+                            | true, xs -> 
+                                if assignCount.Add(left) then
+                                    flatten ((List.rev xs) @ t) (h :: acc) //t (h :: xs @ acc)
+                                else
+                                    flatten t (h :: xs @ acc)
                             | false, _ -> 
                                 // Generate some assignments (usually in C# this is not done)
                                 let ys = args 
@@ -133,6 +152,9 @@
                             match memberAssignments.TryGetValue(left) with
                             | true, xs -> flatten ((List.rev xs) @ t) (h :: acc)
                             | false, _ -> flatten t (h :: acc)
+                        | TupleConstAssignment left ->
+                            assignCount.Add(left) |> ignore
+                            flatten t (h :: acc)
                         | _ -> flatten t (h :: acc)
 
                 let flat = flatten (List.ofSeq newExprs) []
@@ -160,7 +182,6 @@
                         let isInvoke = expr.Method = invoke
 
                         if isInvoke then 
-                            env.Peek().Add(param)
 
                             let target = 
                                 match arg with
@@ -169,6 +190,7 @@
                                 | _ -> None //failwithf "Invalid target %A" arg
                             if target = None then pass ()
                             else
+                                env.Peek().Add(param)
                                 let target = target.Value
                                 match memberAssignments.TryGetValue(target) with
                                 | true, xs -> memberAssignments.[target] <- Expression.Assign(param, arg) :> _ :: xs

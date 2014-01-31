@@ -22,7 +22,7 @@ module Program =
 
         let max = 10
 
-//        let t = LinqOptimizer.Tests.``F# Query tests``()
+        let t = LinqOptimizer.Tests.``F# Query tests``()
 //        t.``detuple #1``()
 //        t.``detuple #2``()
 //        t.``detuple #3``()
@@ -30,6 +30,7 @@ module Program =
 //        t.``detuple #5``()
 //        t.``detuple #6``()
 //        t.``detuple #7``()
+//        t.``detuple #8``()
 
         let q = Query.range(1, max + 1)
                 |> Query.fold(fun (a,b) i -> (b, a + b)) (0,1)
