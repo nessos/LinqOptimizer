@@ -43,9 +43,6 @@
     <Compile Include="GpuContext.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="LinqOptimizer.Base">
-      <HintPath>..\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Base.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -57,6 +54,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">
+      <Name>LinqOptimizer.Base</Name>
+      <Project>{f21f83a3-bdbd-4965-87d6-94e65a069a7b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\LinqOptimizer.Core\LinqOptimizer.Core.fsproj">
       <Name>LinqOptimizer.Core</Name>
       <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
