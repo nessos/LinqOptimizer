@@ -734,7 +734,11 @@ namespace LinqOptimizer.Tests
                 return Enumerable.SequenceEqual(xs, ys);
             }).QuickCheckThrowOnFailure();
         }
+    }
 
+    [TestFixture]
+    public class TupleTests
+    {
         [Test]
         public void Detuple1()
         {
@@ -817,7 +821,7 @@ namespace LinqOptimizer.Tests
             Spec.ForAny<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
-                         .Aggregate(Tuple.Create(0,1), (t,_) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
+                         .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
                          .Run();
 
                 var ys = ms
@@ -826,6 +830,5 @@ namespace LinqOptimizer.Tests
                 return Tuple.Equals(xs, ys);
             }).QuickCheckThrowOnFailure();
         }
-
     }
 }

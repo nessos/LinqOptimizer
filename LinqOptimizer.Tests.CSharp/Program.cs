@@ -53,8 +53,8 @@ namespace LinqOptimizer.Tests
             //         .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
             //         .Run();
 
-            var t = new QueryTests();
-            t.Detuple5();
+            //var t = new QueryTests();
+            //t.Detuple5();
 
             //Func<int, int, int, bool> f = (x, y, z) => x * x + y * y == z * z;
 

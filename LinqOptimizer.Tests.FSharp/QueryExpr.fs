@@ -303,6 +303,11 @@
                 else 
                     true
             Check.QuickThrowOnFailure  test
+    
+    [<TestFixture>]
+    type ``F# Query tuple tests`` () =
+    
+        let equal x y = Enumerable.SequenceEqual(x,y)
 
         [<Test>]
         member __.``detuple #1`` () =

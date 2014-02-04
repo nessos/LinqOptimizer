@@ -109,6 +109,12 @@
                     && mexpr.Member.Name.StartsWith("Item")
                 | _ -> false
 
+            let (|AssignTo|_|) (expr : Expression) =
+                match expr with
+                | :? BinaryExpression as bexpr when bexpr.NodeType = ExpressionType.Assign && bexpr.Left.NodeType = ExpressionType.Parameter -> 
+                    Some(bexpr.Left :?> ParameterExpression)
+                | _ -> None
+
     type private ReshapeVisitor () =
         inherit ExpressionVisitor() with
 
@@ -143,18 +149,19 @@
                                          |> Seq.toList 
                                          |> List.mapi (fun i arg -> 
                                             let i = i + 1
-                                            let p = Expression.Parameter(arg.Type, left.Name + string i)
-                                            env.Peek().Add(p)
                                             let itemExpr = Expression.MakeMemberAccess(left, left.Type.GetProperty("Item" + string i))
+                                            let p = Expression.Parameter(itemExpr.Type, left.Name + string i)
+                                            env.Peek().Add(p)
                                             Expression.Assign(p, itemExpr) :> Expression)
                                 flatten (ys @ t) (h :: acc)
-                        | TupleAssignment    (left, _)    ->
-                            match memberAssignments.TryGetValue(left) with
-                            | true, xs -> flatten ((List.rev xs) @ t) (h :: acc)
-                            | false, _ -> flatten t (h :: acc)
                         | TupleConstAssignment left ->
                             assignCount.Add(left) |> ignore
                             flatten t (h :: acc)
+                        | TupleAssignment(left, _)
+                        | AssignTo(left) ->
+                            match memberAssignments.TryGetValue(left) with
+                            | true, xs -> flatten ((List.rev xs) @ t) (h :: acc)
+                            | false, _ -> flatten t (h :: acc)
                         | _ -> flatten t (h :: acc)
 
                 let flat = flatten (List.ofSeq newExprs) []

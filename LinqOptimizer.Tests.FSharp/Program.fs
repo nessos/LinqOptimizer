@@ -22,7 +22,7 @@ module Program =
 
         let max = 10
 
-        let t = LinqOptimizer.Tests.``F# Query tests``()
+//        let t = LinqOptimizer.Tests.``F# Query tests``()
 //        t.``detuple #1``()
 //        t.``detuple #2``()
 //        t.``detuple #3``()
@@ -32,8 +32,16 @@ module Program =
 //        t.``detuple #7``()
 //        t.``detuple #8``()
 
-        let q = Query.range(1, max + 1)
-                |> Query.fold(fun (a,b) i -> (b, a + b)) (0,1)
+//        let q = Query.range(1, max + 1)
+//                |> Query.groupBy(fun x -> int x / 100)
+//                |> Query.sortBy (fun (key, vs) -> key)
+//                |> Query.map(fun (key, vs) -> Seq.length vs)
+//                |> Query.toArray
+//                |> Query.run
+
+        let q = Query.range(1,10)
+                |> Query.map(fun i -> i, i + 1)
+                |> Query.filter(fun (a,b) -> Seq.length [||] = 0)
                 |> Query.run
 
 //        let z =
