@@ -39,6 +39,7 @@
   <Import Project="..\packages\OpenCL.Net.2.2.9.0\build\net40\OpenCL.Net.targets" Condition="Exists('..\packages\OpenCL.Net.2.2.9.0\build\net40\OpenCL.Net.targets')" />
   <ItemGroup>
     <None Include="packages.config" />
+    <Compile Include="GpuArray.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="GpuContext.fs" />
   </ItemGroup>

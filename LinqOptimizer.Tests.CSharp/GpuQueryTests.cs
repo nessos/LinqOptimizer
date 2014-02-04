@@ -20,9 +20,12 @@ namespace LinqOptimizer.Tests
             {
                 Spec.ForAny<int[]>(xs =>
                 {
-                    var x = context.Run(xs.AsGpuQueryExpr().Select(n => n * 2));
-                    var y = xs.Select(n => n * 2).ToArray();
-                    return x.SequenceEqual(y);
+                    using (var _xs = context.Create(xs))
+                    {
+                        var x = context.Run(_xs.AsGpuQueryExpr().Select(n => n * 2));
+                        var y = xs.Select(n => n * 2);
+                        return x.ToArray().SequenceEqual(y);
+                    }
                 }).QuickCheckThrowOnFailure();    
             }
         }
@@ -35,16 +38,18 @@ namespace LinqOptimizer.Tests
             {
                 Spec.ForAny<int[]>(xs =>
                 {
+                    using (var _xs = context.Create(xs))
+                    {
 
-                    var x = context.Run(xs.AsGpuQueryExpr()
-                                          .Select(n => n * 2)
-                                          .Select(n => n + 1));
+                        var x = context.Run(_xs.AsGpuQueryExpr()
+                                              .Select(n => n * 2)
+                                              .Select(n => n + 1));
+                        var y = xs
+                                .Select(n => n * 2)
+                                .Select(n => n + 1);
 
-                    var y = xs
-                            .Select(n => n * 2)
-                            .Select(n => n + 1);
-
-                    return x.SequenceEqual(y);
+                        return x.ToArray().SequenceEqual(y);
+                    }
 
                 }).QuickCheckThrowOnFailure();
             }
@@ -58,15 +63,18 @@ namespace LinqOptimizer.Tests
                 Spec.ForAny<int[]>(xs =>
                 {
 
-                    var x = context.Run(from n in xs.AsGpuQueryExpr()
-                                        where n % 2 == 0
-                                        select n + 1);
-                    var y = (from n in xs
-                             where n % 2 == 0
-                             select n + 1).ToArray();
+                    using (var _xs = context.Create(xs))
+                    {
 
-                    return x.SequenceEqual(y);
+                        var x = context.Run(from n in _xs.AsGpuQueryExpr()
+                                            where n % 2 == 0
+                                            select n + 1);
+                        var y = (from n in xs
+                                 where n % 2 == 0
+                                 select n + 1).ToArray();
 
+                        return x.ToArray().SequenceEqual(y);
+                    }
                 }).QuickCheckThrowOnFailure();
             }
         }

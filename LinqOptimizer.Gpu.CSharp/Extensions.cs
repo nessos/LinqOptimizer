@@ -21,9 +21,9 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <typeparam name="TSource">The type of the elements in the source array.</typeparam>
         /// <param name="source">An array to convert to an IGpuQueryExpr.</param>
         /// <returns>A query that returns the elements of the source array.</returns>
-        public static IGpuQueryExpr<TSource[]> AsGpuQueryExpr<TSource>(this TSource[] source)
+        public static IGpuQueryExpr<GpuArray<TSource>> AsGpuQueryExpr<TSource>(this GpuArray<TSource> source) where TSource : struct 
         {
-            return new GpuQueryExpr<TSource[]>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Gpu));
+            return new GpuQueryExpr<GpuArray<TSource>>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Gpu));
         }
 
         #region Combinators
@@ -35,9 +35,10 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <param name="query">A query whose values to invoke a transform function on.</param>
         /// <param name="selector">A transform function to apply to each element.</param>
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
-        public static IGpuQueryExpr<TResult[]> Select<TSource, TResult>(this IGpuQueryExpr<TSource[]> query, Expression<Func<TSource, TResult>> selector)
+        public static IGpuQueryExpr<GpuArray<TResult>> Select<TSource, TResult>(this IGpuQueryExpr<GpuArray<TSource>> query, Expression<Func<TSource, TResult>> selector) where TSource : struct 
+                                                                                                                                                                          where TResult : struct
         {
-            return new GpuQueryExpr<TResult[]>(QueryExpr.NewTransform(selector, query.Expr));
+            return new GpuQueryExpr<GpuArray<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
         }
 
 
@@ -48,9 +49,9 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <param name="query">An query whose values to filter.</param>
         /// <param name="predicate">A function to test each element for a condition.</param>
         /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
-        public static IGpuQueryExpr<TSource[]> Where<TSource>(this IGpuQueryExpr<TSource[]> query, Expression<Func<TSource, bool>> predicate)
+        public static IGpuQueryExpr<GpuArray<TSource>> Where<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query, Expression<Func<TSource, bool>> predicate) where TSource : struct
         {
-            return new GpuQueryExpr<TSource[]>(QueryExpr.NewFilter(predicate, query.Expr));
+            return new GpuQueryExpr<GpuArray<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
         }
 
         #endregion

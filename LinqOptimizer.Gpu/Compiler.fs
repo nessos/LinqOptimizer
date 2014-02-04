@@ -3,7 +3,7 @@
     open System.Linq.Expressions
     open System.Runtime.InteropServices
     open LinqOptimizer.Core
-
+    open OpenCL.Net
 
     module internal Compiler =
         type Length = int
@@ -14,12 +14,13 @@
                                 InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list; ReductionType : ReductionType }
 
-        type CompilerResult = { Source : string; ReductionType : ReductionType; Args : (obj * Type * Length * Size) [] }
+        type CompilerResult = { Source : string; ReductionType : ReductionType; Args : (IGpuArray * Type * Length * Size) []; Results : (obj * Type * Length * Size) [] }
         
         let intType = typeof<int>
         let floatType = typeof<single>
         let doubleType = typeof<double>
         let byteType = typeof<byte>
+        let gpuArrayTypeDef = typedefof<GpuArray<_>>
 
         let breakLabel () = labelTarget "brk"
         let continueLabel () = labelTarget "cont"
@@ -84,11 +85,12 @@
 
 
                 match queryExpr with
-                | Source (Constant (value, Array (_, 1)) as expr, sourceType, QueryExprType.Gpu) ->
+                | Source (Constant (value, Named (TypeCheck gpuArrayTypeDef _, [|_|])) as expr, sourceType, QueryExprType.Gpu) ->
                     let sourceTypeStr = typeToStr sourceType
                     let resultType = context.CurrentVarExpr.Type
                     let resultTypeStr = typeToStr resultType
-                    let sourceLength = (value :?> Array).Length
+                    let gpuArraySource = value :?> IGpuArray
+                    let sourceLength = gpuArraySource.Length
                     let varsStr = context.VarExprs 
                                       |> List.map (fun varExpr -> sprintf "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr)) 
                                       |> List.reduce (fun first second -> sprintf "%s%s%s" first Environment.NewLine second)
@@ -99,15 +101,15 @@
                     | ReductionType.Map ->
                         let resultArray = Array.CreateInstance(resultType, sourceLength) :> obj
                         let source = mapTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr)
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value, sourceType, sourceLength, Marshal.SizeOf(sourceType)); 
-                                                                                            (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (gpuArraySource, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
+                                                                                  Results = [| (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
                     | ReductionType.Filter ->
                         let flagsArray = Array.CreateInstance(typeof<int>, sourceLength) :> obj
                         let resultArray = Array.CreateInstance(resultType, sourceLength) :> obj
                         let source = mapFilterTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.FlagVarExpr) (varExprToStr context.AccVarExpr) 
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value, sourceType, sourceLength, Marshal.SizeOf(sourceType)); 
-                                                                                            (flagsArray, typeof<int>, sourceLength, Marshal.SizeOf(typeof<int>))
-                                                                                            (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
+                                                                                  Results = [| (flagsArray, typeof<int>, sourceLength, Marshal.SizeOf(typeof<int>))
+                                                                                               (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
                     | _ -> failwithf "Not supported %A" context.ReductionType
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
