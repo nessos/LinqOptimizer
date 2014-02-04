@@ -734,6 +734,101 @@ namespace LinqOptimizer.Tests
                 return Enumerable.SequenceEqual(xs, ys);
             }).QuickCheckThrowOnFailure();
         }
+    }
 
+    [TestFixture]
+    public class TupleTests
+    {
+        [Test]
+        public void Detuple1()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Select(i => new Tuple<int, int>(i, i + 1))
+                         .Select(t => new Tuple<int, int, int>(t.Item2, t.Item2, t.Item2 + 1))
+                         .Select(m => string.Format("{0}{1}", m.Item1, m.Item3))
+                         .Run();
+
+                var ys = ms
+                         .Select(i => new Tuple<int, int>(i, i + 1))
+                         .Select(t => new Tuple<int, int, int>(t.Item2, t.Item2, t.Item2 + 1))
+                         .Select(m => string.Format("{0}{1}", m.Item1, m.Item3));
+
+                return Enumerable.SequenceEqual(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void Detuple2()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Select(i => new Tuple<int, int>(i, i + 1))
+                         .Take(ms.Count() / 2)
+                         .Select(m => m.Item2)
+                         .Run();
+
+                var ys = ms
+                         .Select(i => new Tuple<int, int>(i, i + 1))
+                         .Take(ms.Count() / 2)
+                         .Select(m => m.Item2);
+
+                return Enumerable.SequenceEqual(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void Detuple3()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Select(i => new Tuple<int, int>(i, i + 1))
+                         .Select(m => m.ToString())
+                         .Run();
+
+                var ys = ms
+                         .Select(i => new Tuple<int, int>(i, i + 1))
+                         .Select(m => m.ToString());
+
+                return Enumerable.SequenceEqual(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void Detuple4()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Select(i => new Tuple<int, int>(i, i * 42))
+                         .Where(m => m.Item1 % 2 == 0)
+                         .Run();
+
+                var ys = ms
+                         .Select(i => new Tuple<int, int>(i, i * 42))
+                         .Where(m => m.Item1 % 2 == 0);
+
+                return Enumerable.SequenceEqual(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
+        public void Detuple5()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
+                         .Run();
+
+                var ys = ms
+                         .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2));
+
+                return Tuple.Equals(xs, ys);
+            }).QuickCheckThrowOnFailure();
+        }
     }
 }

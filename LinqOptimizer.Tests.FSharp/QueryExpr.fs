@@ -303,6 +303,11 @@
                 else 
                     true
             Check.QuickThrowOnFailure  test
+    
+    [<TestFixture>]
+    type ``F# Query tuple tests`` () =
+    
+        let equal x y = Enumerable.SequenceEqual(x,y)
 
         [<Test>]
         member __.``detuple #1`` () =
@@ -310,13 +315,13 @@
                 let x = xs
                         |> Query.ofSeq
                         |> Query.map (fun i -> i, i + 1)
-                        |> Query.map (fun (a,b) -> a, a * a, b * b)
-                        |> Query.map (fun (x,y,z) -> x + y + z)
+                        |> Query.map (fun (a,b) -> a, a + 1, b + 2)
+                        |> Query.map (fun (x,y,z) -> sprintf "%A%A%A" x y z)
                         |> Query.run
                 let y = xs
                         |> Seq.map (fun i -> i, i + 1)
-                        |> Seq.map (fun (a,b) -> a, a * a, b * b)
-                        |> Seq.map (fun (x,y,z) -> x + y + z)
+                        |> Seq.map (fun (a,b) -> a, a + 1, b + 2)
+                        |> Seq.map (fun (x,y,z) -> sprintf "%A%A%A" x y z)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
@@ -326,13 +331,13 @@
                 let x = xs
                         |> Query.ofSeq
                         |> Query.map (fun i -> i, i + 1)
-                        |> Query.map (fun (_,b) -> b, b, b * b)
-                        |> Query.map (fun (x,_,z) -> x + z)
+                        |> Query.map (fun (_,b) -> b, b, b + 1)
+                        |> Query.map (fun (x,_,z) -> sprintf "%d%d" x z)
                         |> Query.run
                 let y = xs
                         |> Seq.map (fun i -> i, i + 1)
-                        |> Seq.map (fun (_,b) -> b, b, b * b)
-                        |> Seq.map (fun (x,_,z) -> x + z)
+                        |> Seq.map (fun (_,b) -> b, b, b + 1)
+                        |> Seq.map (fun (x,_,z) -> sprintf "%d%d" x z)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
@@ -341,14 +346,14 @@
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
-                        |> Query.map(fun i -> i, i * i) 
+                        |> Query.map(fun i -> i, i + 1) 
                         |> Query.take (xs.Count() / 2)
-                        |> Query.map(fun (a,b) -> a - b)
+                        |> Query.map(fun (a,b) -> b)
                         |> Query.run
                 let y = xs
-                        |> Seq.map(fun i -> i, i * i) 
+                        |> Seq.map(fun i -> i, i + 1) 
                         |> Seq.take (xs.Count() / 2)
-                        |> Seq.map(fun (a,b) -> a - b)
+                        |> Seq.map(fun (a,b) -> b)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
@@ -357,11 +362,11 @@
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
-                        |> Query.map(fun i -> i,i * i)
+                        |> Query.map(fun i -> i,i + i)
                         |> Query.map(fun t -> snd t)
                         |> Query.run
                 let y = xs
-                        |> Seq.map(fun i -> i,i * i)
+                        |> Seq.map(fun i -> i,i + i)
                         |> Seq.map(fun t -> snd t)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
@@ -371,11 +376,11 @@
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
-                        |> Query.map(fun i -> i,i * i)
+                        |> Query.map(fun i -> i,i * 42)
                         |> Query.map(fun ((a,b) as tt) -> snd tt)
                         |> Query.run
                 let y = xs
-                        |> Seq.map(fun i -> i,i * i)
+                        |> Seq.map(fun i -> i,i * 42)
                         |> Seq.map(fun ((a,b) as tt) -> snd tt)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
@@ -385,11 +390,53 @@
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
-                        |> Query.map(fun i -> i,i * i)
+                        |> Query.map(fun i -> i,i * 42)
                         |> Query.filter(fun (a,b) -> a % 2 = 0)
                         |> Query.run
                 let y = xs
-                        |> Seq.map(fun i -> i,i * i)
+                        |> Seq.map(fun i -> i,i * 42)
                         |> Seq.filter(fun (a,b) -> a % 2 = 0)
                 equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #7`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.map(fun i -> i,i * 42)
+                        |> Query.filter(fun ((a,b) as mm) -> a % 2 = 0)
+                        |> Query.run
+                let y = xs
+                        |> Seq.map(fun i -> i,i * 42)
+                        |> Seq.filter(fun ((a,b) as mm) -> a % 2 = 0)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #8`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.fold(fun (a,b) i -> (b, a + b)) (0,1)
+                        |> Query.run
+                let y = xs
+                        |> Seq.fold(fun (a,b) i -> (b, a + b)) (0,1)
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #9`` () =
+            let test (xs : seq<int>) =
+                let x = xs
+                        |> Query.ofSeq
+                        |> Query.fold(fun t i -> let a = fst t
+                                                 let b = snd t 
+                                                 (b, a + b)) (0,1)
+                        |> Query.run
+                let y = xs
+                        |> Seq.fold(fun t i -> let a = fst t
+                                               let b = snd t 
+                                               (b, a + b)) (0,1)
+                x = y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
