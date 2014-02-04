@@ -39,10 +39,18 @@ module Program =
 //                |> Query.toArray
 //                |> Query.run
 
-        let q = Query.range(1,10)
-                |> Query.map(fun i -> i, i + 1)
-                |> Query.filter(fun (a,b) -> Seq.length [||] = 0)
-                |> Query.run
+        let q = [| 1 .. max + 1 |] |> Seq.map double
+                |> PQuery.ofSeq
+                |> PQuery.groupBy(fun x -> int x / 100)
+                |> PQuery.sortBy (fun (key, vs) -> key)
+                |> PQuery.map(fun (key, vs) -> Seq.length vs)
+                |> PQuery.toArray
+                |> PQuery.run
+
+//        let q = Query.range(1,10)
+//                |> Query.map(fun i -> i, i + 1)
+//                |> Query.filter(fun (a,b) -> Seq.length [||] = 0)
+//                |> Query.run
 
 //        let z =
 //            [|0|]

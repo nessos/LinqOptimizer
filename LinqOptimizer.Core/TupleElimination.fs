@@ -121,6 +121,7 @@
             let env = new Stack<List<ParameterExpression>>()
             let memberAssignments = new Dictionary<ParameterExpression, Expression list>()
             let assignCount = HashSet<ParameterExpression>()
+            let assigned = HashSet<ParameterExpression>()
 
             // Populate parameters list
             override this.VisitBlock(expr : BlockExpression) =
@@ -189,7 +190,6 @@
                         let isInvoke = expr.Method = invoke
 
                         if isInvoke then 
-
                             let target = 
                                 match arg with
                                 | :? MemberExpression as me -> Some(me.Expression :?> ParameterExpression)
@@ -197,17 +197,27 @@
                                 | _ -> None //failwithf "Invalid target %A" arg
                             if target = None then pass ()
                             else
-                                env.Peek().Add(param)
                                 let target = target.Value
-                                match memberAssignments.TryGetValue(target) with
-                                | true, xs -> memberAssignments.[target] <- Expression.Assign(param, arg) :> _ :: xs
-                                | false, _ -> memberAssignments.Add(target, [Expression.Assign(param, arg)])
-                                this.Visit(lambda.Body)
+                                if assigned.Contains(target) then
+                                    env.Peek().Add(param)
+                                    match memberAssignments.TryGetValue(target) with
+                                    | true, xs -> memberAssignments.[target] <- Expression.Assign(param, arg) :> _ :: xs
+                                    | false, _ -> memberAssignments.Add(target, [Expression.Assign(param, arg)])
+                                    this.Visit(lambda.Body)
+                                else
+                                    Expression.Block([param], Expression.Assign(param, arg), this.Visit(lambda.Body)) :> _
                         else pass ()
                     | _ ->  
                         pass()
                 else
                     pass()
+
+            override this.VisitBinary(expr : BinaryExpression) =
+                match expr with
+                | AssignTo(left) -> 
+                    assigned.Add(left) |> ignore
+                | _ -> ()
+                expr.Update(this.Visit expr.Left, null, this.Visit expr.Right) :> _
 
     type private EscapeAnalysisVisitor () =
         inherit ExpressionVisitor() with
@@ -245,10 +255,13 @@
                     //Diagnostics.Debugger.Break()
                     if expr.NodeType = ExpressionType.Assign && expr.Left.NodeType = ExpressionType.Parameter && isTupleAccess expr.Right then
                         let right = expr.Right :?> MemberExpression
-                        let p = parameters.[right.Expression :?> ParameterExpression]
-                        let idx = getItemPosition right
-                        p.MemberBindings.Add(expr.Left :?> ParameterExpression)
-                        expr :> _
+                        match parameters.TryGetValue(right.Expression :?> ParameterExpression) with
+                        | true, p ->
+                            let idx = getItemPosition right
+                            p.MemberBindings.Add(expr.Left :?> ParameterExpression)
+                            expr :> _
+                        | false, _ ->
+                            expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _    
                     else
                         expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _
 
