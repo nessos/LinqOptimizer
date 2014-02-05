@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>LinqOptimizer by palladin</title>
+    <title>LinqOptimizer by nessos</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -20,9 +20,9 @@
   <body>
       <div id="header">
         <nav>
-          <li class="fork"><a href="https://github.com/palladin/LinqOptimizer">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/palladin/LinqOptimizer/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/palladin/LinqOptimizer/tarball/master">TAR</a></li>
+          <li class="fork"><a href="https://github.com/nessos/LinqOptimizer">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/nessos/LinqOptimizer/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/nessos/LinqOptimizer/tarball/master">TAR</a></li>
           <li class="title">DOWNLOADS</li>
         </nav>
       </div><!-- end header -->
@@ -34,16 +34,16 @@
           <h1>LinqOptimizer</h1>
           <p>An automatic query optimizer for LINQ to Objects and PLINQ.</p>
           <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/palladin">palladin</a></span>
+          <span class="credits left">Project maintained by <a href="https://github.com/nessos">nessos</a></span>
           <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
         </div>
 
         <h1>
 <a name="linqoptimizer" class="anchor" href="#linqoptimizer"><span class="octicon octicon-link"></span></a>LinqOptimizer</h1>
 
-<p>An automatic query optimizer for LINQ to Objects and PLINQ. 
+<p>An automatic query optimizer-compiler for Sequential and Parallel LINQ. 
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
-The compiled code has fewer virtual calls, better data locality and speedups of up to 15x.</p>
+The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the <a href="https://github.com/nessos/LinqOptimizer/wiki/Performance">Performance</a> page).</p>
 
 <p>The main idea is that we lift query sources into the world of Expression trees and
 after various transformations-optimizations we compile them into IL for efficient execution.</p>
@@ -57,13 +57,13 @@ after various transformations-optimizations we compile them into IL for efficien
 
 <p>For F# we support functional pipelines and support for F# style LINQ queries is in development.</p>
 
-<div class="highlight highlight-fsharp"><pre><span class="k">let</span> <span class="n">query</span> <span class="o">=</span> <span class="n">nums</span>
+<div class="highlight highlight-fsharp"><pre><span class="k">let</span> <span class="nv">query</span> <span class="o">=</span> <span class="n">nums</span>
             <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">ofSeq</span>
             <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">filter</span> <span class="o">(</span><span class="k">fun</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="n">num</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">=</span> <span class="mi">0</span><span class="o">)</span>
             <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">map</span> <span class="o">(</span><span class="k">fun</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="o">)</span>
             <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">sum</span>
 
-<span class="n">printfn</span> <span class="s2">"Result: %d"</span> <span class="o">&lt;|</span> <span class="nn">Query</span><span class="p">.</span><span class="n">run</span> <span class="n">query</span> <span class="c1">// compile and execute</span>
+<span class="n">printfn</span> <span class="s">"Result: %d"</span> <span class="o">&lt;|</span> <span class="nn">Query</span><span class="p">.</span><span class="n">run</span> <span class="n">query</span> <span class="c1">// compile and execute</span>
 </pre></div>
 
 <h2>
