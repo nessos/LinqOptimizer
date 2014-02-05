@@ -2,7 +2,7 @@ LinqOptimizer
 =============
 An automatic query optimizer-compiler for Sequential and Parallel LINQ. 
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
-The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x.
+The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the [Performance] (https://github.com/nessos/LinqOptimizer/wiki/Performance) page).
 
 The main idea is that we lift query sources into the world of Expression trees and
 after various transformations-optimizations we compile them into IL for efficient execution.
