@@ -49,6 +49,29 @@
                                 ___result___[___id___] = %s;
                             }"
 
+            let reduceTemplate = sprintf "
+                            __kernel void kernelCode(__global %s* ___input___, __global %s* ___result___, __local %s* ___partial___)
+                            {
+                                %s
+                                int ___localId___  = get_local_id(0);
+                                int ___groupSize___ = get_local_size(0);
+                                %s = ___input___[get_global_id(0)];
+                                %s
+                                ___partial___[___localId___] = %s;
+                                barrier(CLK_LOCAL_MEM_FENCE);
+
+                                for(int ___i___ = ___groupSize___ / 2; ___i___ > 0; ___i___ >>= 1) {
+                                    if(___localId___ < ___i___) {
+                                        ___partial___[___localId___] = ___partial___[___localId___] %s ___partial___[___localId___ + ___i___];
+                                    }
+                                    barrier(CLK_LOCAL_MEM_FENCE);
+                                }
+
+                                if(___localId___ == 0) {
+                                    ___result___[get_group_id(0)] = ___partial___[0];
+                                }
+                            }"
+
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) =
                 let typeToStr (t : Type) = 
                     match t with
@@ -110,6 +133,10 @@
                         { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
                                                                                   Results = [| (flagsArray, typeof<int>, sourceLength, Marshal.SizeOf(typeof<int>))
                                                                                                (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
+                    | ReductionType.Sum -> 
+                        let source = reduceTemplate sourceTypeStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr) "+"
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
+                                                                                  Results = [| |] }
                     | _ -> failwithf "Not supported %A" context.ReductionType
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
@@ -139,9 +166,12 @@
                                 InitExprs = []; AccExpr = empty; CombinerExpr = empty; ReturnExpr = empty; 
                                 VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Filter }
                 compile' queryExpr context
-            | Sum (_) ->
-                let context : QueryContext = raise <| new NotImplementedException()
-                compile' queryExpr context
+            | Sum (queryExpr') ->
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = finalVarExpr; FlagVarExpr = flagVarExpr;
+                                BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ReturnExpr = empty; 
+                                VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Sum }
+                compile' queryExpr' context
             | Count (_) ->
                 let context : QueryContext = raise <| new NotImplementedException()
                 compile' queryExpr context

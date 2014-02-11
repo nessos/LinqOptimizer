@@ -19,30 +19,26 @@ namespace LinqOptimizer.Tests
 {
 
 
-
     public class Program
     {
-
+            
 
 
         public static void Main(string[] args)
         {
-
+            
             var input = Enumerable.Range(1, 10).Select(x => x).ToArray();
 
-            //using (var context = new GpuContext())
-            //{
-            //    using (var buffer = context.Create(input))
-            //    {
-            //        var query = buffer.AsGpuQueryExpr().Select(x => x + 1);
-            //        var test = context.Run(query).ToArray();
-            //    }
-            //}
+            using (var context = new GpuContext())
+            {
+                using (var buffer = context.Create(input))
+                {
+                    var query = buffer.AsGpuQueryExpr().Select(x => x + 1).Sum();
+                    var test = context.Run(query);
+                }
+            }
 
-            
-
-
-            (new GpuQueryTests()).Where();
+            //(new GpuQueryTests()).SumInt();
 
         }
 
@@ -54,6 +50,4 @@ namespace LinqOptimizer.Tests
             Console.WriteLine(watch.Elapsed);
         }
     }
-
-    
 }

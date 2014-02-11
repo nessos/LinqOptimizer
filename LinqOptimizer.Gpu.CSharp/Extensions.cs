@@ -41,7 +41,6 @@ namespace LinqOptimizer.Gpu.CSharp
             return new GpuQueryExpr<GpuArray<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
         }
 
-
         /// <summary>
         /// Creates a new query that filters a sequence of values based on a predicate.
         /// </summary>
@@ -52,6 +51,16 @@ namespace LinqOptimizer.Gpu.CSharp
         public static IGpuQueryExpr<GpuArray<TSource>> Where<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query, Expression<Func<TSource, bool>> predicate) where TSource : struct
         {
             return new GpuQueryExpr<GpuArray<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
+        }
+
+        /// <summary>
+        /// Creates a new query that computes the sum of a sequence of int values.
+        /// </summary>
+        /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
+        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        public static IGpuQueryExpr<int> Sum<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
+        {
+            return new GpuQueryExpr<int>(QueryExpr.NewSum(query.Expr));
         }
 
         #endregion

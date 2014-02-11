@@ -79,6 +79,28 @@ namespace LinqOptimizer.Tests
             }
         }
 
+        [Test]
+        public void SumInt()
+        {
+            using (var context = new GpuContext())
+            {
+
+                Spec.ForAny<int[]>(xs =>
+                {
+                    using (var _xs = context.Create(xs))
+                    {
+
+                        var x = context.Run((from n in _xs.AsGpuQueryExpr()
+                                             select n * 2).Sum());
+                        var y = (from n in xs
+                                 select n * 2).Sum();
+
+                        return x == y;
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
 
     }
 }
