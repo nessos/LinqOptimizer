@@ -169,5 +169,11 @@ namespace LinqOptimizer.Core
             | :? BlockExpression as blockExpr -> Some (blockExpr.Variables, blockExpr.Expressions, blockExpr.Result) 
             | _ -> None
 
+        let (|Convert|_|) (expr : Expression) = 
+            match expr with
+            | :? UnaryExpression as unaryExpr when unaryExpr.NodeType = ExpressionType.Convert -> 
+                Some (unaryExpr.Operand, unaryExpr.Type) 
+            | _ -> None
+
         type internal Expression with
             static member ofFSharpFunc<'T,'R>(func : Expression<Func<'T,'R>>) = func

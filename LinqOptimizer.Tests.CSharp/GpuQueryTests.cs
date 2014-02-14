@@ -20,7 +20,7 @@ namespace LinqOptimizer.Tests
             {
                 Spec.ForAny<int[]>(xs =>
                 {
-                    using (var _xs = context.Create(xs))
+                    using (var _xs = context.CreateGpuArray(xs))
                     {
                         var x = context.Run(_xs.AsGpuQueryExpr().Select(n => n * 2));
                         var y = xs.Select(n => n * 2);
@@ -32,13 +32,30 @@ namespace LinqOptimizer.Tests
 
 
         [Test]
+        public void SelectWithConvert()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(xs =>
+                {
+                    using (var _xs = context.CreateGpuArray(xs))
+                    {
+                        var x = context.Run(_xs.AsGpuQueryExpr().Select(n => (float)n * 2));
+                        var y = xs.Select(n => (float)n * 2);
+                        return x.ToArray().SequenceEqual(y);
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
+        [Test]
         public void Pipelined()
         {
             using (var context = new GpuContext())
             {
                 Spec.ForAny<int[]>(xs =>
                 {
-                    using (var _xs = context.Create(xs))
+                    using (var _xs = context.CreateGpuArray(xs))
                     {
 
                         var x = context.Run(_xs.AsGpuQueryExpr()
@@ -63,7 +80,7 @@ namespace LinqOptimizer.Tests
                 Spec.ForAny<int[]>(xs =>
                 {
 
-                    using (var _xs = context.Create(xs))
+                    using (var _xs = context.CreateGpuArray(xs))
                     {
 
                         var x = context.Run(from n in _xs.AsGpuQueryExpr()
@@ -87,7 +104,7 @@ namespace LinqOptimizer.Tests
 
                 Spec.ForAny<int[]>(xs =>
                 {
-                    using (var _xs = context.Create(xs))
+                    using (var _xs = context.CreateGpuArray(xs))
                     {
 
                         var x = context.Run((from n in _xs.AsGpuQueryExpr()

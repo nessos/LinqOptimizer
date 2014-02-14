@@ -11,10 +11,10 @@
 
         type QueryContext = { CurrentVarExpr : ParameterExpression; AccVarExpr : ParameterExpression; FlagVarExpr : ParameterExpression;
                                 BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
-                                InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ReturnExpr : Expression; 
+                                InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ResultType : Type; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list; ReductionType : ReductionType }
 
-        type CompilerResult = { Source : string; ReductionType : ReductionType; Args : (IGpuArray * Type * Length * Size) []; Results : (obj * Type * Length * Size) [] }
+        type CompilerResult = { Source : string; ReductionType : ReductionType; Args : (IGpuArray * Type * Length * Size) [] }
         
         let intType = typeof<int>
         let floatType = typeof<single>
@@ -103,6 +103,7 @@
                         exprs
                             |> Seq.map (fun expr -> sprintf "%s" (exprToStr expr))
                             |> Seq.reduce (fun first second -> sprintf "%s;%s%s" first Environment.NewLine second)
+                    | Convert (expr, t) -> sprintf "((%s) %s)" (typeToStr t) (exprToStr expr)
                     | Nop _ -> ""
                     | _ -> failwithf "Not supported %A" expr
 
@@ -110,7 +111,7 @@
                 match queryExpr with
                 | Source (Constant (value, Named (TypeCheck gpuArrayTypeDef _, [|_|])) as expr, sourceType, QueryExprType.Gpu) ->
                     let sourceTypeStr = typeToStr sourceType
-                    let resultType = context.CurrentVarExpr.Type
+                    let resultType = context.ResultType
                     let resultTypeStr = typeToStr resultType
                     let gpuArraySource = value :?> IGpuArray
                     let sourceLength = gpuArraySource.Length
@@ -122,21 +123,14 @@
                                        |> List.reduce (fun first second -> sprintf "%s%s%s" first Environment.NewLine second)
                     match context.ReductionType with
                     | ReductionType.Map ->
-                        let resultArray = Array.CreateInstance(resultType, sourceLength) :> obj
                         let source = mapTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr)
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (gpuArraySource, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
-                                                                                  Results = [| (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (gpuArraySource, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
                     | ReductionType.Filter ->
-                        let flagsArray = Array.CreateInstance(typeof<int>, sourceLength) :> obj
-                        let resultArray = Array.CreateInstance(resultType, sourceLength) :> obj
                         let source = mapFilterTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.FlagVarExpr) (varExprToStr context.AccVarExpr) 
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
-                                                                                  Results = [| (flagsArray, typeof<int>, sourceLength, Marshal.SizeOf(typeof<int>))
-                                                                                               (resultArray, resultType, sourceLength, Marshal.SizeOf(resultType)) |] }
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
                     | ReductionType.Sum -> 
                         let source = reduceTemplate sourceTypeStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr) "+"
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |];
-                                                                                  Results = [| |] }
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
                     | _ -> failwithf "Not supported %A" context.ReductionType
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
@@ -157,19 +151,19 @@
             | Transform (_) ->
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = finalVarExpr; FlagVarExpr = flagVarExpr;
                                 BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ReturnExpr = empty; 
+                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ResultType = queryExpr.Type; 
                                 VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Map  }
                 compile' queryExpr context
             | Filter (_) ->
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = flagVarExpr; FlagVarExpr = flagVarExpr;
                                 BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ReturnExpr = empty; 
+                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ResultType = queryExpr.Type; 
                                 VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Filter }
                 compile' queryExpr context
             | Sum (queryExpr') ->
                 let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = finalVarExpr; FlagVarExpr = flagVarExpr;
                                 BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
-                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ReturnExpr = empty; 
+                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ResultType = queryExpr.Type; 
                                 VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Sum }
                 compile' queryExpr' context
             | Count (_) ->
