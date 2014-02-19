@@ -58,9 +58,29 @@ namespace LinqOptimizer.Gpu.CSharp
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
         /// <returns>A query that returns the sum of the values in the sequence.</returns>
-        public static IGpuQueryExpr<int> Sum<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
+        public static IGpuQueryExpr<int> Sum(this IGpuQueryExpr<GpuArray<int>> query) 
         {
             return new GpuQueryExpr<int>(QueryExpr.NewSum(query.Expr));
+        }
+
+        /// <summary>
+        /// Creates a new query that computes the sum of a sequence of float values.
+        /// </summary>
+        /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
+        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        public static IGpuQueryExpr<float> Sum(this IGpuQueryExpr<GpuArray<float>> query)
+        {
+            return new GpuQueryExpr<float>(QueryExpr.NewSum(query.Expr));
+        }
+
+        /// <summary>
+        /// Creates a new query that computes the sum of a sequence of double values.
+        /// </summary>
+        /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
+        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        public static IGpuQueryExpr<double> Sum(this IGpuQueryExpr<GpuArray<double>> query)
+        {
+            return new GpuQueryExpr<double>(QueryExpr.NewSum(query.Expr));
         }
 
         #endregion

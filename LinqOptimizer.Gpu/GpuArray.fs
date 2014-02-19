@@ -8,12 +8,16 @@
     type internal IGpuArray =
         inherit IDisposable
         abstract member Length : int
+        abstract member Capacity : int
+        abstract member Size : int
+        abstract member Type : Type
         abstract member GetBuffer : unit -> IMem
     
     /// <summary>
     /// A typed wrapper object for managing GPU Bufferss
     /// </summary>
-    type GpuArray<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> (env : Environment, length : int, buffer : IMem) =
+    type GpuArray<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType> 
+                    (env : Environment, length : int, capacity : int, size : int, buffer : IMem) =
         let mutable disposed = false
         member self.ToArray() = 
             let array = Array.create length Unchecked.defaultof<'T>
@@ -25,6 +29,9 @@
 
         interface IGpuArray with 
             member self.Length = length
+            member self.Capacity = capacity
+            member self.Size = size
+            member self.Type = typeof<'T>
             member self.GetBuffer () = buffer
         interface System.IDisposable with 
             member this.Dispose() = 
