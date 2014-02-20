@@ -50,14 +50,22 @@
                             }"
 
             let reduceTemplate = sprintf "
-                            __kernel void kernelCode(__global %s* ___input___, __global %s* ___result___, __local %s* ___partial___)
+                            __kernel void kernelCode(__global %s* ___input___, int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
                             {
                                 %s
                                 int ___localId___  = get_local_id(0);
+                                int ___globalId___  = get_global_id(0);
                                 int ___groupSize___ = get_local_size(0);
-                                %s = ___input___[get_global_id(0)];
-                                %s
-                                ___partial___[___localId___] = %s;
+                                %s = ___input___[___globalId___];
+                                if(___globalId___ < ___inputLength___)
+                                {
+                                    %s
+                                    ___partial___[___localId___] = %s;
+                                }
+                                else
+                                {
+                                    ___partial___[___localId___] = %s;
+                                }
                                 barrier(CLK_LOCAL_MEM_FENCE);
 
                                 for(int ___i___ = ___groupSize___ / 2; ___i___ > 0; ___i___ >>= 1) {
@@ -129,8 +137,9 @@
                         let source = mapFilterTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.FlagVarExpr) (varExprToStr context.AccVarExpr) 
                         { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
                     | ReductionType.Sum -> 
-                        let source = reduceTemplate sourceTypeStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr) "+"
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
+                        let gpuArray = value :?> IGpuArray
+                        let source = reduceTemplate sourceTypeStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr) "0" "+"
+                        { Source = source; ReductionType = context.ReductionType; Args = [| (gpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
                     | _ -> failwithf "Not supported %A" context.ReductionType
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs

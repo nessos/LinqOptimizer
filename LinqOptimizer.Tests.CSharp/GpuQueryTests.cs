@@ -108,9 +108,9 @@ namespace LinqOptimizer.Tests
                     {
 
                         var x = context.Run((from n in _xs.AsGpuQueryExpr()
-                                             select n * 2).Sum());
+                                             select n + 1).Sum());
                         var y = (from n in xs
-                                 select n * 2).Sum();
+                                 select n + 1).Sum();
 
                         return x == y;
                     }

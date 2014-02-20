@@ -30,9 +30,7 @@
                 new GpuArray<'T>(env, 0, 0, sizeof<'T>, null)
             else
                 let capacity = int <| 2.0 ** Math.Ceiling(Math.Log(float array.Length, 2.0))
-                let array' : 'T[] = Array.zeroCreate capacity
-                Array.Copy(array, array', array.Length)
-                match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.UseHostPtr, new IntPtr(capacity * sizeof<'T>), array') with
+                match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.UseHostPtr, new IntPtr(capacity * sizeof<'T>), array) with
                 | inputBuffer, ErrorCode.Success -> 
                     let gpuArray = new GpuArray<'T>(env, array.Length, capacity, sizeof<'T>, inputBuffer)
                     buffers.Add(gpuArray)
@@ -171,6 +169,9 @@
                     let (maxGroupSize, outputLength) = if gpuArray.Capacity < maxGroupSize then (gpuArray.Capacity, 1)
                                                        else (maxGroupSize, gpuArray.Capacity / maxGroupSize)
 
+                    match Cl.SetKernelArg(kernel, (incr argIndex; uint32 !argIndex), new IntPtr(sizeof<int>), length) with
+                    | ErrorCode.Success -> ()
+                    | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
                     let output = Array.CreateInstance(queryExpr.Type, outputLength)
                     use outputBuffer = createBuffer queryExpr.Type env outputLength
                     addKernelArg outputBuffer
