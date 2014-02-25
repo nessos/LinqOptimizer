@@ -156,7 +156,7 @@
                             createGpuArray queryExpr.Type env result.Length resultBuffer :> obj :?> _
                         | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
                     | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
-            | ReductionType.Sum ->
+            | ReductionType.Sum | ReductionType.Count ->
                 let (gpuArray, _, length, _) = compilerResult.Args.[0]
                 if length = 0 then
                     0 :> obj :?> _

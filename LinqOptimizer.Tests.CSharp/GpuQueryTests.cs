@@ -32,23 +32,6 @@ namespace LinqOptimizer.Tests
 
 
         [Test]
-        public void SelectWithConvert()
-        {
-            using (var context = new GpuContext())
-            {
-                Spec.ForAny<int[]>(xs =>
-                {
-                    using (var _xs = context.CreateGpuArray(xs))
-                    {
-                        var x = context.Run(_xs.AsGpuQueryExpr().Select(n => (float)n * 2));
-                        var y = xs.Select(n => (float)n * 2);
-                        return x.ToArray().SequenceEqual(y);
-                    }
-                }).QuickCheckThrowOnFailure();
-            }
-        }
-
-        [Test]
         public void Pipelined()
         {
             using (var context = new GpuContext())
@@ -59,10 +42,10 @@ namespace LinqOptimizer.Tests
                     {
 
                         var x = context.Run(_xs.AsGpuQueryExpr()
-                                              .Select(n => n * 2)
+                                              .Select(n => (float)n * 2)
                                               .Select(n => n + 1));
                         var y = xs
-                                .Select(n => n * 2)
+                                .Select(n => (float)n * 2)
                                 .Select(n => n + 1);
 
                         return x.ToArray().SequenceEqual(y);
@@ -97,7 +80,7 @@ namespace LinqOptimizer.Tests
         }
 
         [Test]
-        public void SumInt()
+        public void Sum()
         {
             using (var context = new GpuContext())
             {
@@ -111,6 +94,30 @@ namespace LinqOptimizer.Tests
                                              select n + 1).Sum());
                         var y = (from n in xs
                                  select n + 1).Sum();
+
+                        return x == y;
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
+        [Test]
+        public void Count()
+        {
+            using (var context = new GpuContext())
+            {
+
+                Spec.ForAny<int[]>(xs =>
+                {
+                    using (var _xs = context.CreateGpuArray(xs))
+                    {
+                        var x = context.Run(_xs.AsGpuQueryExpr()
+                                                .Select(i => i)
+                                                .Count());
+
+                        var y = xs
+                                .Select(i => i)
+                                .Count();
 
                         return x == y;
                     }

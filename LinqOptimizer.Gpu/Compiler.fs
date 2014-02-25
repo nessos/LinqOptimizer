@@ -136,7 +136,7 @@
                     | ReductionType.Filter ->
                         let source = mapFilterTemplate sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.FlagVarExpr) (varExprToStr context.AccVarExpr) 
                         { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
-                    | ReductionType.Sum -> 
+                    | ReductionType.Sum | ReductionType.Count -> 
                         let gpuArray = value :?> IGpuArray
                         let source = reduceTemplate sourceTypeStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr) exprsStr (varExprToStr context.AccVarExpr) "0" "+"
                         { Source = source; ReductionType = context.ReductionType; Args = [| (gpuArray, sourceType, sourceLength, Marshal.SizeOf(sourceType)) |] }
@@ -175,8 +175,11 @@
                                 InitExprs = []; AccExpr = empty; CombinerExpr = empty; ResultType = queryExpr.Type; 
                                 VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Sum }
                 compile' queryExpr' context
-            | Count (_) ->
-                let context : QueryContext = raise <| new NotImplementedException()
-                compile' queryExpr context
+            | Count (queryExpr') ->
+                let context = { CurrentVarExpr = finalVarExpr; AccVarExpr = finalVarExpr; FlagVarExpr = flagVarExpr;
+                                BreakLabel = breakLabel (); ContinueLabel = continueLabel (); 
+                                InitExprs = []; AccExpr = empty; CombinerExpr = empty; ResultType = queryExpr.Type; 
+                                VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Count }
+                compile' (Transform ((lambda [|var "___empty___" queryExpr'.Type|] (constant 1)),queryExpr')) context
             | _ -> failwithf "Not supported %A" queryExpr 
 

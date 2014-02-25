@@ -83,6 +83,17 @@ namespace LinqOptimizer.Gpu.CSharp
             return new GpuQueryExpr<double>(QueryExpr.NewSum(query.Expr));
         }
 
+        /// <summary>
+        /// Creates a new query that returns the number of elements in a sequence.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">A query whose elements will be count.</param>
+        /// <returns>A query that returns the number of elements in the input sequence.</returns>
+        public static IGpuQueryExpr<int> Count<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
+        {
+            return new GpuQueryExpr<int>(QueryExpr.NewCount(query.Expr));
+        }
+
         #endregion
     }
 }

@@ -27,20 +27,19 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            
-            var input = Enumerable.Range(1, 100).Select(x => 1).ToArray();
+            var input = Enumerable.Range(1, 100).ToArray();
 
             using (var context = new GpuContext())
             {
                 using (var buffer = context.CreateGpuArray(input))
                 {
-                    var query = buffer.AsGpuQueryExpr().Select(x => x + 1).Sum();
+                    var query = buffer.AsGpuQueryExpr().Select(x => x + 1).Count();
                     var test = context.Run(query);
-                    var _test = input.Select(x => x + 1).Sum();
+                    var _test = input.Select(x => x + 1).Count();
                 }
             }
 
-            //(new GpuQueryTests()).Select();
+            (new GpuQueryTests()).Count();
 
         }
 
