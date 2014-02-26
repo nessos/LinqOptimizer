@@ -120,42 +120,54 @@
             for input, t, length, size in compilerResult.Args do
                 if length <> 0 then 
                     addKernelArg (input.GetBuffer())
-                                
+                                        
             match compilerResult.ReductionType with
             | ReductionType.Map -> 
                 let (input, _, length, size) = compilerResult.Args.[0]
-                if length = 0 then
-                    createGpuArray queryExpr.Type env length null :> obj :?> _
-                else
-                    let outputBuffer = createBuffer queryExpr.Type env length 
-                    addKernelArg outputBuffer 
-                    match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(length) |], [| new IntPtr(1) |], uint32 0, null) with
-                    | ErrorCode.Success, event ->
-                        use event = event
-                        createGpuArray queryExpr.Type env length outputBuffer :> obj :?> _
-                    | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                let gpuArray = 
+                    if length = 0 then
+                        createGpuArray queryExpr.Type env length null 
+                    else
+                        let outputBuffer = createBuffer queryExpr.Type env length 
+                        addKernelArg outputBuffer 
+                        match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(length) |], [| new IntPtr(1) |], uint32 0, null) with
+                        | ErrorCode.Success, event ->
+                            use event = event
+                            createGpuArray queryExpr.Type env length outputBuffer 
+                        | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                match queryExpr with
+                | ToArray (_) -> 
+                    use gpuArray = gpuArray
+                    gpuArray.ToArray() :> obj :?> _
+                | _ -> gpuArray :> obj :?> _
             | ReductionType.Filter -> 
                 let (input, _, length, size) = compilerResult.Args.[0]
-                if length = 0 then
-                    createGpuArray queryExpr.Type env length null :> obj :?> _
-                else
-                    let output = Array.CreateInstance(queryExpr.Type, length)
-                    use outputBuffer = createBuffer queryExpr.Type env length
-                    let flags = Array.CreateInstance(typeof<int>, length)
-                    use flagsBuffer = createBuffer typeof<int> env length 
-                    addKernelArg flagsBuffer 
-                    addKernelArg outputBuffer 
-                    match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(length) |], [| new IntPtr(1) |], uint32 0, null) with
-                    | ErrorCode.Success, event ->
-                        use event = event
-                        readFromBuffer env.CommandQueues.[0] queryExpr.Type outputBuffer output 
-                        readFromBuffer env.CommandQueues.[0] typeof<int> flagsBuffer flags
-                        let result = createDynamicArray queryExpr.Type (flags :?> int[]) output
-                        match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.UseHostPtr, new IntPtr(length * size), result) with
-                        | resultBuffer, ErrorCode.Success -> 
-                            createGpuArray queryExpr.Type env result.Length resultBuffer :> obj :?> _
-                        | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
-                    | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                let gpuArray = 
+                    if length = 0 then
+                        createGpuArray queryExpr.Type env length null 
+                    else
+                        let output = Array.CreateInstance(queryExpr.Type, length)
+                        use outputBuffer = createBuffer queryExpr.Type env length
+                        let flags = Array.CreateInstance(typeof<int>, length)
+                        use flagsBuffer = createBuffer typeof<int> env length 
+                        addKernelArg flagsBuffer 
+                        addKernelArg outputBuffer 
+                        match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(length) |], [| new IntPtr(1) |], uint32 0, null) with
+                        | ErrorCode.Success, event ->
+                            use event = event
+                            readFromBuffer env.CommandQueues.[0] queryExpr.Type outputBuffer output 
+                            readFromBuffer env.CommandQueues.[0] typeof<int> flagsBuffer flags
+                            let result = createDynamicArray queryExpr.Type (flags :?> int[]) output
+                            match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.UseHostPtr, new IntPtr(length * size), result) with
+                            | resultBuffer, ErrorCode.Success -> 
+                                createGpuArray queryExpr.Type env result.Length resultBuffer 
+                            | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
+                        | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+                match queryExpr with
+                | ToArray (_) -> 
+                    use gpuArray = gpuArray
+                    gpuArray.ToArray() :> obj :?> _
+                | _ -> gpuArray :> obj :?> _
             | ReductionType.Sum | ReductionType.Count ->
                 let (gpuArray, _, length, _) = compilerResult.Args.[0]
                 if length = 0 then

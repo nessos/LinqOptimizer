@@ -66,14 +66,14 @@ namespace LinqOptimizer.Tests
                     using (var _xs = context.CreateGpuArray(xs))
                     {
 
-                        var x = context.Run(from n in _xs.AsGpuQueryExpr()
+                        var x = context.Run((from n in _xs.AsGpuQueryExpr()
                                             where n % 2 == 0
-                                            select n + 1);
+                                            select n + 1).ToArray());
                         var y = (from n in xs
                                  where n % 2 == 0
                                  select n + 1).ToArray();
 
-                        return x.ToArray().SequenceEqual(y);
+                        return x.SequenceEqual(y);
                     }
                 }).QuickCheckThrowOnFailure();
             }
@@ -120,6 +120,23 @@ namespace LinqOptimizer.Tests
                                 .Count();
 
                         return x == y;
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
+        [Test]
+        public void ToArray()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(xs =>
+                {
+                    using (var _xs = context.CreateGpuArray(xs))
+                    {
+                        var x = context.Run(_xs.AsGpuQueryExpr().Select(n => n * 2).ToArray());
+                        var y = xs.Select(n => n * 2).ToArray();
+                        return x.SequenceEqual(y);
                     }
                 }).QuickCheckThrowOnFailure();
             }

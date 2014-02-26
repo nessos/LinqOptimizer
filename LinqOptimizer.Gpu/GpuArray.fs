@@ -12,6 +12,7 @@
         abstract member Size : int
         abstract member Type : Type
         abstract member GetBuffer : unit -> IMem
+        abstract member ToArray : unit -> Array
     
     /// <summary>
     /// A typed wrapper object for managing GPU Bufferss
@@ -33,6 +34,7 @@
             member self.Size = size
             member self.Type = typeof<'T>
             member self.GetBuffer () = buffer
+            member self.ToArray () = self.ToArray() :> _
         interface System.IDisposable with 
             member this.Dispose() = 
                 if buffer <> null && disposed = false then

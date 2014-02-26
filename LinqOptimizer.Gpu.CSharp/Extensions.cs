@@ -57,7 +57,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// Creates a new query that computes the sum of a sequence of int values.
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
-        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        /// <returns>A query that returns the sum of the values in the gpu array.</returns>
         public static IGpuQueryExpr<int> Sum(this IGpuQueryExpr<GpuArray<int>> query) 
         {
             return new GpuQueryExpr<int>(QueryExpr.NewSum(query.Expr));
@@ -67,7 +67,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// Creates a new query that computes the sum of a sequence of float values.
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
-        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        /// <returns>A query that returns the sum of the values in the gpu array.</returns>
         public static IGpuQueryExpr<float> Sum(this IGpuQueryExpr<GpuArray<float>> query)
         {
             return new GpuQueryExpr<float>(QueryExpr.NewSum(query.Expr));
@@ -77,21 +77,32 @@ namespace LinqOptimizer.Gpu.CSharp
         /// Creates a new query that computes the sum of a sequence of double values.
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
-        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        /// <returns>A query that returns the sum of the values in the gpu array.</returns>
         public static IGpuQueryExpr<double> Sum(this IGpuQueryExpr<GpuArray<double>> query)
         {
             return new GpuQueryExpr<double>(QueryExpr.NewSum(query.Expr));
         }
 
         /// <summary>
-        /// Creates a new query that returns the number of elements in a sequence.
+        /// Creates a new query that returns the number of elements in a gpu array.
         /// </summary>
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="query">A query whose elements will be count.</param>
-        /// <returns>A query that returns the number of elements in the input sequence.</returns>
+        /// <returns>A query that returns the number of elements in the gpu array.</returns>
         public static IGpuQueryExpr<int> Count<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
         {
             return new GpuQueryExpr<int>(QueryExpr.NewCount(query.Expr));
+        }
+
+        /// <summary>
+        /// A query that returns an array from an gpu array.
+        /// </summary>
+        /// <typeparam name="TSource">The type of the elements of source.</typeparam>
+        /// <param name="query">The query to create an array from.</param>
+        /// <returns>A query that contains elements from the gpu array in an array form.</returns>
+        public static IGpuQueryExpr<TSource[]> ToArray<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
+        {
+            return new GpuQueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
         }
 
         #endregion

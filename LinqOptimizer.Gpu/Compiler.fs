@@ -25,7 +25,7 @@
         let breakLabel () = labelTarget "brk"
         let continueLabel () = labelTarget "cont"
 
-        let compile (queryExpr : QueryExpr) : CompilerResult = 
+        let rec compile (queryExpr : QueryExpr) : CompilerResult = 
             
             let mapTemplate = sprintf "
                             __kernel void kernelCode(__global %s* ___input___, __global %s* ___result___)
@@ -181,5 +181,6 @@
                                 InitExprs = []; AccExpr = empty; CombinerExpr = empty; ResultType = queryExpr.Type; 
                                 VarExprs = [finalVarExpr; flagVarExpr]; Exprs = []; ReductionType = ReductionType.Count }
                 compile' (Transform ((lambda [|var "___empty___" queryExpr'.Type|] (constant 1)),queryExpr')) context
+            | ToArray (queryExpr') -> compile queryExpr'
             | _ -> failwithf "Not supported %A" queryExpr 
 

@@ -33,9 +33,9 @@ namespace LinqOptimizer.Tests
             {
                 using (var buffer = context.CreateGpuArray(input))
                 {
-                    var query = buffer.AsGpuQueryExpr().Select(x => x + 1).Count();
+                    var query = buffer.AsGpuQueryExpr().Select(x => x + 1).ToArray();
                     var test = context.Run(query);
-                    var _test = input.Select(x => x + 1).Count();
+                    var _test = input.Select(x => x + 1).ToArray();
                 }
             }
 
