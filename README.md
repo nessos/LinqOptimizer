@@ -38,7 +38,7 @@ Optimizations
 * Lambda inlining
 * Loop fusion
 * Nested loop generation
-* Tuple elimination
+* Anonymous Types-Tuples elimination
 * Specialized strategies and algorithms
 
 The expression
