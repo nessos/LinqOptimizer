@@ -64,6 +64,7 @@
                                 }
                                 else
                                 {
+                                cont:
                                     ___partial___[___localId___] = %s;
                                 }
                                 barrier(CLK_LOCAL_MEM_FENCE);

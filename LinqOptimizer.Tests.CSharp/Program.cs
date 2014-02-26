@@ -33,13 +33,13 @@ namespace LinqOptimizer.Tests
             {
                 using (var buffer = context.CreateGpuArray(input))
                 {
-                    var query = buffer.AsGpuQueryExpr().Select(x => x + 1).ToArray();
+                    var query = buffer.AsGpuQueryExpr().Where(x => x % 2 == 0).Select(x => x + 1).Sum();
                     var test = context.Run(query);
-                    var _test = input.Select(x => x + 1).ToArray();
+                    var _test = input.Where(x => x % 2 == 0).Select(x => x + 1).Sum();
                 }
             }
 
-            (new GpuQueryTests()).Count();
+            //(new GpuQueryTests()).Count();
 
         }
 

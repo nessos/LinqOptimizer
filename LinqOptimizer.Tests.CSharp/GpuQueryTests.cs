@@ -111,13 +111,13 @@ namespace LinqOptimizer.Tests
                 {
                     using (var _xs = context.CreateGpuArray(xs))
                     {
-                        var x = context.Run(_xs.AsGpuQueryExpr()
-                                                .Select(i => i)
-                                                .Count());
+                        var x = context.Run((from n in _xs.AsGpuQueryExpr()
+                                             where n % 2 == 0
+                                             select n + 1).Count());
 
-                        var y = xs
-                                .Select(i => i)
-                                .Count();
+                        var y = (from n in xs
+                                 where n % 2 == 0
+                                 select n + 1).Count();
 
                         return x == y;
                     }
