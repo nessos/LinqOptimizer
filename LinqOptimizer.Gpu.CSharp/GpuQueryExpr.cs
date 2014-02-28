@@ -13,7 +13,7 @@ namespace LinqOptimizer.Gpu.CSharp
     /// <summary>
     /// Provides a set of static methods for querying objects that implement IGpuQueryExpr.
     /// </summary>
-    public static class Extensions
+    public static class GpuQueryExpr
     {
         /// <summary>
         /// Enables a gpu query.
@@ -103,6 +103,22 @@ namespace LinqOptimizer.Gpu.CSharp
         public static IGpuQueryExpr<TSource[]> ToArray<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
         {
             return new GpuQueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
+        }
+
+
+        /// <summary>
+        /// Creates a query that applies a specified function to the corresponding elements of two gpu arrays, producing a sequence of the results.
+        /// </summary>
+        /// <param name="first">The first gpu array to merge.</param>
+        /// <param name="second">The first gpu array to merge.</param>
+        /// <param name="resultSelector">A function that specifies how to merge the elements from the two gpu arrays.</param>
+        /// <returns>A query that contains merged elements of two gpu arrays.</returns>
+        public static IGpuQueryExpr<GpuArray<TResult>> Zip<TFirst, TSecond, TResult>(GpuArray<TFirst> first, GpuArray<TSecond> second, Expression<Func<TFirst, TSecond, TResult>> resultSelector)
+            where TFirst : struct
+            where TSecond : struct
+            where TResult : struct
+        {
+            return new GpuQueryExpr<GpuArray<TResult>>(QueryExpr.NewZipWith(Expression.Constant(first), Expression.Constant(second), resultSelector));
         }
 
         #endregion
