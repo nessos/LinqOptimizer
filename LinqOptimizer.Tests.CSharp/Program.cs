@@ -23,7 +23,6 @@ namespace LinqOptimizer.Tests
     {
             
 
-
         public static void Main(string[] args)
         {
 
@@ -33,9 +32,9 @@ namespace LinqOptimizer.Tests
             {
                 using (var buffer = context.CreateGpuArray(input))
                 {
-                    var query = GpuQueryExpr.Zip(buffer, buffer, (a, b) => a * b).ToArray();
+                    var query = GpuQueryExpr.Zip(buffer, buffer, (a, b) => a * b).Where(x => x % 2 == 0).ToArray();
                     var test = context.Run(query);
-                    var _test = Enumerable.Zip(input, input, (a, b) => a * b).ToArray();
+                    var _test = Enumerable.Zip(input, input, (a, b) => a * b).Where(x => x % 2 == 0).ToArray();
                 }
             }
 

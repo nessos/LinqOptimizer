@@ -22,9 +22,9 @@ namespace LinqOptimizer.Tests
                 {
                     using (var _xs = context.CreateGpuArray(xs))
                     {
-                        var x = context.Run(_xs.AsGpuQueryExpr().Select(n => n * 2));
-                        var y = xs.Select(n => n * 2);
-                        return x.ToArray().SequenceEqual(y);
+                        var x = context.Run(_xs.AsGpuQueryExpr().Select(n => n * 2).ToArray());
+                        var y = xs.Select(n => n * 2).ToArray();
+                        return x.SequenceEqual(y);
                     }
                 }).QuickCheckThrowOnFailure();    
             }
@@ -43,12 +43,12 @@ namespace LinqOptimizer.Tests
 
                         var x = context.Run(_xs.AsGpuQueryExpr()
                                               .Select(n => (float)n * 2)
-                                              .Select(n => n + 1));
+                                              .Select(n => n + 1).ToArray());
                         var y = xs
                                 .Select(n => (float)n * 2)
-                                .Select(n => n + 1);
+                                .Select(n => n + 1).ToArray();
 
-                        return x.ToArray().SequenceEqual(y);
+                        return x.SequenceEqual(y);
                     }
 
                 }).QuickCheckThrowOnFailure();
@@ -151,10 +151,28 @@ namespace LinqOptimizer.Tests
                 {
                     using (var _ms = context.CreateGpuArray(ms))
                     {
-                        var xs = context.Run(GpuQueryExpr.Zip(_ms, _ms, (a, b) => a * b));
-                        var ys = Enumerable.Zip(ms, ms, (a, b) => a * b);
+                        var xs = context.Run(GpuQueryExpr.Zip(_ms, _ms, (a, b) => a * b).Select(x => x + 1).ToArray());
+                        var ys = Enumerable.Zip(ms, ms, (a, b) => a * b).Select(x => x + 1).ToArray();
 
-                        return xs.ToArray().SequenceEqual(ys);
+                        return xs.SequenceEqual(ys);
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
+        [Test]
+        public void ZipWithFilter()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(ms =>
+                {
+                    using (var _ms = context.CreateGpuArray(ms))
+                    {
+                        var xs = context.Run(GpuQueryExpr.Zip(_ms, _ms, (a, b) => a * b).Where(x => x % 2 == 0).ToArray());
+                        var ys = Enumerable.Zip(ms, ms, (a, b) => a * b).Where(x => x % 2 == 0).ToArray();
+
+                        return xs.SequenceEqual(ys);
                     }
                 }).QuickCheckThrowOnFailure();
             }
