@@ -178,6 +178,24 @@ namespace LinqOptimizer.Tests
             }
         }
 
+        [Test]
+        public void ZipWithReduction()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(ms =>
+                {
+                    using (var _ms = context.CreateGpuArray(ms))
+                    {
+                        var xs = context.Run(GpuQueryExpr.Zip(_ms, _ms, (a, b) => a * b).Sum());
+                        var ys = Enumerable.Zip(ms, ms, (a, b) => a * b).Sum();
+
+                        return xs == ys;
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
 
     }
 }

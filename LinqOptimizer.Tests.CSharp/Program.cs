@@ -26,16 +26,24 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            var input = Enumerable.Range(1, 100).ToArray();
-
+            //var input = Enumerable.Range(1, 67108864).Select(x => (float)x).ToArray();
+            var input = Enumerable.Range(1, 100000).Select(x => (float)x).ToArray();
+            
+            var array = new int[100000];  //Array.CreateInstance(t, 10000)
             using (var context = new GpuContext())
             {
                 using (var buffer = context.CreateGpuArray(input))
                 {
-                    var query = GpuQueryExpr.Zip(buffer, buffer, (a, b) => a * b).Where(x => x % 2 == 0).ToArray();
+                    //var query = GpuQueryExpr.Zip(buffer, buffer, (a, b) => a * b).Sum();
+                    var query = buffer.AsGpuQueryExpr().Select(x => x * 2).ToArray();
                     var test = context.Run(query);
-                    var _test = Enumerable.Zip(input, input, (a, b) => a * b).Where(x => x % 2 == 0).ToArray();
+                    //var _test = Enumerable.Zip(input, input, (a, b) => a * b).Sum();
                 }
+            }
+            foreach (var item in array)
+            {
+                if (item != 0)
+                    Console.WriteLine(item);
             }
 
             //(new GpuQueryTests()).Count();
