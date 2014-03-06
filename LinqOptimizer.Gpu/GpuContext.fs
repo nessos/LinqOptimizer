@@ -30,7 +30,9 @@
                 new GpuArray<'T>(env, 0, 0, sizeof<'T>, null)
             else
                 let capacity = int <| 2.0 ** Math.Ceiling(Math.Log(float array.Length, 2.0))
-                match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.UseHostPtr, new IntPtr(capacity * sizeof<'T>), array) with
+                let array' = Array.CreateInstance(typeof<'T>, capacity)
+                Array.Copy(array, array', array.Length)
+                match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.CopyHostPtr, new IntPtr(capacity * sizeof<'T>), array') with
                 | inputBuffer, ErrorCode.Success -> 
                     let gpuArray = new GpuArray<'T>(env, array.Length, capacity, sizeof<'T>, inputBuffer)
                     buffers.Add(gpuArray)
