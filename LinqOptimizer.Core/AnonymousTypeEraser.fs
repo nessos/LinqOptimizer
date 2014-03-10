@@ -14,46 +14,7 @@
     type private AnonymousTypeEraserVisitor () =
         inherit ExpressionVisitor() with
 
-            // http://stackoverflow.com/questions/1650681/determining-whether-a-type-is-an-anonymous-type
-            // TODO : Mono?
-            let isAnonymousType (ty : Type) =
-                ty.GetCustomAttributes(typeof<CompilerGeneratedAttribute>, false).Count() > 0
-                && ty.FullName.Contains "AnonymousType"
-                && ty.Namespace = null
-                && ty.IsSealed
-                && not ty.IsPublic
 
-            // TODO : Mono?
-            let isTransparentIdentifier (expr : Expression) =
-                match expr with
-                | :? ParameterExpression as expr -> expr.Name.Contains "TransparentIdentifier"
-                | _ -> false
-
-            let isAnonymousConstructor (expr : Expression) =
-                match expr with
-                | :? NewExpression as expr -> isAnonymousType expr.Constructor.DeclaringType
-                | _ -> false
-
-            let (|AnonymousTypeAssign|_|) (expr : BinaryExpression) =
-                if expr.NodeType = ExpressionType.Assign 
-                   && isTransparentIdentifier expr.Left 
-                   && isAnonymousConstructor expr.Right then
-                        let left = expr.Left :?> ParameterExpression
-                        let right = expr.Right :?> NewExpression
-                        Some(left, right)
-                else
-                        None
-
-            let (|TransparentIdentifierIdentityAssignment|_|) (expr : BinaryExpression) =
-                if expr.NodeType = ExpressionType.Assign
-                   && isTransparentIdentifier expr.Left
-                   && isTransparentIdentifier expr.Right then
-                        let left = expr.Left :?> ParameterExpression
-                        let right = expr.Right :?> ParameterExpression
-                        if left.Name = right.Name then Some (left, right)
-                        else None
-                else
-                    None
 
             let generated = sprintf "___%s___"
 

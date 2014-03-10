@@ -1,8 +1,10 @@
 ﻿    
 namespace LinqOptimizer.Core
     open System
+    open System.Linq
     open System.Linq.Expressions
     open System.Reflection
+    open System.Runtime.CompilerServices
 
     [<AutoOpen>]
     module ExpressionHelpers =
@@ -129,6 +131,18 @@ namespace LinqOptimizer.Core
                 when plusExpr.NodeType = ExpressionType.Add -> Some (plusExpr.Left, plusExpr.Right)
             | _ -> None
 
+        let (|Subtract|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as plusExpr 
+                when plusExpr.NodeType = ExpressionType.Subtract -> Some (plusExpr.Left, plusExpr.Right)
+            | _ -> None
+
+        let (|Divide|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as plusExpr 
+                when plusExpr.NodeType = ExpressionType.Divide -> Some (plusExpr.Left, plusExpr.Right)
+            | _ -> None
+
         let (|Times|_|) (expr : Expression) = 
             match expr with
             | :? BinaryExpression as plusExpr 
@@ -173,6 +187,61 @@ namespace LinqOptimizer.Core
             match expr with
             | :? UnaryExpression as unaryExpr when unaryExpr.NodeType = ExpressionType.Convert -> 
                 Some (unaryExpr.Operand, unaryExpr.Type) 
+            | _ -> None
+
+
+        // http://stackoverflow.com/questions/1650681/determining-whether-a-type-is-an-anonymous-type
+        // TODO : Mono?
+        let isAnonymousType (ty : Type) =
+            ty.GetCustomAttributes(typeof<CompilerGeneratedAttribute>, false).Count() > 0
+            && ty.FullName.Contains "AnonymousType"
+            && ty.Namespace = null
+            && ty.IsSealed
+            && not ty.IsPublic
+
+        // TODO : Mono?
+        let isTransparentIdentifier (expr : Expression) =
+            match expr with
+            | :? ParameterExpression as expr -> expr.Name.Contains "TransparentIdentifier"
+            | _ -> false
+
+        let isAnonymousConstructor (expr : Expression) =
+            match expr with
+            | :? NewExpression as expr -> isAnonymousType expr.Constructor.DeclaringType
+            | _ -> false
+
+        let (|AnonymousTypeAssign|_|) (expr : Expression) =
+            if expr.NodeType = ExpressionType.Assign then
+                let expr = expr :?> BinaryExpression
+                if isTransparentIdentifier expr.Left && isAnonymousConstructor expr.Right then
+                    let left = expr.Left :?> ParameterExpression
+                    let right = expr.Right :?> NewExpression
+                    Some(left, right)
+                else None
+            else None
+
+        let (|AnonymousTypeConstruction|_|) (expr : Expression) =
+            match expr with
+            | :? NewExpression as expr when isAnonymousType expr.Constructor.DeclaringType -> Some (expr.Members, expr.Arguments)
+            | _ -> None
+
+        let (|TransparentIdentifierIdentityAssignment|_|) (expr : BinaryExpression) =
+            if expr.NodeType = ExpressionType.Assign
+                && isTransparentIdentifier expr.Left
+                && isTransparentIdentifier expr.Right then
+                    let left = expr.Left :?> ParameterExpression
+                    let right = expr.Right :?> ParameterExpression
+                    if left.Name = right.Name then Some (left, right)
+                    else None
+            else
+                None
+
+        let (|AnonymousTypeMember|_|) (expr : Expression) =
+            match expr with
+            | :? MemberExpression as expr ->
+                    match expr.Member.MemberType with
+                    | MemberTypes.Property when isAnonymousType expr.Member.DeclaringType -> Some expr
+                    | _ -> None
             | _ -> None
 
         type internal Expression with

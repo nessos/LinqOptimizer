@@ -21,9 +21,9 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <typeparam name="TSource">The type of the elements in the source array.</typeparam>
         /// <param name="source">An array to convert to an IGpuQueryExpr.</param>
         /// <returns>A query that returns the elements of the source array.</returns>
-        public static IGpuQueryExpr<GpuArray<TSource>> AsGpuQueryExpr<TSource>(this GpuArray<TSource> source) where TSource : struct 
+        public static IGpuQueryExpr<IGpuArray<TSource>> AsGpuQueryExpr<TSource>(this IGpuArray<TSource> source) 
         {
-            return new GpuQueryExpr<GpuArray<TSource>>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Gpu));
+            return new GpuQueryExpr<IGpuArray<TSource>>(QueryExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Gpu));
         }
 
         #region Combinators
@@ -35,10 +35,9 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <param name="query">A query whose values to invoke a transform function on.</param>
         /// <param name="selector">A transform function to apply to each element.</param>
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
-        public static IGpuQueryExpr<GpuArray<TResult>> Select<TSource, TResult>(this IGpuQueryExpr<GpuArray<TSource>> query, Expression<Func<TSource, TResult>> selector) where TSource : struct 
-                                                                                                                                                                          where TResult : struct
+        public static IGpuQueryExpr<IGpuArray<TResult>> Select<TSource, TResult>(this IGpuQueryExpr<IGpuArray<TSource>> query, Expression<Func<TSource, TResult>> selector) 
         {
-            return new GpuQueryExpr<GpuArray<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
+            return new GpuQueryExpr<IGpuArray<TResult>>(QueryExpr.NewTransform(selector, query.Expr));
         }
 
         /// <summary>
@@ -48,9 +47,9 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <param name="query">An query whose values to filter.</param>
         /// <param name="predicate">A function to test each element for a condition.</param>
         /// <returns>A query that contains elements from the input query that satisfy the condition.</returns>
-        public static IGpuQueryExpr<GpuArray<TSource>> Where<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query, Expression<Func<TSource, bool>> predicate) where TSource : struct
+        public static IGpuQueryExpr<IGpuArray<TSource>> Where<TSource>(this IGpuQueryExpr<IGpuArray<TSource>> query, Expression<Func<TSource, bool>> predicate) 
         {
-            return new GpuQueryExpr<GpuArray<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
+            return new GpuQueryExpr<IGpuArray<TSource>>(QueryExpr.NewFilter(predicate, query.Expr));
         }
 
         /// <summary>
@@ -58,7 +57,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
         /// <returns>A query that returns the sum of the values in the gpu array.</returns>
-        public static IGpuQueryExpr<int> Sum(this IGpuQueryExpr<GpuArray<int>> query) 
+        public static IGpuQueryExpr<int> Sum(this IGpuQueryExpr<IGpuArray<int>> query) 
         {
             return new GpuQueryExpr<int>(QueryExpr.NewSum(query.Expr));
         }
@@ -68,7 +67,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
         /// <returns>A query that returns the sum of the values in the gpu array.</returns>
-        public static IGpuQueryExpr<float> Sum(this IGpuQueryExpr<GpuArray<float>> query)
+        public static IGpuQueryExpr<float> Sum(this IGpuQueryExpr<IGpuArray<float>> query)
         {
             return new GpuQueryExpr<float>(QueryExpr.NewSum(query.Expr));
         }
@@ -78,7 +77,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>
         /// <returns>A query that returns the sum of the values in the gpu array.</returns>
-        public static IGpuQueryExpr<double> Sum(this IGpuQueryExpr<GpuArray<double>> query)
+        public static IGpuQueryExpr<double> Sum(this IGpuQueryExpr<IGpuArray<double>> query)
         {
             return new GpuQueryExpr<double>(QueryExpr.NewSum(query.Expr));
         }
@@ -89,7 +88,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="query">A query whose elements will be count.</param>
         /// <returns>A query that returns the number of elements in the gpu array.</returns>
-        public static IGpuQueryExpr<int> Count<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
+        public static IGpuQueryExpr<int> Count<TSource>(this IGpuQueryExpr<IGpuArray<TSource>> query) 
         {
             return new GpuQueryExpr<int>(QueryExpr.NewCount(query.Expr));
         }
@@ -100,7 +99,7 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <typeparam name="TSource">The type of the elements of source.</typeparam>
         /// <param name="query">The query to create an array from.</param>
         /// <returns>A query that contains elements from the gpu array in an array form.</returns>
-        public static IGpuQueryExpr<TSource[]> ToArray<TSource>(this IGpuQueryExpr<GpuArray<TSource>> query) where TSource : struct
+        public static IGpuQueryExpr<TSource[]> ToArray<TSource>(this IGpuQueryExpr<IGpuArray<TSource>> query) 
         {
             return new GpuQueryExpr<TSource[]>(QueryExpr.NewToArray(query.Expr));
         }
@@ -113,12 +112,9 @@ namespace LinqOptimizer.Gpu.CSharp
         /// <param name="second">The first gpu array to merge.</param>
         /// <param name="resultSelector">A function that specifies how to merge the elements from the two gpu arrays.</param>
         /// <returns>A query that contains merged elements of two gpu arrays.</returns>
-        public static IGpuQueryExpr<GpuArray<TResult>> Zip<TFirst, TSecond, TResult>(GpuArray<TFirst> first, GpuArray<TSecond> second, Expression<Func<TFirst, TSecond, TResult>> resultSelector)
-            where TFirst : struct
-            where TSecond : struct
-            where TResult : struct
+        public static IGpuQueryExpr<IGpuArray<TResult>> Zip<TFirst, TSecond, TResult>(IGpuArray<TFirst> first, IGpuArray<TSecond> second, Expression<Func<TFirst, TSecond, TResult>> resultSelector)
         {
-            return new GpuQueryExpr<GpuArray<TResult>>(QueryExpr.NewZipWith(Expression.Constant(first), Expression.Constant(second), resultSelector));
+            return new GpuQueryExpr<IGpuArray<TResult>>(QueryExpr.NewZipWith(Expression.Constant(first), Expression.Constant(second), resultSelector));
         }
 
         #endregion

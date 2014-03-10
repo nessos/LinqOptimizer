@@ -196,6 +196,42 @@ namespace LinqOptimizer.Tests
             }
         }
 
+        [Test]
+        public void LinqLet()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(nums =>
+                {
+                    using (var _nums = context.CreateGpuArray(nums))
+                    {
+                        var x =
+                            context.Run((from num in _nums.AsGpuQueryExpr()
+                                         let a = num * 2
+                                         let c = a + 1
+                                         let b = a * 2
+                                         let e = b - 5
+                                         let d = c * c
+                                         let m = 3
+                                         select a + b + c + d + e + m + num).Sum());
+
+                        var y =
+                            (from num in nums
+                             let a = num * 2
+                             let c = a + 1
+                             let b = a * 2
+                             let e = b - 5
+                             let d = c * c
+                             let m = 3
+                             select a + b + c + d + e + m + num).Sum();
+
+                        return x == y;
+                    }
+                }).QuickCheckThrowOnFailure();
+                
+            }
+        }
+
 
     }
 }

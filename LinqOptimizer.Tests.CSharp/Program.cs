@@ -26,17 +26,30 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            var input = Enumerable.Range(1, 100000000).Select(x => (float)x).ToArray();
+            var input = Enumerable.Range(1, 1000).Select(x => (float)x).ToArray();
             
             using (var context = new GpuContext())
             {
                 using (var buffer = context.CreateGpuArray(input))
                 {
-                    var query = GpuQueryExpr.Zip(buffer, buffer, (a, b) => a * b).Sum();
-                    Measure(() => context.Run(query), 100);
-                    var parallelInput = input.AsParallel();
-                    Measure(() => ParallelEnumerable.Zip(parallelInput, parallelInput, (a, b) => a * b).Sum(), 100);
-                    Measure(() => Enumerable.Zip(input, input, (a, b) => a * b).Sum(), 100);
+                    var query = (from num in buffer.AsGpuQueryExpr()
+                                         let a = num * 2
+                                         let c = a + 1
+                                         let b = a * 2
+                                         let e = b - 5
+                                         let d = c * c
+                                         let m = 3
+                                         select a + b + c + d + e + m + num).Sum();
+                    var test = context.Run(query);
+                    var _test =
+                        (from num in input
+                         let a = num * 2
+                         let c = a + 1
+                         let b = a * 2
+                         let e = b - 5
+                         let d = c * c
+                         let m = 3
+                         select a + b + c + d + e + m + num).Sum();
                 }
             }
 
