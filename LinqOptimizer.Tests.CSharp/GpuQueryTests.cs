@@ -7,6 +7,7 @@ using LinqOptimizer.Gpu;
 using LinqOptimizer.Gpu.CSharp;
 using FsCheck.Fluent;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace LinqOptimizer.Tests
 {
@@ -231,6 +232,41 @@ namespace LinqOptimizer.Tests
                 
             }
         }
+
+        #region Struct Tests
+        [StructLayout(LayoutKind.Sequential)]
+        struct Node
+        {
+            public int x;
+            public int y;
+        }
+
+        [Test]
+        public void Structs()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(nums =>
+                {
+                    var nodes = nums.Select(num => new Node { x = num, y = num }).ToArray();
+                    using (var _nodes = context.CreateGpuArray(nodes))
+                    {
+                        var xs = context.Run((from node in _nodes.AsGpuQueryExpr()
+                                             let x = node.x + 2
+                                             let y = node.y + 1
+                                             select new Node { x = x, y = y }).ToArray());
+                        var ys = (from node in nodes
+                                  let x = node.x + 2
+                                  let y = node.y + 1
+                                  select new Node { x = x, y = y }).ToArray();
+
+                        return xs.SequenceEqual(ys);
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+        #endregion
+
 
 
     }

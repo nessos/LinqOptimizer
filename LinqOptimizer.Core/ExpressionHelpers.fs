@@ -244,5 +244,18 @@ namespace LinqOptimizer.Core
                     | _ -> None
             | _ -> None
 
+        let (|FieldMember|_|) (expr : Expression) =
+            match expr with
+            | :? MemberExpression as expr ->
+                    match expr.Member.MemberType with
+                    | MemberTypes.Field -> Some (expr.Expression, expr.Member)
+                    | _ -> None
+            | _ -> None
+
+        let (|ValueTypeMemberInit|_|) (expr : Expression) =
+            match expr with
+            | :? MemberInitExpression as expr when expr.Type.IsValueType -> Some (expr.NewExpression, expr.Bindings |> Seq.map (fun binding -> binding :?> MemberAssignment))
+            | _ -> None
+
         type internal Expression with
             static member ofFSharpFunc<'T,'R>(func : Expression<Func<'T,'R>>) = func

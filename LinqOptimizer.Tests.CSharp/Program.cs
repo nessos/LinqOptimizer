@@ -21,35 +21,35 @@ namespace LinqOptimizer.Tests
 
     public class Program
     {
-            
+
+        struct Node
+        {
+            public float x;
+            public float y;
+        }
 
         public static void Main(string[] args)
         {
 
-            var input = Enumerable.Range(1, 1000).Select(x => (float)x).ToArray();
-            
+            var input = Enumerable.Range(1, 10).Select(x => (float)x).ToArray();
+            var nodes = input.Select(num => new Node { x = num, y = num }).ToArray();
             using (var context = new GpuContext())
             {
-                using (var buffer = context.CreateGpuArray(input))
+                using (var buffer = context.CreateGpuArray(nodes))
                 {
-                    var query = (from num in buffer.AsGpuQueryExpr()
-                                         let a = num * 2
-                                         let c = a + 1
-                                         let b = a * 2
-                                         let e = b - 5
-                                         let d = c * c
-                                         let m = 3
-                                         select a + b + c + d + e + m + num).Sum();
+                    var query = (from node in buffer.AsGpuQueryExpr()
+                                 let x = node.x + 1
+                                 let y = node.y + 2
+                                 select new Node { x = x, y = y }).ToArray();
+
                     var test = context.Run(query);
+
                     var _test =
-                        (from num in input
-                         let a = num * 2
-                         let c = a + 1
-                         let b = a * 2
-                         let e = b - 5
-                         let d = c * c
-                         let m = 3
-                         select a + b + c + d + e + m + num).Sum();
+                        (from node in nodes
+                         let x = node.x + 1
+                         let y = node.y + 2
+                         select new Node { x = x, y = y }).ToArray();
+
                 }
             }
 

@@ -1,7 +1,7 @@
 ﻿namespace LinqOptimizer.Gpu
 
     module KernelTemplates = 
-        let mapTemplate = sprintf "
+        let mapTemplate = sprintf "%s
                             __kernel void kernelCode(__global %s* ___input___, __global %s* ___result___)
                             {
                                 %s
@@ -11,7 +11,7 @@
                                 ___result___[___id___] = %s;
                             }"
 
-        let mapFilterTemplate = sprintf "
+        let mapFilterTemplate = sprintf "%s
                         __kernel void kernelCode(__global %s* ___input___, __global int* ___flags___, __global %s* ___result___)
                         {
                             %s
@@ -23,7 +23,7 @@
                             ___result___[___id___] = %s;
                         }"
 
-        let reduceTemplate = sprintf "
+        let reduceTemplate = sprintf "%s
                         __kernel void kernelCode(__global %s* ___input___, int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
                         {
                             %s
@@ -55,7 +55,7 @@
                             }
                         }"
 
-        let zip2Template = sprintf "
+        let zip2Template = sprintf "%s
                         __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, __global %s* ___result___)
                         {
                             %s
@@ -67,7 +67,7 @@
                             ___result___[___id___] = %s;
                         }"
 
-        let zip2FilterTemplate = sprintf "
+        let zip2FilterTemplate = sprintf "%s
                         __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, __global int* ___flags___, __global %s* ___result___)
                         {
                             %s
@@ -82,7 +82,7 @@
                         }"
 
 
-        let zip2ReduceTemplate = sprintf "
+        let zip2ReduceTemplate = sprintf "%s
                         __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
                         {
                             %s
