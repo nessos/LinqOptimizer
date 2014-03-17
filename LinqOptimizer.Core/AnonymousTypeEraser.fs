@@ -26,7 +26,7 @@
             // TODO : Mono?
             let isTransparentIdentifier (expr : Expression) =
                 match expr with
-                | :? ParameterExpression as expr -> expr.Name.Contains "TransparentIdentifier"
+                | :? ParameterExpression as expr when expr.Name <> null -> expr.Name.Contains "TransparentIdentifier"
                 | _ -> false
 
             let isAnonymousConstructor (expr : Expression) =
