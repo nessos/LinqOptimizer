@@ -31,29 +31,30 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            var input = Enumerable.Range(1, 10).Select(x => (float)x).ToArray();
-            var nodes = input.Select(num => new Node { x = num, y = num }).ToArray();
-            using (var context = new GpuContext())
-            {
-                using (var buffer = context.CreateGpuArray(nodes))
-                {
-                    var query = (from node in buffer.AsGpuQueryExpr()
-                                 let x = node.x + 1
-                                 let y = node.y + 2
-                                 select new Node { x = x, y = y }).ToArray();
+            //var input = Enumerable.Range(1, 10).Select(x => (float)x).ToArray();
+            //var nodes = input.Select(num => new Node { x = num, y = num }).ToArray();
+            //using (var context = new GpuContext())
+            //{
+            //    using (IGpuArray<Node> buffer = context.CreateGpuArray(nodes))
+            //    {
+            //        int c = 12;
+            //        var query = (from node in buffer.AsGpuQueryExpr()
+            //                     let x = node.x + c
+            //                     select new Node { x = x, y = x + c }).ToArray();
 
-                    var test = context.Run(query);
+            //        var test = context.Run(query);
 
-                    var _test =
-                        (from node in nodes
-                         let x = node.x + 1
-                         let y = node.y + 2
-                         select new Node { x = x, y = y }).ToArray();
+            //        var _test =
+            //            (from node in nodes
+            //             let x = node.x + c
+            //             select new Node { x = x, y = x + c }).ToArray();
 
-                }
-            }
+            //        var check = test.SequenceEqual(_test);
 
-            
+            //    }
+            //}
+
+            (new GpuQueryTests()).ZipWithReduction();
         }
 
         static void Measure(Action action)

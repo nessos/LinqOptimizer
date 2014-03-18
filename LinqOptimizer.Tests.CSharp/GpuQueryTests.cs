@@ -267,7 +267,30 @@ namespace LinqOptimizer.Tests
         }
         #endregion
 
+        [Test]
+        public void ConstantLifting()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(nums =>
+                {
+                    using (var _nums = context.CreateGpuArray(nums))
+                    {
+                        int c = nums.Length;
+                        var xs = context.Run((from num in _nums.AsGpuQueryExpr()
+                                             let y = num + c
+                                             let k = y + c
+                                             select c + y + k).ToArray());
 
+                        var ys = (from num in nums
+                                  let y = num + c
+                                  let k = y + c
+                                  select c + y + k).ToArray();
+                        return xs.SequenceEqual(ys);
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
 
     }
 }

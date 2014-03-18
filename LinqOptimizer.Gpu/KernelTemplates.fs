@@ -2,7 +2,7 @@
 
     module KernelTemplates = 
         let mapTemplate = sprintf "%s
-                            __kernel void kernelCode(__global %s* ___input___, __global %s* ___result___)
+                            __kernel void kernelCode(__global %s* ___input___, %s __global %s* ___result___)
                             {
                                 %s
                                 int ___id___ = get_global_id(0);
@@ -12,7 +12,7 @@
                             }"
 
         let mapFilterTemplate = sprintf "%s
-                        __kernel void kernelCode(__global %s* ___input___, __global int* ___flags___, __global %s* ___result___)
+                        __kernel void kernelCode(__global %s* ___input___, %s __global int* ___flags___, __global %s* ___result___)
                         {
                             %s
                             int ___id___ = get_global_id(0);
@@ -24,7 +24,7 @@
                         }"
 
         let reduceTemplate = sprintf "%s
-                        __kernel void kernelCode(__global %s* ___input___, int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
+                        __kernel void kernelCode(__global %s* ___input___, %s int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
                         {
                             %s
                             int ___localId___  = get_local_id(0);
@@ -56,7 +56,7 @@
                         }"
 
         let zip2Template = sprintf "%s
-                        __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, __global %s* ___result___)
+                        __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, %s __global %s* ___result___)
                         {
                             %s
                             int ___id___ = get_global_id(0);
@@ -68,7 +68,7 @@
                         }"
 
         let zip2FilterTemplate = sprintf "%s
-                        __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, __global int* ___flags___, __global %s* ___result___)
+                        __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, %s __global int* ___flags___, __global %s* ___result___)
                         {
                             %s
                             int ___id___ = get_global_id(0);
@@ -83,7 +83,7 @@
 
 
         let zip2ReduceTemplate = sprintf "%s
-                        __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
+                        __kernel void kernelCode(__global %s* ___first___, __global %s* ___second___, %s int ___inputLength___, __global %s* ___result___, __local %s* ___partial___)
                         {
                             %s
                             int ___localId___  = get_local_id(0);

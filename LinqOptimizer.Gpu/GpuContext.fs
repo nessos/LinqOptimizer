@@ -25,18 +25,18 @@
         /// </summary>
         /// <param name="gpuQuery">The array to be copied</param>
         /// <returns>A GpuArray object</returns>
-        member self.CreateGpuArray<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>(array : 'T[]) = 
+        member self.CreateGpuArray<'T when 'T : struct and 'T : (new : unit -> 'T) and 'T :> ValueType>(array : 'T[]) : IGpuArray<'T> = 
             if array.Length = 0 then
-                new GpuArray<'T>(env, 0, 0, sizeof<'T>, null)
+                new GpuArray<'T>(env, 0, 0, sizeof<'T>, null) :> _
             else
                 let capacity = int <| 2.0 ** Math.Ceiling(Math.Log(float array.Length, 2.0))
                 let array' = Array.CreateInstance(typeof<'T>, capacity)
                 Array.Copy(array, array', array.Length)
                 match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.CopyHostPtr, new IntPtr(capacity * sizeof<'T>), array') with
                 | inputBuffer, ErrorCode.Success -> 
-                    let gpuArray = new GpuArray<'T>(env, array.Length, capacity, sizeof<'T>, inputBuffer)
+                    let gpuArray = new GpuArray<'T>(env, array.Length, capacity, sizeof<'T>, inputBuffer) 
                     buffers.Add(gpuArray)
-                    gpuArray
+                    gpuArray :> _
                 | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
             
 
@@ -122,13 +122,24 @@
                 match Cl.SetKernelArg(kernel, uint32 !argIndex, buffer) with
                 | ErrorCode.Success -> ()
                 | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
-            for input in compilerResult.Args do
+            // Set Source Args
+            for input in compilerResult.SourceArgs do
                 if input.Length <> 0 then 
                     addKernelArg (input.GetBuffer())
+                else incr argIndex 
+            // Set Value Args
+            for (value, t) in compilerResult.ValueArgs do
+                match t with
+                | TypeCheck Compiler.intType _ | TypeCheck Compiler.floatType _ ->  
+                    incr argIndex 
+                    match Cl.SetKernelArg(kernel, uint32 !argIndex, new IntPtr(4), value) with
+                    | ErrorCode.Success -> ()
+                    | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
+                | _ -> failwithf "Not supported result type %A" t
                                         
             match compilerResult.ReductionType with
             | ReductionType.Map -> 
-                let input = compilerResult.Args.[0]
+                let input = compilerResult.SourceArgs.[0]
                 let gpuArray = 
                     if input.Length = 0 then
                         createGpuArray queryExpr.Type env input.Length null 
@@ -146,7 +157,7 @@
                     gpuArray.ToArray() :> obj :?> _
                 | _ -> gpuArray :> obj :?> _
             | ReductionType.Filter -> 
-                let input = compilerResult.Args.[0]
+                let input = compilerResult.SourceArgs.[0]
                 let gpuArray = 
                     if input.Length = 0 then
                         createGpuArray queryExpr.Type env input.Length null 
@@ -174,7 +185,7 @@
                     gpuArray.ToArray() :> obj :?> _
                 | _ -> gpuArray :> obj :?> _
             | ReductionType.Sum | ReductionType.Count ->
-                let gpuArray  = compilerResult.Args.[0]
+                let gpuArray  = compilerResult.SourceArgs.[0]
                 if gpuArray.Length = 0 then
                     0 :> obj :?> _
                 else

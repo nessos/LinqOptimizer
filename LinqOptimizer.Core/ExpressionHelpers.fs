@@ -155,7 +155,7 @@ namespace LinqOptimizer.Core
                 when plusExpr.NodeType = ExpressionType.Modulo -> Some (plusExpr.Left, plusExpr.Right)
             | _ -> None
 
-        let (|IFThenElse|_|) (expr : Expression) = 
+        let (|IfThenElse|_|) (expr : Expression) = 
             match expr with
             | :? ConditionalExpression as contExpr -> 
                 Some (contExpr.Test, contExpr.IfTrue, contExpr.IfFalse)

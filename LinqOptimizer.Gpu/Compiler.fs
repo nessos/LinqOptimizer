@@ -15,8 +15,8 @@
                                 BreakLabel : LabelTarget; ContinueLabel : LabelTarget;
                                 InitExprs : Expression list; AccExpr : Expression; CombinerExpr : Expression; ResultType : Type; 
                                 VarExprs : ParameterExpression list; Exprs : Expression list; ReductionType : ReductionType }
-
-        type CompilerResult = { Source : string; ReductionType : ReductionType; Args : IGpuArray [] }
+        
+        type CompilerResult = { Source : string; ReductionType : ReductionType; SourceArgs : IGpuArray []; ValueArgs : (obj * Type) [] }
         
         let intType = typeof<int>
         let floatType = typeof<single>
@@ -39,8 +39,8 @@
                     | _ when t.IsValueType -> t.Name
                     | _ -> failwithf "Not supported %A" t
 
-                let varExprToStr (varExpr : ParameterExpression) (vars : ParameterExpression list) = 
-                    let index = vars |> List.findIndex (fun varExpr' -> varExpr = varExpr')
+                let varExprToStr (varExpr : ParameterExpression) (vars : seq<ParameterExpression>) = 
+                    let index = vars |> Seq.findIndex (fun varExpr' -> varExpr = varExpr')
                     sprintf' "%s%d" (varExpr.ToString()) index
                 
                 let isCustomStruct (t : Type) = t.IsValueType && not t.IsPrimitive
@@ -66,14 +66,23 @@
                     exprs
                     |> List.collect collectCustomStructs
                     |> customStructsToStr
+                let constantLifting (exprs : Expression list) = 
+                    match exprs with
+                    | [] -> ([||], [||], [||])
+                    | _ ->
+                        let expr, paramExprs, objs = ConstantLiftingTransformer.apply (block [] exprs) 
+                        ((expr :?> BlockExpression).Expressions.ToArray(), paramExprs, objs)
+                let argsToStr (argParamExprs : ParameterExpression[]) (paramExprs : seq<ParameterExpression>) = 
+                    (argParamExprs, "") 
+                    ||> Array.foldBack (fun paramExpr result -> sprintf' "%s %s, %s" (typeToStr paramExpr.Type) (varExprToStr paramExpr paramExprs) result) 
 
-                let rec exprToStr (expr : Expression) (vars : ParameterExpression list) =
+                let rec exprToStr (expr : Expression) (vars : seq<ParameterExpression>) =
                     match expr with
                     | AnonymousTypeMember expr ->
-                        match vars |> List.tryFind (fun varExpr -> varExpr.Name = expr.Member.Name) with
+                        match vars |> Seq.tryFind (fun varExpr -> varExpr.Name = expr.Member.Name) with
                         | Some varExpr -> varExprToStr varExpr vars
                         | None -> expr.Member.Name
-                    | AnonymousTypeAssign(_ ,AnonymousTypeConstruction(members, args)) ->
+                    | AnonymousTypeAssign(_ , AnonymousTypeConstruction(members, args)) ->
                         sprintf' "%s %s = %s" (typeToStr <| args.Last().Type) (members.Last().Name) (exprToStr <| args.Last() <| vars)
                     | FieldMember (expr, fieldMember) -> sprintf' "%s.%s" (exprToStr expr vars) fieldMember.Name
                     | ValueTypeMemberInit (members, bindings) ->
@@ -91,7 +100,7 @@
                     | Divide (leftExpr, rightExpr) -> sprintf' "(%s * %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | Modulo (leftExpr, rightExpr) -> sprintf' "(%s %% %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | Equal (leftExpr, rightExpr) -> sprintf' "(%s == %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
-                    | IFThenElse (testExpr, thenExpr, elseExpr) -> 
+                    | IfThenElse (testExpr, thenExpr, elseExpr) -> 
                         sprintf' "if (%s) { %s; } else { %s; }" (exprToStr testExpr vars) (exprToStr thenExpr vars) (exprToStr elseExpr vars)
                     | Goto (kind, target, value) when kind = GotoExpressionKind.Continue -> sprintf' "goto %s" target.Name 
                     | Block (_, exprs, _) -> 
@@ -105,30 +114,33 @@
 
                 match queryExpr with
                 | Source (Constant (value, Named (TypeCheck gpuArrayTypeDef _, [|_|])) as expr, sourceType, QueryExprType.Gpu) ->
-                    let vars = context.VarExprs
                     let sourceTypeStr = typeToStr sourceType
                     let resultTypeStr = typeToStr context.ResultType
                     let gpuArraySource = value :?> IGpuArray
                     let sourceLength = gpuArraySource.Length
                     let structsStr = structsDefinitionStr context.Exprs
-                    let exprsStr = context.Exprs
-                                       |> List.map (fun expr -> sprintf' "%s;" (exprToStr expr vars))
-                                       |> List.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
-                    let varsStr = vars 
-                                      |> List.filter (fun varExpr -> not (isAnonymousType varExpr.Type))
-                                      |> List.map (fun varExpr -> sprintf' "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr vars)) 
-                                      |> List.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
+                    let exprs, paramExprs, values = constantLifting context.Exprs
+                    let valueArgs = (paramExprs, values) ||> Array.zip |> Array.map (fun (paramExpr, value) -> (value, paramExpr.Type)) 
+                    let vars = Seq.append paramExprs context.VarExprs 
+                    let argsStr = argsToStr paramExprs vars
+                    let exprsStr = exprs
+                                       |> Seq.map (fun expr -> sprintf' "%s;" (exprToStr expr vars))
+                                       |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
+                    let varsStr = context.VarExprs 
+                                      |> Seq.filter (fun varExpr -> not (isAnonymousType varExpr.Type))
+                                      |> Seq.map (fun varExpr -> sprintf' "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr vars)) 
+                                      |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
                     match context.ReductionType with
                     | ReductionType.Map ->
-                        let source = KernelTemplates.mapTemplate structsStr sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.AccVarExpr vars)
-                        { Source = source; ReductionType = context.ReductionType; Args = [| gpuArraySource |] }
+                        let source = KernelTemplates.mapTemplate structsStr sourceTypeStr argsStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.AccVarExpr vars)
+                        { Source = source; ReductionType = context.ReductionType; SourceArgs = [| gpuArraySource |]; ValueArgs = valueArgs  }
                     | ReductionType.Filter ->
-                        let source = KernelTemplates.mapFilterTemplate structsStr sourceTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.FlagVarExpr vars) (varExprToStr context.AccVarExpr vars) 
-                        { Source = source; ReductionType = context.ReductionType; Args = [| (value :?> IGpuArray) |] }
+                        let source = KernelTemplates.mapFilterTemplate structsStr sourceTypeStr argsStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.FlagVarExpr vars) (varExprToStr context.AccVarExpr vars) 
+                        { Source = source; ReductionType = context.ReductionType; SourceArgs = [| (value :?> IGpuArray) |]; ValueArgs = valueArgs }
                     | ReductionType.Sum | ReductionType.Count -> 
                         let gpuArray = value :?> IGpuArray
-                        let source = KernelTemplates.reduceTemplate structsStr sourceTypeStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.AccVarExpr vars) "0" "+"
-                        { Source = source; ReductionType = context.ReductionType; Args = [| gpuArray |] }
+                        let source = KernelTemplates.reduceTemplate structsStr sourceTypeStr argsStr resultTypeStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.AccVarExpr vars) "0" "+"
+                        { Source = source; ReductionType = context.ReductionType; SourceArgs = [| gpuArray |]; ValueArgs = valueArgs }
                     | _ -> failwithf "Not supported %A" context.ReductionType
                 | ZipWith ((Constant (first, Named (TypeCheck gpuArrayTypeDef _, [|_|])) as firstExpr), 
                             (Constant (second, Named (TypeCheck gpuArrayTypeDef _, [|_|])) as secondExpr), Lambda ([firstParamExpr; secondParamExpr], bodyExpr)) ->
@@ -138,31 +150,34 @@
                     let secondGpuArray = second :?> IGpuArray
                     let sourceLength = firstGpuArray.Length
                     let structsStr = structsDefinitionStr context.Exprs
-                    let exprsStr = context.Exprs
-                                       |> List.map (fun expr -> sprintf' "%s;" (exprToStr expr vars))
-                                       |> List.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
+                    let exprs, paramExprs, values = constantLifting context.Exprs
+                    let argsStr = argsToStr paramExprs vars
+                    let valueArgs = (paramExprs, values) ||> Array.zip |> Array.map (fun (paramExpr, value) -> (value, paramExpr.Type)) 
+                    let exprsStr = exprs
+                                       |> Seq.map (fun expr -> sprintf' "%s;" (exprToStr expr (Seq.append paramExprs vars)))
+                                       |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
                     let varsStr = vars 
-                                      |> List.filter (fun varExpr -> not (isAnonymousType varExpr.Type))
-                                      |> List.map (fun varExpr -> sprintf' "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr vars)) 
-                                      |> List.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
+                                      |> Seq.filter (fun varExpr -> not (isAnonymousType varExpr.Type))
+                                      |> Seq.map (fun varExpr -> sprintf' "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr vars)) 
+                                      |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
                     match context.ReductionType with
                     | ReductionType.Map ->
-                        let source = KernelTemplates.zip2Template structsStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) resultTypeStr 
+                        let source = KernelTemplates.zip2Template structsStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) argsStr resultTypeStr 
                                                                      varsStr (varExprToStr firstParamExpr vars) (varExprToStr secondParamExpr vars) 
                                                                      (varExprToStr context.CurrentVarExpr vars) (exprToStr bodyExpr vars)
                                                                      exprsStr (varExprToStr context.AccVarExpr vars)
-                        { Source = source; ReductionType = context.ReductionType; Args = [| firstGpuArray; secondGpuArray |] }
+                        { Source = source; ReductionType = context.ReductionType; SourceArgs = [| firstGpuArray; secondGpuArray |]; ValueArgs = valueArgs  }
                     | ReductionType.Filter ->
-                        let source = KernelTemplates.zip2FilterTemplate structsStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) resultTypeStr 
+                        let source = KernelTemplates.zip2FilterTemplate structsStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) argsStr resultTypeStr 
                                                                             varsStr (varExprToStr firstParamExpr vars) (varExprToStr secondParamExpr vars) 
                                                                             (varExprToStr context.CurrentVarExpr vars) (exprToStr bodyExpr vars)
                                                                             exprsStr (varExprToStr context.FlagVarExpr vars) (varExprToStr context.AccVarExpr vars)
-                        { Source = source; ReductionType = context.ReductionType; Args = [| firstGpuArray; secondGpuArray |] }
+                        { Source = source; ReductionType = context.ReductionType; SourceArgs = [| firstGpuArray; secondGpuArray |]; ValueArgs = valueArgs  }
                     | ReductionType.Sum | ReductionType.Count -> 
-                        let source = KernelTemplates.zip2ReduceTemplate structsStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) resultTypeStr resultTypeStr 
+                        let source = KernelTemplates.zip2ReduceTemplate structsStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) argsStr resultTypeStr resultTypeStr 
                                                                         varsStr (varExprToStr firstParamExpr vars) (varExprToStr secondParamExpr vars) 
                                                                         (varExprToStr context.CurrentVarExpr vars) (exprToStr bodyExpr vars) exprsStr (varExprToStr context.AccVarExpr vars) "0" "+"
-                        { Source = source; ReductionType = context.ReductionType; Args = [| firstGpuArray; secondGpuArray |] }
+                        { Source = source; ReductionType = context.ReductionType; SourceArgs = [| firstGpuArray; secondGpuArray |]; ValueArgs = valueArgs  }
                     | _ -> failwithf "Not supported %A" context.ReductionType
                 | Transform (Lambda ([paramExpr], bodyExpr), queryExpr') ->
                     let exprs' = assign context.CurrentVarExpr bodyExpr :: context.Exprs
