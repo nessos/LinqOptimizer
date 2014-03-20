@@ -252,6 +252,14 @@ namespace LinqOptimizer.Core
                     | _ -> None
             | _ -> None
 
+        let (|PropertyMember|_|) (expr : Expression) =
+            match expr with
+            | :? MemberExpression as expr ->
+                    match expr.Member.MemberType with
+                    | MemberTypes.Property -> Some (expr.Expression, expr.Member)
+                    | _ -> None
+            | _ -> None
+
         let (|ValueTypeMemberInit|_|) (expr : Expression) =
             match expr with
             | :? MemberInitExpression as expr when expr.Type.IsValueType -> Some (expr.NewExpression, expr.Bindings |> Seq.map (fun binding -> binding :?> MemberAssignment))

@@ -21,6 +21,8 @@
     /// </summary>
     type IGpuArray<'T> =
         inherit IGpuArray
+        abstract member Item : int -> 'T with get
+        
     
     /// <summary>
     /// A typed wrapper object for managing GPU Buffers
@@ -43,6 +45,7 @@
             member self.Type = typeof<'T>
             member self.GetBuffer () = buffer
             member self.ToArray () = self.ToArray() :> _
+            member this.Item with get(index) = raise <| new NotSupportedException()
         interface System.IDisposable with 
             member this.Dispose() = 
                 if buffer <> null && disposed = false then

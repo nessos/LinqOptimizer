@@ -30,12 +30,14 @@
         let rec compile (queryExpr : QueryExpr) : CompilerResult = 
 
             let rec compile' (queryExpr : QueryExpr) (context : QueryContext) =
-                let typeToStr (t : Type) = 
+                let rec typeToStr (t : Type) = 
                     match t with
                     | TypeCheck intType _ -> "int"
                     | TypeCheck floatType _ -> "float"
                     | TypeCheck doubleType _ -> "float"
                     | TypeCheck byteType _ -> "byte"
+                    | Named(typedef, [|elemType|]) when typedef = typedefof<IGpuArray<_>> -> 
+                        sprintf' "__global %s*" (typeToStr elemType)
                     | _ when t.IsValueType -> t.Name
                     | _ -> failwithf "Not supported %A" t
 
@@ -85,6 +87,8 @@
                     | AnonymousTypeAssign(_ , AnonymousTypeConstruction(members, args)) ->
                         sprintf' "%s %s = %s" (typeToStr <| args.Last().Type) (members.Last().Name) (exprToStr <| args.Last() <| vars)
                     | FieldMember (expr, fieldMember) -> sprintf' "%s.%s" (exprToStr expr vars) fieldMember.Name
+                    | MethodCall (objExpr, methodInfo, [argExpr]) when methodInfo.Name = "get_Item" ->
+                        sprintf' "%s[%s]" (exprToStr objExpr vars) (exprToStr argExpr vars)
                     | ValueTypeMemberInit (members, bindings) ->
                         let bindingsStr = bindings |> Seq.fold (fun bindingsStr binding -> sprintf' ".%s = %s, %s" binding.Member.Name (exprToStr binding.Expression vars) bindingsStr) ""
                         sprintf' "(%s) { %s }" (typeToStr expr.Type) bindingsStr

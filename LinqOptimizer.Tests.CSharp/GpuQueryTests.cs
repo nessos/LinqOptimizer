@@ -292,5 +292,33 @@ namespace LinqOptimizer.Tests
             }
         }
 
+
+        [Test]
+        public void GpuArrayIndexer()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(nums =>
+                {
+                    using (var _nums = context.CreateGpuArray(nums))
+                    {
+                        using (var __nums = context.CreateGpuArray(nums))
+                        {
+                            int length = __nums.Length;
+                            var xs = context.Run((from num in _nums.AsGpuQueryExpr()
+                                                  let y = __nums[num % length]
+                                                  select num + y).ToArray());
+
+                            var ys = (from num in nums
+                                      let y = nums[num % length]
+                                      select num + y).ToArray();
+
+                            return xs.SequenceEqual(ys);
+                        }
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
     }
 }
