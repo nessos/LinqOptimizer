@@ -136,7 +136,10 @@
                     | ErrorCode.Success -> ()
                     | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
                 | Named(typedef, [|elemType|]) when typedef = typedefof<IGpuArray<_>> -> 
-                    addKernelArg <| (value :?> IGpuArray).GetBuffer()
+                    let gpuArray = (value :?> IGpuArray)
+                    if gpuArray.Length <> 0 then
+                        addKernelArg <| gpuArray.GetBuffer()
+                    else incr argIndex
                 | _ -> failwithf "Not supported result type %A" t
                                         
             match compilerResult.ReductionType with

@@ -298,8 +298,10 @@ namespace LinqOptimizer.Tests
         {
             using (var context = new GpuContext())
             {
-                Spec.ForAny<int[]>(nums =>
+                Spec.ForAny<int>(n =>
                 {
+                    if (n < 0) n = 0;
+                    var nums = Enumerable.Range(0, n).ToArray();
                     using (var _nums = context.CreateGpuArray(nums))
                     {
                         using (var __nums = context.CreateGpuArray(nums))

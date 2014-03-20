@@ -53,7 +53,7 @@ namespace LinqOptimizer.Tests
                 }
             }
 
-            //(new GpuQueryTests()).ZipWithReduction();
+            //(new GpuQueryTests()).GpuArrayIndexer();
         }
 
         static void Measure(Action action)
