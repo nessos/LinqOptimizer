@@ -322,5 +322,42 @@ namespace LinqOptimizer.Tests
             }
         }
 
+        [Test]
+        public void MathFunctions()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(xs =>
+                {
+                    using (var _xs = context.CreateGpuArray(xs))
+                    {
+
+                        var gpuResult = context.Run((from n in _xs.AsGpuQueryExpr()
+                                                     let pi = Math.PI
+                                                     let c = Math.Cos(n)
+                                                     let s = Math.Sin(n)
+                                                     let f = Math.Floor(pi)
+                                                     let sq = Math.Sqrt(n * n)
+                                                     let ex = Math.Exp(pi)
+                                                     let p = Math.Pow(pi, 2)
+                                                     select f * pi * c * s * sq * ex * p).ToArray());
+
+                        var cpuResult = (from n in xs
+                                         let pi = Math.PI
+                                         let c = Math.Cos(n)
+                                         let s = Math.Sin(n)
+                                         let f = Math.Floor(pi)
+                                         let sq = Math.Sqrt(n * n)
+                                         let ex = Math.Exp(pi)
+                                         let p = Math.Pow(pi, 2)
+                                         select f * pi * c * s * sq * ex * p).ToArray();
+
+                        return gpuResult.Zip(cpuResult, (x, y) => System.Math.Abs(x - y) < 0.001f)
+                                        .SequenceEqual(Enumerable.Range(1, xs.Length).Select(_ => true));
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
     }
 }

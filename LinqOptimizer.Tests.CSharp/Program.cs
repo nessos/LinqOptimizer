@@ -21,7 +21,7 @@ namespace LinqOptimizer.Tests
 
     public class Program
     {
-
+        [StructLayout(LayoutKind.Sequential)]
         struct Node
         {
             public float x;
@@ -31,25 +31,35 @@ namespace LinqOptimizer.Tests
         public static void Main(string[] args)
         {
 
-            var input = Enumerable.Range(1, 10).Select(x => x).ToArray();
+            var xs = Enumerable.Range(1, 10).Select(x => x).ToArray();
             using (var context = new GpuContext())
             {
-                using (var buffer = context.CreateGpuArray(input))
+                using (var _xs = context.CreateGpuArray(xs))
                 {
-                    int length = input.Length;
-                    var query = (from num in buffer.AsGpuQueryExpr()
-                                 let y = buffer[num % length]
-                                 select num + y).ToArray();
+                    var query = (from n in _xs.AsGpuQueryExpr()
+                                 let pi = Math.PI
+                                 let c = Math.Cos(n)
+                                 let s = Math.Sin(n)
+                                 let f = Math.Floor(pi)
+                                 let sq = Math.Sqrt(n * n)
+                                 let ex = Math.Exp(pi)
+                                 let p = Math.Pow(pi, 2)
+                                 select f * pi * c * s * sq * ex * p).ToArray();
 
-                    var test = context.Run(query);
+                    var gpuResult = context.Run(query);
 
-                    var _test =
-                        (from num in input
-                         let y = input[num % length]
-                         select num + y).ToArray();
+                    var cpuResult =
+                        (from n in xs
+                         let pi = Math.PI
+                         let c = Math.Cos(n)
+                         let s = Math.Sin(n)
+                         let f = Math.Floor(pi)
+                         let sq = Math.Sqrt(n * n)
+                         let ex = Math.Exp(pi)
+                         let p = Math.Pow(pi, 2)
+                         select f * pi * c * s * sq * ex * p).ToArray();
 
-                    var check = test.SequenceEqual(_test);
-
+                    var check = gpuResult.Zip(cpuResult, (x, y) => System.Math.Abs(x - y) < 0.001f).ToArray();
                 }
             }
 

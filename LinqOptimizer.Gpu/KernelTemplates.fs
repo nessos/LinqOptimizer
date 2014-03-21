@@ -1,6 +1,9 @@
 ﻿namespace LinqOptimizer.Gpu
 
     module KernelTemplates = 
+
+        let openCLExtensions = "#pragma OPENCL EXTENSION cl_khr_fp64 : enable"
+
         let mapTemplate = sprintf "%s
                             __kernel void kernelCode(__global %s* ___input___, %s __global %s* ___result___)
                             {

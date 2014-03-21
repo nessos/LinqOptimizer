@@ -58,6 +58,8 @@
                         new GpuArray<int>(env, length, length, Marshal.SizeOf(t), buffer) :> _
                     | TypeCheck Compiler.floatType _ ->  
                         new GpuArray<single>(env, length, length, Marshal.SizeOf(t), buffer) :> _
+                    | TypeCheck Compiler.doubleType _ ->  
+                        new GpuArray<double>(env, length, length, Marshal.SizeOf(t), buffer) :> _
                     | _ when t.IsValueType -> 
                         Activator.CreateInstance(typedefof<GpuArray<_>>.MakeGenericType [| t |], 
                                                     [|env :> obj; length :> obj; length :> obj; Marshal.SizeOf(t) :> obj; buffer :> obj|]) :?> _
