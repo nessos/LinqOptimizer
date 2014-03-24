@@ -38,7 +38,7 @@
                     | TypeCheck byteType _ -> "byte"
                     | Named(typedef, [|elemType|]) when typedef = typedefof<IGpuArray<_>> -> 
                         sprintf' "__global %s*" (typeToStr elemType)
-                    | _ when t.IsValueType -> t.Name
+                    | _ when t.IsValueType -> t.Name                    
                     | _ -> failwithf "Not supported %A" t
 
                 let varExprToStr (varExpr : ParameterExpression) (vars : seq<ParameterExpression>) = 
@@ -63,6 +63,7 @@
                 let customStructsToStr (types : seq<Type>) = 
                     types 
                     |> Seq.map structToStr
+                    |> Set.ofSeq
                     |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
                 let structsDefinitionStr (exprs : Expression list) =
                     exprs
@@ -118,7 +119,7 @@
                     | Plus (leftExpr, rightExpr) -> sprintf' "(%s + %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | Subtract (leftExpr, rightExpr) -> sprintf' "(%s - %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | Times (leftExpr, rightExpr) -> sprintf' "(%s * %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
-                    | Divide (leftExpr, rightExpr) -> sprintf' "(%s * %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
+                    | Divide (leftExpr, rightExpr) -> sprintf' "(%s / %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | Modulo (leftExpr, rightExpr) -> sprintf' "(%s %% %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | Equal (leftExpr, rightExpr) -> sprintf' "(%s == %s)" (exprToStr leftExpr vars) (exprToStr rightExpr vars)
                     | IfThenElse (testExpr, thenExpr, elseExpr) -> 

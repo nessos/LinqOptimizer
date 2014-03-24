@@ -15,10 +15,107 @@
     /// A scoped Context that manages GPU kernel execution and caching  
     /// </summary>
     type GpuContext() =
-
+        // Context enviroment
         let env = "*".CreateCLEnvironment()
         let cache = Dictionary<string, (Program * Kernel)>()
         let buffers = new System.Collections.Generic.List<IGpuArray>()
+        // helper functions
+        let createBuffer (t : Type) (env : Environment) (length : int) =
+            match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.AllocHostPtr, new IntPtr(length * Marshal.SizeOf(t))) with
+            | inputBuffer, ErrorCode.Success -> inputBuffer
+            | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
+                
+        let createGpuArray (t : Type) (env : Environment) (length : int) (buffer : IMem) = 
+            let gpuArray : IGpuArray = 
+                match t with
+                | TypeCheck Compiler.intType _ -> 
+                    new GpuArray<int>(env, length, length, Marshal.SizeOf(t), buffer) :> _
+                | TypeCheck Compiler.floatType _ ->  
+                    new GpuArray<single>(env, length, length, Marshal.SizeOf(t), buffer) :> _
+                | TypeCheck Compiler.doubleType _ ->  
+                    new GpuArray<double>(env, length, length, Marshal.SizeOf(t), buffer) :> _
+                | _ when t.IsValueType -> 
+                    Activator.CreateInstance(typedefof<GpuArray<_>>.MakeGenericType [| t |], 
+                                                [|env :> obj; length :> obj; length :> obj; Marshal.SizeOf(t) :> obj; buffer :> obj|]) :?> _
+                | _ -> failwithf "Not supported result type %A" t
+            buffers.Add(gpuArray)
+            gpuArray
+
+        let readFromBuffer (queue : CommandQueue) (t : Type) (outputBuffer : IMem) (output : obj) =
+            match t with
+            | TypeCheck Compiler.intType _ -> 
+                let output = output :?> int[]
+                queue.ReadFromBuffer(outputBuffer, output, 0, int64 output.Length)
+            | TypeCheck Compiler.floatType _ ->  
+                let output = output :?> single[]
+                queue.ReadFromBuffer(outputBuffer, output, 0, int64 output.Length)
+            | _ -> failwithf "Not supported result type %A" t
+
+        let createDynamicArray (t : Type) (flags : int[]) (output : obj) : Array =
+            match t with
+            | TypeCheck Compiler.intType _ ->
+                let output = output :?> int[]
+                let result = new System.Collections.Generic.List<int>(flags.Length)
+                for i = 0 to flags.Length - 1 do
+                    if flags.[i] = 0 then
+                        result.Add(output.[i])
+                let result = result.ToArray() 
+                result :> _
+            | TypeCheck Compiler.floatType _ ->  
+                let output = output :?> float[]
+                let result = new System.Collections.Generic.List<float>(flags.Length)
+                for i = 0 to flags.Length - 1 do
+                    if flags.[i] = 0 then
+                        result.Add(output.[i])
+                result.ToArray() :> _
+            | _ -> failwithf "Not supported result type %A" t
+
+        let createKernel source =
+            if cache.ContainsKey(source) then
+                let (_, kernel) = cache.[source]
+                kernel
+            else
+                let program, kernel = 
+                    match Cl.CreateProgramWithSource(env.Context, 1u, [| source |], null) with
+                    | program, ErrorCode.Success ->
+                        match Cl.BuildProgram(program, uint32 env.Devices.Length, env.Devices, " -cl-fast-relaxed-math  -cl-mad-enable ", null, IntPtr.Zero) with
+                        | ErrorCode.Success -> 
+                            match Cl.CreateKernel(program, "kernelCode") with
+                            | kernel, ErrorCode.Success -> 
+                                (program, kernel)
+                            | _, error -> failwithf "OpenCL.CreateKernel failed with error code %A" error
+                        | error -> failwithf "OpenCL.BuildProgram failed with error code %A" error
+                    | _, error -> failwithf "OpenCL.CreateProgramWithSource failed with error code %A" error
+                cache.Add(source, (program, kernel))
+                kernel
+
+        let addKernelBufferArg (kernel : Kernel) (buffer : IMem) (argIndex : int ref) = 
+            incr argIndex
+            match Cl.SetKernelArg(kernel, uint32 !argIndex, buffer) with
+            | ErrorCode.Success -> ()
+            | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
+
+        let setKernelArgs (kernel : Kernel) (compilerResult : Compiler.CompilerResult) (argIndex : int ref) = 
+            // Set Source Args
+            for input in compilerResult.SourceArgs do
+                if input.Length <> 0 then 
+                    addKernelBufferArg kernel (input.GetBuffer()) argIndex
+                else incr argIndex 
+                
+            // Set Value Args
+            for (value, t) in compilerResult.ValueArgs do
+                match t with
+                | TypeCheck Compiler.intType _ | TypeCheck Compiler.floatType _ ->  
+                    incr argIndex 
+                    match Cl.SetKernelArg(kernel, uint32 !argIndex, new IntPtr(4), value) with
+                    | ErrorCode.Success -> ()
+                    | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
+                | Named(typedef, [|elemType|]) when typedef = typedefof<IGpuArray<_>> -> 
+                    let gpuArray = (value :?> IGpuArray)
+                    if gpuArray.Length <> 0 then
+                        addKernelBufferArg kernel (gpuArray.GetBuffer()) argIndex
+                    else incr argIndex
+                | _ -> failwithf "Not supported result type %A" t
 
         /// <summary>
         /// Creates a GpuArray 
@@ -38,7 +135,35 @@
                     buffers.Add(gpuArray)
                     gpuArray :> _
                 | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
-            
+
+        /// <summary>
+        /// Compiles a gpu query to gpu kernel code, runs the kernel and fills with data the output gpuArray.
+        /// </summary>
+        /// <param name="gpuQuery">The query to run.</param>
+        /// <param name="outputGpuArray">The gpuArray to be filled.</param>
+        /// <returns>void</returns>            
+        member self.Fill<'T>(gpuQuery : IGpuQueryExpr<IGpuArray<'T>>, outputGpuArray : IGpuArray<'T>) : unit =
+            let queryExpr = gpuQuery.Expr
+            let compilerResult = Compiler.compile queryExpr
+            let kernel = createKernel compilerResult.Source
+
+            // Set Kernel Args
+            let argIndex = ref -1
+            setKernelArgs kernel compilerResult argIndex
+            // Prepare query and execute 
+            match compilerResult.ReductionType with
+            | ReductionType.Map -> 
+                let input = compilerResult.SourceArgs.[0]
+                if input.Length = 0 then
+                    ()
+                else
+                    addKernelBufferArg kernel (outputGpuArray.GetBuffer())  argIndex
+                    match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(input.Length) |], [| new IntPtr(1) |], uint32 0, null) with
+                    | ErrorCode.Success, event ->
+                        use event = event
+                        ()
+                    | _, error -> failwithf "OpenCL.EnqueueNDRangeKernel failed with error code %A" error
+            | reductionType -> failwith "Invalid ReductionType %A" reductionType
 
         /// <summary>
         /// Compiles a gpu query to gpu kernel code, runs the kernel and returns the result.
@@ -46,104 +171,16 @@
         /// <param name="gpuQuery">The query to run.</param>
         /// <returns>The result of the query.</returns>
         member self.Run<'TQuery> (gpuQuery : IGpuQueryExpr<'TQuery>) : 'TQuery =
-            let createBuffer (t : Type) (env : Environment) (length : int) =
-                match Cl.CreateBuffer(env.Context, MemFlags.ReadWrite ||| MemFlags.None ||| MemFlags.AllocHostPtr, new IntPtr(length * Marshal.SizeOf(t))) with
-                | inputBuffer, ErrorCode.Success -> inputBuffer
-                | _, error -> failwithf "OpenCL.CreateBuffer failed with error code %A" error 
-                
-            let createGpuArray (t : Type) (env : Environment) (length : int) (buffer : IMem) = 
-                let gpuArray : IGpuArray = 
-                    match t with
-                    | TypeCheck Compiler.intType _ -> 
-                        new GpuArray<int>(env, length, length, Marshal.SizeOf(t), buffer) :> _
-                    | TypeCheck Compiler.floatType _ ->  
-                        new GpuArray<single>(env, length, length, Marshal.SizeOf(t), buffer) :> _
-                    | TypeCheck Compiler.doubleType _ ->  
-                        new GpuArray<double>(env, length, length, Marshal.SizeOf(t), buffer) :> _
-                    | _ when t.IsValueType -> 
-                        Activator.CreateInstance(typedefof<GpuArray<_>>.MakeGenericType [| t |], 
-                                                    [|env :> obj; length :> obj; length :> obj; Marshal.SizeOf(t) :> obj; buffer :> obj|]) :?> _
-                    | _ -> failwithf "Not supported result type %A" t
-                buffers.Add(gpuArray)
-                gpuArray
-
-            let readFromBuffer (queue : CommandQueue) (t : Type) (outputBuffer : IMem) (output : obj) =
-                match t with
-                | TypeCheck Compiler.intType _ -> 
-                    let output = output :?> int[]
-                    queue.ReadFromBuffer(outputBuffer, output, 0, int64 output.Length)
-                | TypeCheck Compiler.floatType _ ->  
-                    let output = output :?> single[]
-                    queue.ReadFromBuffer(outputBuffer, output, 0, int64 output.Length)
-                | _ -> failwithf "Not supported result type %A" t
-
-            let createDynamicArray (t : Type) (flags : int[]) (output : obj) : Array =
-                match t with
-                | TypeCheck Compiler.intType _ ->
-                    let output = output :?> int[]
-                    let result = new System.Collections.Generic.List<int>(flags.Length)
-                    for i = 0 to flags.Length - 1 do
-                        if flags.[i] = 0 then
-                            result.Add(output.[i])
-                    let result = result.ToArray() 
-                    result :> _
-                | TypeCheck Compiler.floatType _ ->  
-                    let output = output :?> float[]
-                    let result = new System.Collections.Generic.List<float>(flags.Length)
-                    for i = 0 to flags.Length - 1 do
-                        if flags.[i] = 0 then
-                            result.Add(output.[i])
-                    result.ToArray() :> _
-                | _ -> failwithf "Not supported result type %A" t
-
 
             let queryExpr = gpuQuery.Expr
             let compilerResult = Compiler.compile queryExpr
-            let kernel = 
-                if cache.ContainsKey(compilerResult.Source) then
-                    let (_, kernel) = cache.[compilerResult.Source]
-                    kernel
-                else
-                    let program, kernel = 
-                        match Cl.CreateProgramWithSource(env.Context, 1u, [| compilerResult.Source |], null) with
-                        | program, ErrorCode.Success ->
-                            match Cl.BuildProgram(program, uint32 env.Devices.Length, env.Devices, " -cl-fast-relaxed-math  -cl-mad-enable ", null, IntPtr.Zero) with
-                            | ErrorCode.Success -> 
-                                match Cl.CreateKernel(program, "kernelCode") with
-                                | kernel, ErrorCode.Success -> 
-                                    (program, kernel)
-                                | _, error -> failwithf "OpenCL.CreateKernel failed with error code %A" error
-                            | error -> failwithf "OpenCL.BuildProgram failed with error code %A" error
-                        | _, error -> failwithf "OpenCL.CreateProgramWithSource failed with error code %A" error
-                    cache.Add(compilerResult.Source, (program, kernel))
-                    kernel
-                    
+            let kernel = createKernel compilerResult.Source
+
+            // Set Kernel Args
             let argIndex = ref -1
-            let addKernelArg (buffer : IMem) = 
-                incr argIndex 
-                match Cl.SetKernelArg(kernel, uint32 !argIndex, buffer) with
-                | ErrorCode.Success -> ()
-                | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
-            // Set Source Args
-            for input in compilerResult.SourceArgs do
-                if input.Length <> 0 then 
-                    addKernelArg (input.GetBuffer())
-                else incr argIndex 
-            // Set Value Args
-            for (value, t) in compilerResult.ValueArgs do
-                match t with
-                | TypeCheck Compiler.intType _ | TypeCheck Compiler.floatType _ ->  
-                    incr argIndex 
-                    match Cl.SetKernelArg(kernel, uint32 !argIndex, new IntPtr(4), value) with
-                    | ErrorCode.Success -> ()
-                    | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
-                | Named(typedef, [|elemType|]) when typedef = typedefof<IGpuArray<_>> -> 
-                    let gpuArray = (value :?> IGpuArray)
-                    if gpuArray.Length <> 0 then
-                        addKernelArg <| gpuArray.GetBuffer()
-                    else incr argIndex
-                | _ -> failwithf "Not supported result type %A" t
-                                        
+            setKernelArgs kernel compilerResult argIndex
+
+            // Prepare query and execute 
             match compilerResult.ReductionType with
             | ReductionType.Map -> 
                 let input = compilerResult.SourceArgs.[0]
@@ -152,7 +189,7 @@
                         createGpuArray queryExpr.Type env input.Length null 
                     else
                         let outputBuffer = createBuffer queryExpr.Type env input.Length
-                        addKernelArg outputBuffer 
+                        addKernelBufferArg kernel outputBuffer argIndex
                         match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(input.Length) |], [| new IntPtr(1) |], uint32 0, null) with
                         | ErrorCode.Success, event ->
                             use event = event
@@ -173,8 +210,8 @@
                         use outputBuffer = createBuffer queryExpr.Type env input.Length
                         let flags = Array.CreateInstance(typeof<int>, input.Length)
                         use flagsBuffer = createBuffer typeof<int> env input.Length
-                        addKernelArg flagsBuffer 
-                        addKernelArg outputBuffer 
+                        addKernelBufferArg kernel flagsBuffer argIndex
+                        addKernelBufferArg kernel outputBuffer argIndex
                         match Cl.EnqueueNDRangeKernel(env.CommandQueues.[0], kernel, uint32 1, null, [| new IntPtr(input.Length) |], [| new IntPtr(1) |], uint32 0, null) with
                         | ErrorCode.Success, event ->
                             use event = event
@@ -209,7 +246,7 @@
                     | error -> failwithf "OpenCL.SetKernelArg failed with error code %A" error
                     let output = Array.CreateInstance(queryExpr.Type, outputLength)
                     use outputBuffer = createBuffer queryExpr.Type env outputLength
-                    addKernelArg outputBuffer
+                    addKernelBufferArg kernel outputBuffer argIndex
                     // local buffer
                     match Cl.SetKernelArg(kernel, (incr argIndex; uint32 !argIndex), new IntPtr(Marshal.SizeOf(queryExpr.Type) * maxGroupSize), null) with
                     | ErrorCode.Success ->

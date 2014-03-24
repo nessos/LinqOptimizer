@@ -188,6 +188,7 @@ namespace LinqOptimizer.Tests
                 {
                     using (var _ms = context.CreateGpuArray(ms))
                     {
+                        // Dot Product
                         var xs = context.Run(GpuQueryExpr.Zip(_ms, _ms, (a, b) => a * b).Sum());
                         var ys = Enumerable.Zip(ms, ms, (a, b) => a * b).Sum();
 
@@ -358,6 +359,72 @@ namespace LinqOptimizer.Tests
                 }).QuickCheckThrowOnFailure();
             }
         }
+
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct Complex
+        {
+            public double A;
+            public double B;
+        }
+        [Test]
+        public void FFT()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int>(n =>
+                {
+                    int size = 0;
+                    if (n > 0) size = n;
+                    int fftSize = 2;
+                    var xs = Enumerable.Range(1, size).Select(x => x - 1).ToArray();
+                    using (var _xs = context.CreateGpuArray(xs))
+                    {
+                        Random random = new Random();
+                        var input = Enumerable.Range(1, size).Select(x => new Complex { A = random.NextDouble(), B = 0.0 }).ToArray();
+                        using (var _input = context.CreateGpuArray(input))
+                        {
+                            
+                            var gpuResult = context.Run((from x in _xs.AsGpuQueryExpr()
+                                                         let b = (((int)System.Math.Floor((double)x / fftSize)) * (fftSize / 2))
+                                                         let offset = x % (fftSize / 2)
+                                                         let x0 = b + offset
+                                                         let x1 = x0 + size / 2
+                                                         let val0 = _input[x0]
+                                                         let val1 = _input[x1]
+                                                         let angle = -2 * System.Math.PI * (x / fftSize)
+                                                         let t = new Complex { A = System.Math.Cos(angle), B = System.Math.Sin(angle) }
+                                                         select new Complex
+                                                         {
+                                                             A = val0.A + t.A * val1.A - t.B * val1.B,
+                                                             B = val0.B + t.B * val1.A + t.A * val1.B
+                                                         }).ToArray());
+
+                            var cpuResult = (from x in xs
+                                             let b = (((int)System.Math.Floor((double)x / fftSize)) * (fftSize / 2))
+                                             let offset = x % (fftSize / 2)
+                                             let x0 = b + offset
+                                             let x1 = x0 + size / 2
+                                             let val0 = input[x0]
+                                             let val1 = input[x1]
+                                             let angle = -2 * System.Math.PI * (x / fftSize)
+                                             let t = new Complex { A = System.Math.Cos(angle), B = System.Math.Sin(angle) }
+                                             select new Complex
+                                             {
+                                                 A = val0.A + t.A * val1.A - t.B * val1.B,
+                                                 B = val0.B + t.B * val1.A + t.A * val1.B
+                                             }).ToArray();
+
+                            return gpuResult.Zip(cpuResult, (x, y) => System.Math.Abs(x.A - y.A) < 0.001f)
+                                            .SequenceEqual(Enumerable.Range(1, size).Select(_ => true)) &&
+                                   gpuResult.Zip(cpuResult, (x, y) => System.Math.Abs(x.B - y.B) < 0.001f)
+                                            .SequenceEqual(Enumerable.Range(1, size).Select(_ => true));
+                        }
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+
 
     }
 }
