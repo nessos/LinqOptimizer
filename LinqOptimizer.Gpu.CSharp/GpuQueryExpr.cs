@@ -15,6 +15,53 @@ namespace LinqOptimizer.Gpu.CSharp
     /// </summary>
     public static class GpuQueryExpr
     {
+        #region Expression<Func<_>>.Invoke
+        /// <summary>
+        /// Dummy Invoke call (Required for splicing expression trees)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="f"></param>
+        /// <param name="arg"></param>
+        /// <returns></returns>
+        public static R Invoke<T, R>(this Expression<Func<T, R>> f, T arg)
+        {
+            throw new NotSupportedException("Callable only from inside a gpu kernel");
+        }
+
+        /// <summary>
+        /// Dummy Invoke call (Required for splicing expression trees)
+        /// </summary>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="f"></param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        /// <returns></returns>
+        public static R Invoke<T1, T2, R>(this Expression<Func<T1, T2, R>> f, T1 arg1, T2 arg2)
+        {
+            throw new NotSupportedException("Callable only from inside a gpu kernel");
+        }
+
+        /// <summary>
+        /// Dummy Invoke call (Required for splicing expression trees)
+        /// </summary>
+        /// <typeparam name="T1"></typeparam>
+        /// <typeparam name="T2"></typeparam>
+        /// <typeparam name="T3"></typeparam>
+        /// <typeparam name="R"></typeparam>
+        /// <param name="f"></param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        /// <param name="arg3"></param>
+        /// <returns></returns>
+        public static R Invoke<T1, T2, T3, R>(this Expression<Func<T1, T2, T3, R>> f, T1 arg1, T2 arg2, T3 arg3)
+        {
+            throw new NotSupportedException("Callable only from inside a gpu kernel");
+        }
+        #endregion
+
         /// <summary>
         /// Enables a gpu query.
         /// </summary>

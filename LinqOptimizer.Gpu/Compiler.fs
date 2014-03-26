@@ -143,8 +143,7 @@
                     let headerStr = headerStr context.Exprs
                     let exprs, paramExprs, values = constantLifting context.Exprs
                     let valueArgs = (paramExprs, values) ||> Array.zip |> Array.map (fun (paramExpr, value) -> (value, paramExpr.Type)) 
-                    let vars = Seq.append paramExprs context.VarExprs 
-                    let argsStr = argsToStr paramExprs vars
+                    let vars = Seq.append paramExprs context.VarExprs                     
                     let exprsStr = exprs
                                        |> Seq.map (fun expr -> sprintf' "%s;" (exprToStr expr vars))
                                        |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
@@ -152,6 +151,7 @@
                                       |> Seq.filter (fun varExpr -> not (isAnonymousType varExpr.Type))
                                       |> Seq.map (fun varExpr -> sprintf' "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr vars)) 
                                       |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
+                    let argsStr = argsToStr paramExprs vars
                     match context.ReductionType with
                     | ReductionType.Map ->
                         let source = KernelTemplates.mapTemplate headerStr sourceTypeStr argsStr resultTypeStr varsStr (varExprToStr context.CurrentVarExpr vars) exprsStr (varExprToStr context.AccVarExpr vars)
@@ -173,7 +173,6 @@
                     let sourceLength = firstGpuArray.Length
                     let headerStr = headerStr context.Exprs
                     let exprs, paramExprs, values = constantLifting context.Exprs
-                    let argsStr = argsToStr paramExprs vars
                     let valueArgs = (paramExprs, values) ||> Array.zip |> Array.map (fun (paramExpr, value) -> (value, paramExpr.Type)) 
                     let exprsStr = exprs
                                        |> Seq.map (fun expr -> sprintf' "%s;" (exprToStr expr (Seq.append paramExprs vars)))
@@ -182,6 +181,7 @@
                                       |> Seq.filter (fun varExpr -> not (isAnonymousType varExpr.Type))
                                       |> Seq.map (fun varExpr -> sprintf' "%s %s;" (typeToStr varExpr.Type) (varExprToStr varExpr vars)) 
                                       |> Seq.fold (fun first second -> sprintf' "%s%s%s" first Environment.NewLine second) ""
+                    let argsStr = argsToStr paramExprs vars
                     match context.ReductionType with
                     | ReductionType.Map ->
                         let source = KernelTemplates.zip2Template headerStr (typeToStr firstGpuArray.Type) (typeToStr secondGpuArray.Type) argsStr resultTypeStr 
