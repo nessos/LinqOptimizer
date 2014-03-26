@@ -360,7 +360,7 @@ namespace LinqOptimizer.Tests
             }
         }
 
-
+        #region FFT
         [StructLayout(LayoutKind.Sequential)]
         struct Complex
         {
@@ -419,6 +419,28 @@ namespace LinqOptimizer.Tests
                                             .SequenceEqual(Enumerable.Range(1, size).Select(_ => true)) &&
                                    gpuResult.Zip(cpuResult, (x, y) => System.Math.Abs(x.B - y.B) < 0.001f)
                                             .SequenceEqual(Enumerable.Range(1, size).Select(_ => true));
+                        }
+                    }
+                }).QuickCheckThrowOnFailure();
+            }
+        }
+        #endregion
+
+
+        [Test]
+        public void Fill()
+        {
+            using (var context = new GpuContext())
+            {
+                Spec.ForAny<int[]>(xs =>
+                {
+                    using (var _xs = context.CreateGpuArray(xs))
+                    {
+                        using (var _out = context.CreateGpuArray(Enumerable.Range(1, xs.Length).ToArray()))
+                        {
+                            context.Fill(_xs.AsGpuQueryExpr().Select(n => n * 2), _out);
+                            var y = xs.Select(n => n * 2).ToArray();
+                            return _out.ToArray().SequenceEqual(y);
                         }
                     }
                 }).QuickCheckThrowOnFailure();
