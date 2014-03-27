@@ -1,4 +1,4 @@
-﻿namespace LinqOptimizer.Tests
+﻿namespace Nessos.LinqOptimizer.Tests
 
     open System
     open System.Collections.Generic
@@ -6,7 +6,7 @@
     open System.Text
     open FsCheck
     open NUnit.Framework
-    open LinqOptimizer.FSharp
+    open Nessos.LinqOptimizer.FSharp
 
 
     [<TestFixture>]

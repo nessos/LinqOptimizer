@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using LinqOptimizer.CSharp;
+using Nessos.LinqOptimizer.CSharp;
 using FsCheck.Fluent;
 
-namespace LinqOptimizer.Tests
+namespace Nessos.LinqOptimizer.Tests
 {
     [TestFixture]
     class ParallelQueryTests

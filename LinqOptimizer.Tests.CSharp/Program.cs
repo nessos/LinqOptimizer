@@ -7,13 +7,13 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LinqOptimizer.CSharp;
-using LinqOptimizer.Base;
+using Nessos.LinqOptimizer.CSharp;
+using Nessos.LinqOptimizer.Base;
 using System.Runtime.InteropServices;
 using System.IO.MemoryMappedFiles;
 using System.IO;
 
-namespace LinqOptimizer.Tests
+namespace Nessos.LinqOptimizer.Tests
 {
     public class Program
     {

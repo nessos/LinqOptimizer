@@ -1,4 +1,4 @@
-﻿namespace LinqOptimizer.Tests
+﻿namespace Nessos.LinqOptimizer.Tests
   
 module PrecompileHelpers =
 
@@ -7,9 +7,9 @@ module PrecompileHelpers =
     open System.Collections.Generic
     open System.Linq
     open System.Linq.Expressions
-    open LinqOptimizer.Base
-    open LinqOptimizer.Core
-    open LinqOptimizer.FSharp
+    open Nessos.LinqOptimizer.Base
+    open Nessos.LinqOptimizer.Core
+    open Nessos.LinqOptimizer.FSharp
     open Microsoft.FSharp.Linq
     open Microsoft.FSharp.Linq.RuntimeHelpers
     open Microsoft.FSharp.Quotations
@@ -27,14 +27,14 @@ module PrecompileHelpers =
         let x = Expression.Parameter(typeof<seq<int>>, "x")
         let ofSeq = Expression.Call(ofSeq.MakeGenericMethod [| typeof<int> |], x)
         let length = Expression.Call(length.MakeGenericMethod [| typeof<int> |], ofSeq) 
-        Expression.Lambda<Func<seq<int>, LinqOptimizer.Base.IQueryExpr<int>>>(length, x) 
+        Expression.Lambda<Func<seq<int>, Nessos.LinqOptimizer.Base.IQueryExpr<int>>>(length, x) 
 
 
     let ``fun x -> PQuery.length (PQuery.ofSeq x)`` = 
         let x = Expression.Parameter(typeof<seq<int>>, "x")
         let ofSeq = Expression.Call(pOfSeq.MakeGenericMethod [| typeof<int> |], x)
         let length = Expression.Call(pLength.MakeGenericMethod [| typeof<int> |], ofSeq) 
-        Expression.Lambda<Func<seq<int>, LinqOptimizer.Base.IParallelQueryExpr<int>>>(length, x) 
+        Expression.Lambda<Func<seq<int>, Nessos.LinqOptimizer.Base.IParallelQueryExpr<int>>>(length, x) 
 
 //    let ``fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x)`` =
 //        let a = Var("a", typeof<ResizeArray<int>>)

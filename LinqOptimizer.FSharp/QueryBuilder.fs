@@ -1,4 +1,4 @@
-﻿namespace LinqOptimizer.FSharp
+﻿namespace Nessos.LinqOptimizer.FSharp
 
     open System
     open System.Collections
@@ -12,7 +12,7 @@
     open Microsoft.FSharp.Quotations.Patterns
     open Microsoft.FSharp.Quotations.DerivedPatterns
        
-    open LinqOptimizer.Base
+    open Nessos.LinqOptimizer.Base
 
     type private QueryBuilder () =
         

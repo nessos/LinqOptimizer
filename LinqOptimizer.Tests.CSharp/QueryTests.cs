@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using FsCheck.Fluent;
 using NUnit.Framework;
-using LinqOptimizer.CSharp;
 using System.Linq.Expressions;
-using LinqOptimizer.Base;
+using Nessos.LinqOptimizer.CSharp;
+using Nessos.LinqOptimizer.Base;
 
-namespace LinqOptimizer.Tests
+namespace Nessos.LinqOptimizer.Tests
 {
     [TestFixture]
     public class QueryTests

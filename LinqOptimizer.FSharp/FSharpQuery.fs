@@ -1,4 +1,4 @@
-﻿namespace LinqOptimizer.FSharp
+﻿namespace Nessos.LinqOptimizer.FSharp
     
     open System
     open System.Collections
@@ -6,8 +6,8 @@
     open System.Linq
     open System.Linq.Expressions
     open System.Reflection
-    open LinqOptimizer.Base
-    open LinqOptimizer.Core
+    open Nessos.LinqOptimizer.Base
+    open Nessos.LinqOptimizer.Core
 
     /// Basic operations on queries.
     type Query =

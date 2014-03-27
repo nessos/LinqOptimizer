@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using LinqOptimizer.Base;
-using LinqOptimizer.Core;
-using QExpr = LinqOptimizer.Core.QueryExpr;
+using Nessos.LinqOptimizer.Base;
+using Nessos.LinqOptimizer.Core;
+using QExpr = Nessos.LinqOptimizer.Core.QueryExpr;
 
-namespace LinqOptimizer.CSharp
+namespace Nessos.LinqOptimizer.CSharp
 {
     /// <summary>
     /// Provides a set of static methods for querying objects that implement IQueryExpr.

@@ -1,5 +1,5 @@
 ﻿
-namespace LinqOptimizer.Core
+namespace Nessos.LinqOptimizer.Core
 
 open System.Reflection
 open System.Runtime.CompilerServices

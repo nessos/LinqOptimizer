@@ -1,4 +1,4 @@
-﻿namespace LinqOptimizer.Core
+﻿namespace Nessos.LinqOptimizer.Core
     open System
     open System.Linq.Expressions
     open System.Reflection

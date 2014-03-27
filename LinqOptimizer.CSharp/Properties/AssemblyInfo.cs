@@ -2,4 +2,4 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyVersion(LinqOptimizer.Core.Version.Number)]
+[assembly: AssemblyVersion(Nessos.LinqOptimizer.Core.Version.Number)]

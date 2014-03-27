@@ -1,5 +1,5 @@
 ﻿    
-namespace LinqOptimizer.Core
+namespace Nessos.LinqOptimizer.Core
     open System
     open System.Linq
     open System.Linq.Expressions

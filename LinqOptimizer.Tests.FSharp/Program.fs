@@ -1,9 +1,9 @@
 ﻿// Learn more about F# at http://fsharp.net
 // See the 'F# Tutorial' project for more help.
 
-namespace LinqOptimizer.Tests
+namespace Nessos.LinqOptimizer.Tests
 
-open LinqOptimizer.FSharp
+open Nessos.LinqOptimizer.FSharp
 open System.Linq
 open System.Collections.Generic
 open System.Diagnostics
