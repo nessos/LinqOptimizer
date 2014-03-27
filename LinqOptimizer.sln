@@ -15,12 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Base", "LinqO
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Tests.FSharp", "LinqOptimizer.Tests.FSharp\LinqOptimizer.Tests.FSharp.fsproj", "{38A228D2-764C-4103-9AC2-58452630CBA2}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Gpu", "LinqOptimizer.Gpu\LinqOptimizer.Gpu.fsproj", "{EDF3CE5F-18A2-443E-85E7-D3D877233AED}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Gpu.CSharp", "LinqOptimizer.Gpu.CSharp\LinqOptimizer.Gpu.CSharp.csproj", "{36A2A39A-D980-46C3-A5E1-CB680763786B}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinOptimizer.Gpu.FSharp", "LinOptimizer.Gpu.FSharp\LinOptimizer.Gpu.FSharp.fsproj", "{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,18 +45,6 @@ Global
 		{38A228D2-764C-4103-9AC2-58452630CBA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38A228D2-764C-4103-9AC2-58452630CBA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38A228D2-764C-4103-9AC2-58452630CBA2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EDF3CE5F-18A2-443E-85E7-D3D877233AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EDF3CE5F-18A2-443E-85E7-D3D877233AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EDF3CE5F-18A2-443E-85E7-D3D877233AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EDF3CE5F-18A2-443E-85E7-D3D877233AED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{36A2A39A-D980-46C3-A5E1-CB680763786B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2905E8CC-35C4-426E-91C9-0D0A062AD1A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
