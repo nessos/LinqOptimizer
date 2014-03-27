@@ -170,16 +170,16 @@
             // Source
             //
 
-            | MethodCall (_, (MethodName "ofSeq" _ as mi), [ expr' ]) when mi.DeclaringType.FullName = "LinqOptimizer.FSharp.Query" -> 
+            | MethodCall (_, (MethodName "ofSeq" _ as mi), [ expr' ]) when mi.DeclaringType.FullName = "Nessos.LinqOptimizer.FSharp.Query" -> 
                 sourceOfExpr expr' QueryExprType.Sequential
 
-            | MethodCall (_, (MethodName "ofSeq" _ as mi), [ expr' ]) when mi.DeclaringType.FullName = "LinqOptimizer.FSharp.PQuery" -> 
+            | MethodCall (_, (MethodName "ofSeq" _ as mi), [ expr' ]) when mi.DeclaringType.FullName = "Nessos.LinqOptimizer.FSharp.PQuery" -> 
                 sourceOfExpr expr' QueryExprType.Parallel
 
-            | PipedMethodCall0(expr', (MethodName "ofSeq" _ as mi)) when mi.DeclaringType.FullName = "LinqOptimizer.FSharp.Query" ->
+            | PipedMethodCall0(expr', (MethodName "ofSeq" _ as mi)) when mi.DeclaringType.FullName = "Nessos.LinqOptimizer.FSharp.Query" ->
                 sourceOfExpr expr' QueryExprType.Sequential
 
-            | PipedMethodCall0(expr', (MethodName "ofSeq" _ as mi)) when mi.DeclaringType.FullName = "LinqOptimizer.FSharp.PQuery" ->
+            | PipedMethodCall0(expr', (MethodName "ofSeq" _ as mi)) when mi.DeclaringType.FullName = "Nessos.LinqOptimizer.FSharp.PQuery" ->
                 sourceOfExpr expr' QueryExprType.Sequential
 
             | NotNull expr' -> 
