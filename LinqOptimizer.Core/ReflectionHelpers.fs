@@ -4,7 +4,7 @@
     open System.Reflection
 
     [<AutoOpen>]
-    module internal ReflectionHelpers =
+    module ReflectionHelpers =
 
         let (|MethodName|_|) (methodName : string) (methodInfo : MethodInfo) = 
             if methodInfo.Name = methodName then

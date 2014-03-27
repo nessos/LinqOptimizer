@@ -20,8 +20,9 @@
 //    and ParallelQueryExprVoid(queryExpr : QueryExpr) =
 //        member self.QueryExpr = queryExpr 
     // Main Query representation
-    type QueryExprType = Sequential | Parallel
+    type QueryExprType = Sequential | Parallel | Gpu
     type Order = Ascending | Descending
+    type ReductionType = Map | Filter | Count | Sum | Aggregate | ToList | ToArray | Iter
     /// The type representing an query expression.
     and QueryExpr = 
         | Source of Expression * Type * QueryExprType
@@ -83,6 +84,7 @@
                     match queryExprType with
                     | Sequential -> sprintf' "Source (%s, %s, Sequential)" <| str expr <| t.ToString()
                     | Parallel -> sprintf' "Source (%s, %s, Parallel)" <| str expr <| t.ToString()
+                    | Gpu -> sprintf' "Source (%s, %s, Gpu)" <| str expr <| t.ToString()
                 | Generate(expr1, expr2, expr3, expr4) -> 
                     sprintf' "Generate (%s, %s, %s, %s)" <| str expr1 <| str expr2 <| str expr3 <| str expr4
                 | Transform (lambda, query) -> 
@@ -135,11 +137,10 @@
 
             toString self 
             
-
         static member AddOrderBy(keySelector : LambdaExpression, order : Order, queryExpr : QueryExpr) = 
             match queryExpr with
             | OrderBy (keySelectorOrderPairs, queryExpr') ->
                 OrderBy ((keySelector, order) :: keySelectorOrderPairs, queryExpr')
             | _ -> OrderBy ([keySelector, order], queryExpr)
-
+            
         

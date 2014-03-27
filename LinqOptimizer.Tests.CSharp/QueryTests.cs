@@ -682,7 +682,7 @@ namespace LinqOptimizer.Tests
         {
             Assert.Catch(typeof(MemberAccessException), () => UserDefinedAnonymousTypeTest(false));
             Assert.AreEqual(42, UserDefinedAnonymousTypeTest(true));
-        }
+        } 
 
 
         [Test]

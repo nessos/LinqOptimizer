@@ -32,7 +32,7 @@ namespace LinqOptimizer.CSharp
         /// </summary>
         /// <param name="query">The query to compile</param>
         /// <returns>A Func containing optimized code.</returns>
-        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query)
+        public static Func<TQuery> Compile<TQuery>(this IQueryExpr<TQuery> query) 
         {
             return CoreHelpers.Compile<TQuery>(query.Expr, CSharpExpressionOptimizer.Optimize);
         }
@@ -69,7 +69,7 @@ namespace LinqOptimizer.CSharp
         public static Action Compile(this IQueryExpr query, bool enableNonPublicMemberAccess)
         {
             return CoreHelpers.Compile(query.Expr, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
-        } 
+        }
         #endregion
 
         #region Run methods
@@ -103,7 +103,7 @@ namespace LinqOptimizer.CSharp
         public static void Run(this IQueryExpr query)
         {
             query.Compile().Invoke();
-        } 
+        }
 
         /// <summary>
         /// Compiles a query to optimized code, runs the code and returns the result.<para/>
@@ -197,7 +197,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="selector">A transform function to apply to each source element; the second parameter of the function represents the index of the source element.</param>
         /// <returns>A query whose elements will be the result of invoking the transform function on each element of source.</returns>
         public static IQueryExpr<IEnumerable<TResult>> Select<TSource, TResult>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, int, TResult>> selector)
-        {
+        { 
             return new QueryExpr<IEnumerable<TResult>>(QExpr.NewTransformIndexed(selector, query.Expr));
         }
 
@@ -212,7 +212,7 @@ namespace LinqOptimizer.CSharp
         {
             return new QueryExpr<IEnumerable<TSource>>(QExpr.NewFilter(predicate, query.Expr));
         }
-
+        
         /// <summary>
         /// Creates a new query that filters a sequence of values based on a predicate. Each element's index is used in the logic of the predicate function.
         /// </summary>
@@ -373,7 +373,7 @@ namespace LinqOptimizer.CSharp
         /// <returns>A query where each IGrouping element contains a sequence of objects and a key.</returns>
         public static IQueryExpr<IEnumerable<IGrouping<TKey, TSource>>> GroupBy<TSource, TKey>(this IQueryExpr<IEnumerable<TSource>> query, Expression<Func<TSource, TKey>> keySelector)
         {
-            return new QueryExpr<IEnumerable<IGrouping<TKey, TSource>>>(QExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey, TSource>)));
+            return new QueryExpr<IEnumerable<IGrouping<TKey,TSource>>>(QExpr.NewGroupBy(keySelector, query.Expr, typeof(IGrouping<TKey,TSource>)));
         }
 
         /// <summary>

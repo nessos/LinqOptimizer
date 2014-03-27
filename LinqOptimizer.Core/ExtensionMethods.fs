@@ -39,7 +39,7 @@ namespace LinqOptimizer.Core
             let expr = TupleElimination.apply(expr)
             let expr = AnonymousTypeEraser.apply(expr)
             let expr, pms, objs = ConstantLiftingTransformer.apply(expr)
-
+            
             if CompiledThunks.cache.ContainsKey(source) then
                 let func = CompiledThunks.cache.[source] :?> Func<obj[], obj>
                 Func<'T>(fun () -> func.Invoke(objs) :?> 'T)

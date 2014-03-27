@@ -22,7 +22,7 @@ namespace LinqOptimizer.CSharp
         /// <param name="source">An IEnumerable to convert to an IQExpr.</param>
         /// <returns>A parallel query that returns the elements of the source sequence.</returns>
         public static IParallelQueryExpr<IEnumerable<TSource>> AsParallelQueryExpr<TSource>(this IEnumerable<TSource> source)
-        { 
+        {
             return new ParallelQueryExpr<IEnumerable<TSource>>(QExpr.NewSource(Expression.Constant(source), typeof(TSource), QueryExprType.Parallel));
         }
 
@@ -277,6 +277,5 @@ namespace LinqOptimizer.CSharp
             return CoreHelpers.CompileTemplateToParallel<TSource, TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
         #endregion
-
     }
 }
