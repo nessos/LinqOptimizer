@@ -1,0 +1,186 @@
+﻿PS C:\Users\krontogiannis\Desktop\fsharp> .\LinqOptimizer.Benchmarks.FSharp.exe
+"Sum Seq":      00:00:02.8199866
+"Sum Opt":      00:00:01.1505856
+Validate : True
+
+"Sum Squares Seq":      00:00:07.3947223
+"Sum Squares Opt":      00:00:02.4090330
+Validate : True
+
+"Cartesian Seq":        00:00:33.3088133
+"Cartesian Linq Opt":   00:00:01.9047700
+Validate : True
+
+"Group Seq":    00:01:12.7457616
+"Group Opt":    00:00:24.6694342
+Validate : True
+
+## "Pythagorean Seq":      00:00:26.0756178
+## "Pythagorean Opt":      00:00:59.7736766
+## Validate : True
+"Pythagorean Seq":      00:00:24.1093710
+"Pythagorean Opt":      00:00:00.5481868
+Validate : True
+
+"Parallel Sum Seq":     00:00:00.5089718
+"Parallel Sum Opt":     00:00:00.6138561
+Validate : True
+
+"Parallel Sum Squares Seq":     00:00:01.0234322
+"Parallel Sum Squares Opt":     00:00:00.5227186
+Validate : True
+
+"Parallel Cartesian Linq":      00:00:07.3078305
+"Parallel Cartesian Opt":       00:00:00.4272950
+Validate : True
+
+"Parallel Group Linq":  00:00:18.6451904
+"Parallel Group Opt":   00:00:09.1253919
+Validate : True
+
+## "Parallel Pythagorean Linq":    00:00:09.0055781
+## "Parallel Pythagorean Opt":     00:01:02.9909313
+## Validate : True
+"Parallel Pythagorean Linq":    00:00:08.6221434
+"Parallel Pythagorean Opt":     00:00:00.1720263
+Validate : True
+
+
+
+
+
+
+## krontogiannis@benchmarks-suse:~/fsharptest> mono LinqOptimizer.Benchmarks.FSharp.exe --gc=boehm
+## "Sum Seq":      00:00:05.7900152
+## "Sum Opt":      00:00:01.9753200
+## Validate : True
+## 
+## "Sum Squares Seq":      00:00:12.5300960
+## "Sum Squares Opt":      00:00:01.7239223
+## Validate : True
+## 
+## "Cartesian Seq":        00:00:43.5201732
+## "Cartesian Linq Opt":   00:00:03.1048342
+## Validate : True
+## 
+## "Group Seq":    00:00:21.0231150
+## "Group Opt":    00:00:17.5624660
+## Validate : True
+## 
+## "Pythagorean Seq":      00:00:30.3968180
+## "Pythagorean Opt":      00:03:29.2544626
+## Validate : True
+## 
+## "Parallel Sum Seq":     00:00:29.2880201
+## "Parallel Sum Opt":     00:00:00.9779574
+## Values 100001344.894611, 100001344.894609
+## Validate : False
+## 
+## "Parallel Sum Squares Seq":     00:00:42.6457523
+## "Parallel Sum Squares Opt":     00:00:00.9633095
+## Values 66667650.1864986, 66667650.1865005
+## Validate : False
+## 
+## "Parallel Cartesian Linq":      00:01:18.9780920
+## "Parallel Cartesian Opt":       00:00:00.5017145
+## Values 103369593.171146, 103369593.171139
+## Validate : False
+## 
+## "Parallel Group Linq":  00:00:54.8168058
+## "Parallel Group Opt":   00:00:33.7890481
+## Validate : True
+## 
+## "Parallel Pythagorean Linq":    00:00:44.9215935
+## "Parallel Pythagorean Opt":     00:07:41.5885317
+## Validate : True
+## 
+## 
+## krontogiannis@benchmarks-suse:~/fsharptest> mono LinqOptimizer.Benchmarks.FSharp --gc=sgen
+## "Sum Seq":      00:00:05.6858785
+## "Sum Opt":      00:00:01.7235633
+## Validate : True
+## 
+## "Sum Squares Seq":      00:00:12.0939924
+## "Sum Squares Opt":      00:00:01.7389354
+## Validate : True
+## 
+## "Cartesian Seq":        00:00:42.4520462
+## "Cartesian Linq Opt":   00:00:03.1192097
+## Validate : True
+## 
+## "Group Seq":    00:00:21.2268391
+## "Group Opt":    00:00:16.8401549
+## Validate : True
+## 
+## "Pythagorean Seq":      00:00:28.5491907
+## "Pythagorean Opt":      00:03:21.7066634
+## Validate : True
+## 
+## "Parallel Sum Seq":     00:00:27.7542858
+## "Parallel Sum Opt":     00:00:02.4945969
+## Values 100001454.444871, 100001454.444874
+## Validate : False
+## 
+## "Parallel Sum Squares Seq":     00:00:30.1456743
+## "Parallel Sum Squares Opt":     00:00:03.6991790
+## Values 66667389.8417738, 66667389.8417703
+## Validate : False
+## 
+## "Parallel Cartesian Linq":      00:01:00.1074199
+## "Parallel Cartesian Opt":       00:00:00.4679154
+## Values 92563924.8012052, 92563924.8012029
+## Validate : False
+## 
+## "Parallel Group Linq":  00:00:49.7698066
+## "Parallel Group Opt":   00:00:32.6395047
+## Validate : True
+## 
+## "Parallel Pythagorean Linq":    00:00:36.6311734
+## "Parallel Pythagorean Opt":     00:07:58.5362407
+## Validate : True
+
+
+krontogiannis@benchlinux:~/fs> mono LinqOptimizer.Benchmarks.FSharp.exe --gc=sgen
+"Sum Seq":      00:00:05.4402164
+"Sum Opt":      00:00:01.6571258
+Validate : True
+
+"Sum Squares Seq":      00:00:20.1435323
+"Sum Squares Opt":      00:00:01.7821322
+Validate : True
+
+"Cartesian Seq":        00:01:48.8153359
+"Cartesian Linq Opt":   00:00:03.2311105
+Validate : True
+
+"Group Seq":    00:00:29.2657332
+"Group Opt":    00:00:18.1786424
+Validate : True
+
+"Pythagorean Seq":      00:00:28.6682705
+"Pythagorean Opt":      00:00:00.9956975
+Validate : True
+
+"Parallel Sum Seq":     00:00:33.6194553
+"Parallel Sum Opt":     00:00:01.0214878
+Values 100004014.538589, 100004014.53859
+Validate : False
+
+"Parallel Sum Squares Seq":     00:00:32.4996878
+"Parallel Sum Squares Opt":     00:00:01.0878441
+Values 66669777.2572909, 66669777.257289
+Validate : False
+
+"Parallel Cartesian Linq":      00:01:03.8188772
+"Parallel Cartesian Opt":       00:00:00.5069616
+Values 82871437.6990987, 82871437.699096
+Validate : False
+
+"Parallel Group Linq":  00:01:20.9994334
+"Parallel Group Opt":   00:00:30.8935315
+Validate : True
+
+"Parallel Pythagorean Linq":    00:00:57.4454289
+"Parallel Pythagorean Opt":     00:00:00.1678209
+Validate : True
+
