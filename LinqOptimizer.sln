@@ -17,6 +17,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.CSharp", "src
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.FSharp", "src\LinqOptimizer.FSharp\LinqOptimizer.FSharp.fsproj", "{5C5FE9F9-91DF-44E2-A68D-B9A49828E0BB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{EC71519F-9DEA-49C1-9A29-8D97093C6BBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Benchmarks.CSharp", "benchmarks\LinqOptimizer.Benchmarks.CSharp\LinqOptimizer.Benchmarks.CSharp.csproj", "{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Benchmarks.FSharp", "benchmarks\LinqOptimizer.Benchmarks.FSharp\LinqOptimizer.Benchmarks.FSharp.fsproj", "{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +53,14 @@ Global
 		{5C5FE9F9-91DF-44E2-A68D-B9A49828E0BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C5FE9F9-91DF-44E2-A68D-B9A49828E0BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C5FE9F9-91DF-44E2-A68D-B9A49828E0BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,5 +72,7 @@ Global
 		{5C5FE9F9-91DF-44E2-A68D-B9A49828E0BB} = {9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}
 		{1E812A89-C8F1-463E-8E1E-765389A0A4BC} = {8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}
 		{38A228D2-764C-4103-9AC2-58452630CBA2} = {8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}
+		{2BB3E227-CB90-4FFD-9763-4DCD00B61D79} = {EC71519F-9DEA-49C1-9A29-8D97093C6BBF}
+		{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F} = {EC71519F-9DEA-49C1-9A29-8D97093C6BBF}
 	EndGlobalSection
 EndGlobal
