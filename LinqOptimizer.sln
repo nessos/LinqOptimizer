@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio Express 2012 for Web
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}"
@@ -22,6 +22,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Benchmarks.CSharp", "benchmarks\LinqOptimizer.Benchmarks.CSharp\LinqOptimizer.Benchmarks.CSharp.csproj", "{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Benchmarks.FSharp", "benchmarks\LinqOptimizer.Benchmarks.FSharp\LinqOptimizer.Benchmarks.FSharp.fsproj", "{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{77C030E6-8643-4966-BDEA-9CE1E8A96D42}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
