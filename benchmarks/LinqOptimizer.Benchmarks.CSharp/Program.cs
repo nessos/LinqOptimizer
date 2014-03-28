@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using LinqOptimizer.CSharp;
+using Nessos.LinqOptimizer.CSharp;
 
 namespace LinqOptimizer.Benchmarks.CSharp
 {

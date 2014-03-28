@@ -3,8 +3,8 @@ open System.Linq
 open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
-open LinqOptimizer.FSharp
-open LinqOptimizer.Base
+open Nessos.LinqOptimizer.FSharp
+open Nessos.LinqOptimizer.Base
 
 let measuref<'T>(title1, action1 : unit -> 'T, title2, action2 : unit -> 'T, validate : 'T * 'T -> bool) =
     let sw = new Stopwatch();
