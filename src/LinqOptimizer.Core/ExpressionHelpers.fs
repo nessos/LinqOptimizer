@@ -155,6 +155,12 @@ namespace Nessos.LinqOptimizer.Core
                 when plusExpr.NodeType = ExpressionType.Modulo -> Some (plusExpr.Left, plusExpr.Right)
             | _ -> None
 
+        let (|Negate|_|) (expr : Expression) = 
+            match expr with
+            | :? UnaryExpression as unaryExpr
+                when unaryExpr.NodeType = ExpressionType.Negate -> Some (unaryExpr.Operand)
+            | _ -> None
+
         let (|IfThenElse|_|) (expr : Expression) = 
             match expr with
             | :? ConditionalExpression as contExpr -> 
@@ -166,6 +172,36 @@ namespace Nessos.LinqOptimizer.Core
             match expr with
             | :? BinaryExpression as equalExpr 
                 when equalExpr.NodeType = ExpressionType.Equal -> Some (equalExpr.Left, equalExpr.Right) 
+            | _ -> None
+
+        let (|NotEqual|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as equalExpr 
+                when equalExpr.NodeType = ExpressionType.NotEqual -> Some (equalExpr.Left, equalExpr.Right) 
+            | _ -> None
+
+        let (|GreaterThan|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as equalExpr 
+                when equalExpr.NodeType = ExpressionType.GreaterThan -> Some (equalExpr.Left, equalExpr.Right) 
+            | _ -> None
+
+        let (|GreaterThanOrEqual|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as equalExpr 
+                when equalExpr.NodeType = ExpressionType.GreaterThanOrEqual -> Some (equalExpr.Left, equalExpr.Right) 
+            | _ -> None
+
+        let (|LessThan|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as equalExpr 
+                when equalExpr.NodeType = ExpressionType.LessThan -> Some (equalExpr.Left, equalExpr.Right) 
+            | _ -> None
+
+        let (|LessThanOrEqual|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as equalExpr 
+                when equalExpr.NodeType = ExpressionType.LessThanOrEqual -> Some (equalExpr.Left, equalExpr.Right) 
             | _ -> None
 
         let (|Nop|_|) (expr : Expression) = 
