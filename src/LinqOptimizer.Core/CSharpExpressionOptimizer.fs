@@ -112,6 +112,7 @@
             | MethodCall (_, MethodName "SkipWhile" _,          [_; LambdaOrQuote _ ])
             | MethodCall (_, MethodName "Skip" _,               [_; _        ])
             | MethodCall (_, MethodName "SelectMany" _,         [_; LambdaOrQuote _ ])
+            | MethodCall (_, MethodName "SelectMany" _,         [_; LambdaOrQuote _; LambdaOrQuote _])
             | MethodCall (_, MethodName "GroupBy" _,            [_; LambdaOrQuote _ ])
             | MethodCall (_, MethodName "OrderBy" _,            [_; LambdaOrQuote _ ])
             | MethodCall (_, MethodName "OrderByDescending" _,  [_; LambdaOrQuote _ ])
