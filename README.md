@@ -79,8 +79,7 @@ Future work
 * Many missing operators
 * New specialized operators 
 * Even more optimizations
-* GPU backend
-* DistributedLinq (Combining LinqOptimizer with [MBrace](http://www.m-brace.net))
+
 
 References
 ----------
