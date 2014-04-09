@@ -272,9 +272,9 @@ namespace Nessos.LinqOptimizer.CSharp
         /// <returns>A delegate to the optimized query.</returns>
         public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess)
         {
-            var param = template.Parameters.Single();
+            var param = template.Parameters.ToArray();
             var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
-            return CoreHelpers.CompileTemplateToParallel<TSource, TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+            return (Func<TSource, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
         #endregion
     }

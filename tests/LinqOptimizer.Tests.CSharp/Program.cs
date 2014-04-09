@@ -20,23 +20,23 @@ namespace Nessos.LinqOptimizer.Tests
     {
         public static void Main(string[] args)
         {
-            Func<Tuple<float, float, float>, IEnumerable<Tuple<int, int, int>>>
-              func =
-                Extensions.Compile<Tuple<float, float, float>, IEnumerable<Tuple<int, int, int>>>(
-                    t =>
-                        from yp in Enumerable.Range(0, 10).AsQueryExpr()
-                        from xp in Enumerable.Range(0, 10)
-                        let _y = t.Item1 + t.Item3 * yp
-                        let _x = t.Item2 + t.Item3 * xp
-                        let c = new Complex(_x, _y)
-                        let iters = 4
-                        select Tuple.Create(xp, yp, iters)
-                    );
+            var a1 = Enumerable.Range(0, 10).ToArray();
+            var a2 = Enumerable.Range(0, 10).ToArray();
 
-            var m = Tuple.Create(1.0f,
-                                 1.0f,
-                                 1.0f);
-            var result = func(m);
+            Func<float, float, float, IEnumerable<Tuple<int, int, int>>>
+                func =
+                    Extensions.Compile<float, float, float, IEnumerable<Tuple<int, int, int>>>(
+                        (ymin, xmin, step) =>
+                            from yp in a1.AsQueryExpr()
+                            from xp in a2
+                            let _y = ymin + step * yp
+                            let _x = xmin + step * xp
+                            let c = new Complex(_x, _y)
+                            let iters = 4
+                            select Tuple.Create(xp, yp, iters)
+                        );
+
+            var result = func(1.0f, 1.0f, 1.0f);
         }
 
         static void Measure(Action action)

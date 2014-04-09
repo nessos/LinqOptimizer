@@ -138,9 +138,9 @@
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
         static member compile<'T,'R>(template : Expression<Func<'T, IParallelQueryExpr<'R>>>, enableNonPublicMemberAccess : bool) =
-            let param = template.Parameters.Single()
+            let param = template.Parameters.ToArray()
             let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
-            CoreHelpers.CompileTemplateToParallel<'T,'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
+            (CoreHelpers.CompileTemplateToParallelVariadic<'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess) :?> Func<'T,'R>).Invoke
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.

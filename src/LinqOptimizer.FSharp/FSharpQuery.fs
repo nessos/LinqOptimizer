@@ -260,9 +260,9 @@
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
         static member compile<'T,'R>(template : Expression<Func<'T, IQueryExpr<'R>>>, enableNonPublicMemberAccess : bool) =
-            let param = template.Parameters.Single()
+            let param = template.Parameters.ToArray()
             let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
-            CoreHelpers.CompileTemplate<'T,'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
+            (CoreHelpers.CompileTemplateVariadic<'R>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess) :?> Func<'T,'R>).Invoke
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
@@ -273,9 +273,9 @@
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
         static member compile<'T>(template : Expression<Func<'T, IQueryExpr>>, enableNonPublicMemberAccess : bool) =
-            let param = template.Parameters.Single()
+            let param = template.Parameters.ToArray()
             let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
-            CoreHelpers.CompileTemplate<'T>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess).Invoke
+            (CoreHelpers.CompileActionTemplateVariadic<'T>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess) :?> Action<'T>).Invoke
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.

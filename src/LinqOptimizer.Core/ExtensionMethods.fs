@@ -120,54 +120,53 @@ namespace Nessos.LinqOptimizer.Core
                 CoreHelpers.CompileToMethod(queryExpr,  fun expr -> Compiler.compileToParallel expr optimize.Invoke )
              
 
-
-        static member CompileTemplate<'T,'R>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Func<'T, 'R> =
+        static member CompileTemplateVariadic<'R>(parameters : ParameterExpression [], template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) =
             let func = 
                 if allowNonPublicMemberAccess then
                     CoreHelpers.Compile(template, 
                         fun query -> 
                             let expr = Compiler.compileToSequential query optimize.Invoke
-                            let lam = lambda [|parameter|] expr
+                            let lam = lambda parameters expr
                             lam :> Expression) 
                 else
                     CoreHelpers.CompileToMethod(template, 
                         fun query -> 
                             let expr = Compiler.compileToSequential query optimize.Invoke
-                            let lam = lambda [|parameter|] expr
+                            let lam = lambda parameters expr
                             lam :> _) 
             let template = func.Invoke()
             template
 
-        static member CompileTemplate<'T>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Action<'T> =
-            let func = 
+        static member CompileActionTemplateVariadic<'T>(parameters : ParameterExpression [], template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) =
+            let func  = 
                 if allowNonPublicMemberAccess then
                     CoreHelpers.Compile(template, 
                         fun query -> 
                             let expr = Compiler.compileToSequential query optimize.Invoke
-                            let lam = lambda [|parameter|] expr
+                            let lam = lambda parameters expr
                             lam :> Expression) 
                 else
                     CoreHelpers.CompileToMethod(template, 
                         fun query -> 
                             let expr = Compiler.compileToSequential query optimize.Invoke
-                            let lam = lambda [|parameter|] expr
+                            let lam = lambda parameters expr
                             lam :> _) 
             let template = func.Invoke()
             template
 
-        static member CompileTemplateToParallel<'T,'R>(parameter : ParameterExpression, template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : Func<'T, 'R> =
+        static member CompileTemplateToParallelVariadic<'R>(parameters : ParameterExpression [], template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) =
             let func = 
                 if allowNonPublicMemberAccess then
                     CoreHelpers.Compile(template, 
                         fun query -> 
                             let expr = Compiler.compileToParallel query optimize.Invoke
-                            let lam = lambda [|parameter|] expr
+                            let lam = lambda parameters expr
                             lam :> Expression) 
                 else
                     CoreHelpers.CompileToMethod(template, 
                         fun query -> 
                             let expr = Compiler.compileToParallel query optimize.Invoke
-                            let lam = lambda [|parameter|] expr
+                            let lam = lambda parameters expr
                             lam :> _) 
             let template = func.Invoke()
             template
