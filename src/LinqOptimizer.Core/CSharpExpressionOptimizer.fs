@@ -53,8 +53,11 @@
             | MethodCall (_, MethodName "Skip" _, [expr'; countExpr]) when countExpr.Type = typeof<int> -> 
                 Skip (countExpr, toQueryExpr expr')
     
-            | MethodCall (_, (MethodName "SelectMany" _ as m), [expr'; LambdaOrQuote ([paramExpr], bodyExpr, _)]) -> 
+            | MethodCall (_, (MethodName "SelectMany" _), [expr'; LambdaOrQuote ([paramExpr], bodyExpr, _)]) -> 
                 NestedQuery ((paramExpr, toQueryExpr (bodyExpr)), toQueryExpr expr')
+
+            | MethodCall (_, (MethodName "SelectMany" _), [expr'; LambdaOrQuote ([paramExpr], bodyExpr, _); LambdaOrQuote (_,_,lam)]) -> 
+                NestedQueryTransform((paramExpr, toQueryExpr (bodyExpr)), lam, toQueryExpr expr')
     
             | MethodCall (_, MethodName "GroupBy" _, [expr'; LambdaOrQuote ([paramExpr], bodyExpr,f')]) -> 
                 GroupBy (f', toQueryExpr expr', typedefof<IGrouping<_, _>>.MakeGenericType [|bodyExpr.Type; paramExpr.Type|])
