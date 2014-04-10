@@ -118,30 +118,30 @@ namespace Nessos.LinqOptimizer.CSharp
         }
         #endregion
 
-        #region Compiled templates
+        #region Compiled Funcs
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="T1">The type of the query parameter.</typeparam>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        public static Func<T1, TResult> Compile<T1, TResult>(this Expression<Func<T1, IQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
+        public static Func<T, TResult> Compile<T, TResult>(this Expression<Func<T, IQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
         {
             var param = template.Parameters.ToArray();
             var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
-            return (Func<T1, TResult>)CoreHelpers.CompileTemplateVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+            return (Func<T, TResult>)CoreHelpers.CompileTemplateVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="T1">The type of the query parameter.</typeparam>
-        /// <typeparam name="T2">The type of the query parameter.</typeparam>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
@@ -157,9 +157,9 @@ namespace Nessos.LinqOptimizer.CSharp
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="T1">The type of the query parameter.</typeparam>
-        /// <typeparam name="T2">The type of the query parameter.</typeparam>
-        /// <typeparam name="T3">The type of the query parameter.</typeparam>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
@@ -175,10 +175,10 @@ namespace Nessos.LinqOptimizer.CSharp
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="T1">The type of the query parameter.</typeparam>
-        /// <typeparam name="T2">The type of the query parameter.</typeparam>
-        /// <typeparam name="T3">The type of the query parameter.</typeparam>
-        /// <typeparam name="T4">The type of the query parameter.</typeparam>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="T4">The type of the fourth query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
@@ -194,11 +194,11 @@ namespace Nessos.LinqOptimizer.CSharp
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="T1">The type of the query parameter.</typeparam>
-        /// <typeparam name="T2">The type of the query parameter.</typeparam>
-        /// <typeparam name="T3">The type of the query parameter.</typeparam>
-        /// <typeparam name="T4">The type of the query parameter.</typeparam>
-        /// <typeparam name="T5">The type of the query parameter.</typeparam>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="T4">The type of the fourth query parameter.</typeparam>
+        /// <typeparam name="T5">The type of the fifth query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
@@ -210,31 +210,95 @@ namespace Nessos.LinqOptimizer.CSharp
             return (Func<T1, T2, T3, T4, T5, TResult>)CoreHelpers.CompileTemplateVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
 
+        #endregion
+
+        #region Compiled Actions
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
         /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template)
+        public static Action<T> Compile<T>(this Expression<Func<T, IQueryExpr>> template, bool enableNonPublicMemberAccess = false)
         {
-            return Extensions.Compile(template, false);
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Action<T>)CoreHelpers.CompileActionTemplateVariadic(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        public static Action<TSource> Compile<TSource>(this Expression<Func<TSource, IQueryExpr>> template, bool enableNonPublicMemberAccess)
+        public static Action<T1, T2> Compile<T1, T2>(this Expression<Func<T1, T2, IQueryExpr>> template, bool enableNonPublicMemberAccess = false)
         {
             var param = template.Parameters.ToArray();
             var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
-            return (Action<TSource>)CoreHelpers.CompileActionTemplateVariadic<TSource>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
-        } 
+            return (Action<T1, T2>)CoreHelpers.CompileActionTemplateVariadic(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Action<T1, T2, T3> Compile<T1, T2, T3>(this Expression<Func<T1, T2, T3, IQueryExpr>> template, bool enableNonPublicMemberAccess = false)
+        {
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Action<T1, T2, T3>)CoreHelpers.CompileActionTemplateVariadic(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="T4">The type of the fourth query parameter.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Action<T1, T2, T3, T4> Compile<T1, T2, T3, T4>(this Expression<Func<T1, T2, T3, T4, IQueryExpr>> template, bool enableNonPublicMemberAccess = false)
+        {
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Action<T1, T2, T3, T4>)CoreHelpers.CompileActionTemplateVariadic(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="T4">The type of the fourth query parameter.</typeparam>
+        /// <typeparam name="T5">The type of the fifth query parameter.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Action<T1, T2, T3, T4, T5> Compile<T1, T2, T3, T4, T5>(this Expression<Func<T1, T2, T3, T4, IQueryExpr>> template, bool enableNonPublicMemberAccess = false)
+        {
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Action<T1, T2, T3, T4, T5>)CoreHelpers.CompileActionTemplateVariadic(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+
         #endregion
 
         #region Combinators

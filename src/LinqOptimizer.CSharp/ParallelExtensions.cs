@@ -248,34 +248,100 @@ namespace Nessos.LinqOptimizer.CSharp
         }
 
 
-        #region Compiled templates
+
+        #region Compiled Funcs
+
         /// <summary>
         /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="T">The type of the query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IParallelQueryExpr<TResult>>> template)
+        public static Func<T, TResult> Compile<T, TResult>(this Expression<Func<T, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
         {
-            return ParallelExtensions.Compile<TSource, TResult>(template, false);
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Func<T, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
 
         /// <summary>
         /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
         /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
         /// </summary>
-        /// <typeparam name="TSource">The type of the query parameter.</typeparam>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
         /// <typeparam name="TResult">The type of the query.</typeparam>
         /// <param name="template">The parameterized query.</param>
         /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
         /// <returns>A delegate to the optimized query.</returns>
-        public static Func<TSource, TResult> Compile<TSource, TResult>(this Expression<Func<TSource, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess)
+        public static Func<T1, T2, TResult> Compile<T1, T2, TResult>(this Expression<Func<T1, T2, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
         {
             var param = template.Parameters.ToArray();
             var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
-            return (Func<TSource, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+            return (Func<T1, T2, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
         }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<T1, T2, T3, TResult> Compile<T1, T2, T3, TResult>(this Expression<Func<T1, T2, T3, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
+        {
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Func<T1, T2, T3, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="T4">The type of the fourth query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<T1, T2, T3, T4, TResult> Compile<T1, T2, T3, T4, TResult>(this Expression<Func<T1, T2, T3, T4, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
+        {
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Func<T1, T2, T3, T4, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
+        /// <summary>
+        /// Precompiles a parameterized query to optimized parallel code that can by invoked using a Func.
+        /// <b>Warning</b> : Enabling non-public member access might lead to performance degradation.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first query parameter.</typeparam>
+        /// <typeparam name="T2">The type of the second query parameter.</typeparam>
+        /// <typeparam name="T3">The type of the third query parameter.</typeparam>
+        /// <typeparam name="T4">The type of the fourth query parameter.</typeparam>
+        /// <typeparam name="T5">The type of the fifth query parameter.</typeparam>
+        /// <typeparam name="TResult">The type of the query.</typeparam>
+        /// <param name="template">The parameterized query.</param>
+        /// <param name="enableNonPublicMemberAccess">Enable or not non public member access from the compiled code.</param>
+        /// <returns>A delegate to the optimized query.</returns>
+        public static Func<T1, T2, T3, T4, T5, TResult> Compile<T1, T2, T3, T4, T5, TResult>(this Expression<Func<T1, T2, T3, T4, IParallelQueryExpr<TResult>>> template, bool enableNonPublicMemberAccess = false)
+        {
+            var param = template.Parameters.ToArray();
+            var query = CSharpExpressionOptimizer.ToQueryExpr(template.Body);
+            return (Func<T1, T2, T3, T4, T5, TResult>)CoreHelpers.CompileTemplateToParallelVariadic<TResult>(param, query, CSharpExpressionOptimizer.Optimize, enableNonPublicMemberAccess);
+        }
+
         #endregion
+
     }
 }

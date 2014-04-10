@@ -275,7 +275,7 @@
         static member compile<'T>(template : Expression<Func<'T, IQueryExpr>>, enableNonPublicMemberAccess : bool) =
             let param = template.Parameters.ToArray()
             let query = FSharpExpressionOptimizer.ToQueryExpr(template.Body)
-            (CoreHelpers.CompileActionTemplateVariadic<'T>(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess) :?> Action<'T>).Invoke
+            (CoreHelpers.CompileActionTemplateVariadic(param, query, Func<_,_>(FSharpExpressionOptimizer.Optimize), enableNonPublicMemberAccess) :?> Action<'T>).Invoke
 
         /// <summary>
         /// Precompiles a parameterized query to optimized code that can by invoked using a delegate.
