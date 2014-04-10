@@ -137,8 +137,8 @@ namespace Nessos.LinqOptimizer.Core
             let template = func.Invoke()
             template
 
-        static member CompileActionTemplateVariadic<'T>(parameters : ParameterExpression [], template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) =
-            let func  = 
+        static member CompileActionTemplateVariadic(parameters : ParameterExpression [], template : QueryExpr, optimize : Func<Expression,Expression>, allowNonPublicMemberAccess : bool) : obj =
+            let func = 
                 if allowNonPublicMemberAccess then
                     CoreHelpers.Compile(template, 
                         fun query -> 
