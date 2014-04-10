@@ -9,6 +9,7 @@
     open System.Collections.Concurrent
 
     module internal Compiler =
+        let arrayTypeDef = typedefof<_[]>
         let interfaceListTypeDef = typedefof<IList<_>>
         let partitionerTypeDef = typedefof<Partitioner<_>>
 
@@ -490,15 +491,26 @@
             let rec compile queryExpr context =
                 match queryExpr with
                 | Source (ExprType (Array (_, 1)) as expr, t, _) | Source (ExprType (Named (TypeCheck collectorType _, [|_|])) as expr, t, _) ->
-                    let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()
+                    let methods = typeof<ParallelismHelpers>.GetMethods()
+                    let aggregateMethodInfo = methods
                                                 |> Array.find (fun methodInfo -> 
                                                                 match methodInfo with
-                                                                | MethodName "ReduceCombine" [|ParamType (Named (TypeCheck interfaceListTypeDef _, [|_|])); _; _; _; _|] -> true
+                                                                | MethodName "ReduceCombine" [|ParamType (Array (_, 1)); _; _; _; _|] -> true
                                                                 | _ -> false) // TODO: reflection type checks
                                                 |> (fun methodInfo -> methodInfo.MakeGenericMethod [|context.CurrentVarExpr.Type; context.AccVarExpr.Type; context.AccVarExpr.Type|])
-                    let accExpr = lambda [|context.AccVarExpr; context.CurrentVarExpr|] 
-                                            (block (context.VarExprs |> List.filter (fun var -> not (var = context.CurrentVarExpr))) 
-                                            (context.Exprs @ [context.AccExpr; label context.ContinueLabel; context.AccVarExpr]))
+                    // loop Expr
+                    let indexVarExpr = var "___index___" typeof<int>
+                    let arrayVarExpr = var "___array___" expr.Type
+                    let lengthVarExpr = var "___length___" typeof<int>
+                    let arrayAssignExpr = assign arrayVarExpr expr
+                    let getItemExpr = arrayIndex arrayVarExpr indexVarExpr
+                    let exprs' = assign context.CurrentVarExpr getItemExpr :: context.Exprs
+                    let checkBoundExpr = greaterThan indexVarExpr lengthVarExpr 
+                    let brachExpr = ifThenElse checkBoundExpr (``break`` context.BreakLabel) (block [] exprs') 
+                    let loopExpr = loop (block [] [(addAssign indexVarExpr (constant 1)); brachExpr; context.AccExpr]) context.BreakLabel context.ContinueLabel :> Expression
+                    let accExpr = lambda [|arrayVarExpr; indexVarExpr; lengthVarExpr; context.AccVarExpr|] 
+                                            (block context.VarExprs
+                                            (loopExpr :: [context.AccVarExpr]))
                     call aggregateMethodInfo null [expr; List.head context.InitExprs; accExpr; context.CombinerExpr; context.ReturnExpr]
                 | Source (expr, t, _) ->
                     let aggregateMethodInfo = typeof<ParallelismHelpers>.GetMethods()

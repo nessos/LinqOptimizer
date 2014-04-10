@@ -20,23 +20,25 @@ namespace Nessos.LinqOptimizer.Tests
     {
         public static void Main(string[] args)
         {
-            var a1 = Enumerable.Range(0, 10).ToArray();
-            var a2 = Enumerable.Range(0, 10).ToArray();
+            var input = Enumerable.Range(1, 10000000).Select(x => (double)x).ToArray();
 
-            Func<float, float, float, IEnumerable<Tuple<int, int, int>>>
-                func =
-                    Extensions.Compile<float, float, float, IEnumerable<Tuple<int, int, int>>>(
-                        (ymin, xmin, step) =>
-                            from yp in a1.AsQueryExpr()
-                            from xp in a2
-                            let _y = ymin + step * yp
-                            let _x = xmin + step * xp
-                            let c = new Complex(_x, _y)
-                            let iters = 4
-                            select Tuple.Create(xp, yp, iters)
-                        );
+            var query = input.AsQueryExpr()./*Where(x => x % 2 == 0).*/Select(x => x * x).Sum().Compile();
+            var parQuery = input.AsParallelQueryExpr()./*Where(x => x % 2 == 0).*/Select(x => x * x).Sum().Compile();
 
-            var result = func(1.0f, 1.0f, 1.0f);
+            Measure(() =>
+            {
+                double sum = 0;
+                for (int i = 0; i < input.Length; i++)
+                {
+                    var x = input[i];
+                    //if (x % 2 == 0)
+                        sum += x * x;
+                }
+
+            });
+
+            Measure(() => query());
+            Measure(() =>  parQuery());
         }
 
         static void Measure(Action action)

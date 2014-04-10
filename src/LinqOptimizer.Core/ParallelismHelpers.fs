@@ -8,6 +8,30 @@
     type ParallelismHelpers =
         static member TotalWorkers = int (2.0 ** float (int (Math.Log(float Environment.ProcessorCount, 2.0))))
 
+        static member ReduceCombine<'T, 'Acc, 'R>( array : 'T[],
+                                                    init : Func<'Acc>, 
+                                                    reducer : Func<'T[], int, int, 'Acc, 'Acc>,
+                                                    combiner : Func<'Acc, 'Acc, 'Acc>,
+                                                    selector : Func<'Acc, 'R>) : 'R = 
+            let length = array.Length
+            let seqReduceCount = 
+                if length > ParallelismHelpers.TotalWorkers then 
+                    length / ParallelismHelpers.TotalWorkers
+                else
+                    ParallelismHelpers.TotalWorkers
+            let rec reduceCombine s e =
+                async { 
+                    if e - s <= seqReduceCount then
+                        let s = if s > 0 then s else s - 1
+                        let result = reducer.Invoke(array, s, e, init.Invoke())
+                        return result
+                    else 
+                        let m = (s + e) / 2
+                        let! result =  Async.Parallel [| reduceCombine s m; reduceCombine m e |]
+                        return combiner.Invoke(result.[0], result.[1])
+                }
+            reduceCombine 0 (length - 1) |> Async.RunSynchronously |> selector.Invoke
+
         static member ReduceCombine<'T, 'Acc, 'R>(values : IList<'T>, 
                                                     init : Func<'Acc>, 
                                                     reducer : Func<'Acc, 'T, 'Acc>,
