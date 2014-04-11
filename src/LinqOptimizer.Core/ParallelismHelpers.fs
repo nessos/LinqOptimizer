@@ -1,9 +1,11 @@
 ﻿namespace Nessos.LinqOptimizer.Core
     open System
     open System.Collections.Generic
+    open System.Linq
     open System.Linq.Expressions
     open System.Reflection
     open System.Collections.Concurrent
+    open System.Threading.Tasks
 
     type ParallelismHelpers =
         static member TotalWorkers = int (2.0 ** float (int (Math.Log(float Environment.ProcessorCount, 2.0))))
@@ -13,24 +15,20 @@
                                                     reducer : Func<'T[], int, int, 'Acc, 'Acc>,
                                                     combiner : Func<'Acc, 'Acc, 'Acc>,
                                                     selector : Func<'Acc, 'R>) : 'R = 
-            let length = array.Length
-            let seqReduceCount = 
-                if length > ParallelismHelpers.TotalWorkers then 
-                    length / ParallelismHelpers.TotalWorkers
-                else
-                    ParallelismHelpers.TotalWorkers
-            let rec reduceCombine s e =
-                async { 
-                    if e - s <= seqReduceCount then
-                        let s = if s > 0 then s else s - 1
-                        let result = reducer.Invoke(array, s, e, init.Invoke())
-                        return result
-                    else 
-                        let m = (s + e) / 2
-                        let! result =  Async.Parallel [| reduceCombine s m; reduceCombine m e |]
-                        return combiner.Invoke(result.[0], result.[1])
-                }
-            reduceCombine 0 (length - 1) |> Async.RunSynchronously |> selector.Invoke
+            if array.Length = 0 then
+                selector.Invoke(init.Invoke())
+            else
+                let partitioner = Partitioner.Create(0, array.Length)
+                let partitions = partitioner.GetDynamicPartitions().ToArray()
+                let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
+                let tasks = partitions |> Array.mapi (fun index (s, e) -> 
+                                                        Task.Factory.StartNew(fun () -> 
+                                                                    let result = reducer.Invoke(array, s - 1, e - 1, init.Invoke())
+                                                                    cells.[index] := result
+                                                                    ()))
+                Task.WaitAll(tasks)
+                let result = cells |> Array.fold (fun acc cell -> combiner.Invoke(acc, cell.Value)) (init.Invoke())
+                selector.Invoke(result)
 
         static member ReduceCombine<'T, 'Acc, 'R>(values : IList<'T>, 
                                                     init : Func<'Acc>, 
@@ -45,28 +43,25 @@
                                                         reducer : Func<'Acc, int, 'Acc>,
                                                         combiner : Func<'Acc, 'Acc, 'Acc>,
                                                         selector : Func<'Acc, 'R>) : 'R = 
+            if length = 0 then
+                selector.Invoke(init.Invoke())
+            else
+                let partitioner = Partitioner.Create(0, length)
+                let partitions = partitioner.GetDynamicPartitions().ToArray()
+                let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
+                let tasks = partitions |> Array.mapi (fun index (s, e) -> 
+                                                        Task.Factory.StartNew(fun () -> 
+                                                                    let result = 
+                                                                        let mutable r = init.Invoke()
+                                                                        for i = s to e - 1 do
+                                                                            r <- reducer.Invoke(r, i) 
+                                                                        r
+                                                                    cells.[index] := result
+                                                                    ()))
+                Task.WaitAll(tasks)
+                let result = cells |> Array.fold (fun acc cell -> combiner.Invoke(acc, cell.Value)) (init.Invoke())
+                selector.Invoke(result)
 
-            let seqReduceCount = 
-                if length > ParallelismHelpers.TotalWorkers then 
-                    length / ParallelismHelpers.TotalWorkers
-                else
-                    ParallelismHelpers.TotalWorkers
-            let rec reduceCombine s e =
-                async { 
-                    if e - s <= seqReduceCount then
-                        let s' = if s > 0 then s + 1 else s
-                        let result = 
-                            let mutable r = init.Invoke()
-                            for i = s' to e do
-                                r <- reducer.Invoke(r, i) 
-                            r
-                        return result
-                    else 
-                        let m = (s + e) / 2
-                        let! result =  Async.Parallel [| reduceCombine s m; reduceCombine m e |]
-                        return combiner.Invoke(result.[0], result.[1])
-                }
-            reduceCombine 0 (length - 1) |> Async.RunSynchronously |> selector.Invoke
 
         
         static member ReduceCombine<'T, 'Acc, 'R>( partitioner : Partitioner<'T>,
@@ -74,27 +69,18 @@
                                                     reducer : Func<'Acc, 'T, 'Acc>,
                                                     combiner : Func<'Acc, 'Acc, 'Acc>,
                                                     selector : Func<'Acc, 'R>) : 'R = 
-
-            let split (partitions : IEnumerator<'T> [])  =
-                let half = partitions.Length / 2
-                (partitions |> Seq.take half |> Seq.toArray, partitions |> Seq.skip half |> Seq.toArray)
-                
-            let rec reduceCombine (partitions : IEnumerator<'T>[]) =
-                async {
-                    match partitions with
-                    | [||] -> return init.Invoke()
-                    | [|partition|] ->
-                        let result = 
-                            let mutable r = init.Invoke()
-                            while partition.MoveNext() do
-                                r <- reducer.Invoke(r, partition.Current)
-                            r
-                        return result
-                    | _ -> 
-                        let (left, right) = split partitions
-                        let! result =  Async.Parallel [| reduceCombine left; reduceCombine right |]
-                        return combiner.Invoke(result.[0], result.[1])
-                }
-            reduceCombine (partitioner.GetPartitions(ParallelismHelpers.TotalWorkers) |> Seq.toArray) 
-            |> Async.RunSynchronously |> selector.Invoke
+                let partitions = partitioner.GetPartitions(ParallelismHelpers.TotalWorkers).ToArray()
+                let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
+                let tasks = partitions |> Array.mapi (fun index partition -> 
+                                                        Task.Factory.StartNew(fun () -> 
+                                                                    let result = 
+                                                                        let mutable r = init.Invoke()
+                                                                        while partition.MoveNext() do
+                                                                            r <- reducer.Invoke(r, partition.Current)
+                                                                        r
+                                                                    cells.[index] := result
+                                                                    ()))
+                Task.WaitAll(tasks)
+                let result = cells |> Array.fold (fun acc cell -> combiner.Invoke(acc, cell.Value)) (init.Invoke())
+                selector.Invoke(result)
             

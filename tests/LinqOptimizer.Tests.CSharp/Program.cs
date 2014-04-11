@@ -22,8 +22,11 @@ namespace Nessos.LinqOptimizer.Tests
         {
             var input = Enumerable.Range(1, 10000000).Select(x => (double)x).ToArray();
 
-            var query = input.AsQueryExpr()./*Where(x => x % 2 == 0).*/Select(x => x * x).Sum().Compile();
-            var parQuery = input.AsParallelQueryExpr()./*Where(x => x % 2 == 0).*/Select(x => x * x).Sum().Compile();
+            var query = input.AsQueryExpr()./*Where(x => x % 2 == 0).Select(x => x * x)*/Sum().Compile();
+            var parQuery = input.AsParallelQueryExpr()./*Where(x => x % 2 == 0).Select(x => x * x)*/Sum().Compile();
+
+            //var partitioner = Partitioner.Create(0, 100);
+            //var tuples = partitioner.GetDynamicPartitions().ToArray();
 
             Measure(() =>
             {
@@ -32,9 +35,8 @@ namespace Nessos.LinqOptimizer.Tests
                 {
                     var x = input[i];
                     //if (x % 2 == 0)
-                        sum += x * x;
+                    sum += x * x;
                 }
-
             });
 
             Measure(() => query());
