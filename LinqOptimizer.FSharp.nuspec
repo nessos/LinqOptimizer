@@ -15,6 +15,7 @@
         <tags>F# linq optimization</tags>
         <references>
             <reference file="LinqOptimizer.Base.dll" />
+			<reference file="LinqOptimizer.Core.dll" />
             <reference file="LinqOptimizer.FSharp.dll" />
         </references>
     </metadata>
