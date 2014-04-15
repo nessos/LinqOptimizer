@@ -72,6 +72,8 @@ namespace Nessos.LinqOptimizer.Core
         let isPrimitive (expr : ConstantExpression) =
             expr.Type.IsPrimitive || expr.Type = typeof<string> 
 
+        let (|Map|) (f : 'T -> 'S) (v : 'T) = f v
+
         let (|QuotedLambda|_|) (expr : Expression) =
             match expr with
             | :? UnaryExpression as unaryExpr when unaryExpr.NodeType = ExpressionType.Quote ->
@@ -284,7 +286,7 @@ namespace Nessos.LinqOptimizer.Core
             match expr with
             | :? MemberExpression as expr ->
                     match expr.Member.MemberType with
-                    | MemberTypes.Field -> Some (expr.Expression, expr.Member)
+                    | MemberTypes.Field -> Some (expr.Expression, expr.Member :?> FieldInfo)
                     | _ -> None
             | _ -> None
 
