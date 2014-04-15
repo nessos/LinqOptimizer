@@ -6,7 +6,7 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
  
 module Version =
-    let [<Literal>]Number = "0.5.2.*"
+    let [<Literal>]Number = "0.6.2.*"
 
 [<assembly: AssemblyVersion(Version.Number)>]
 do ()
