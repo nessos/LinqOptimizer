@@ -310,7 +310,7 @@
         let equal x y = Enumerable.SequenceEqual(x,y)
 
         [<Test>]
-        member __.``detuple #1`` () =
+        member __.``detuple #01`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -326,7 +326,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #2`` () =
+        member __.``detuple #02`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -342,7 +342,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #3`` () =
+        member __.``detuple #03`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -358,7 +358,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #4`` () =
+        member __.``detuple #04`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -372,7 +372,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #5`` () =
+        member __.``detuple #05`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -386,7 +386,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #6`` () =
+        member __.``detuple #06`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -400,7 +400,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #7`` () =
+        member __.``detuple #07`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -414,7 +414,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #8`` () =
+        member __.``detuple #08`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -426,7 +426,7 @@
             Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
-        member __.``detuple #9`` () =
+        member __.``detuple #09`` () =
             let test (xs : seq<int>) =
                 let x = xs
                         |> Query.ofSeq
@@ -440,3 +440,16 @@
                                                (b, a + b)) (0,1)
                 x = y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
+
+        [<Test>]
+        member __.``detuple #10 (nested tuples)`` () =
+            let test (xs : seq<int>) =
+                let x = xs |> Query.ofSeq
+                           |> Query.map (fun x -> x*x, (x, -x))
+                           |> Query.where(fun (a,(b,c)) -> a = b * b && b = -c)
+                           |> Query.run
+
+                let y = xs |> Seq.map(fun x -> x*x, (x, -x))
+                           |> Seq.where(fun (a,(b,c)) -> a = b * b && b = -c)
+                equal x y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)        

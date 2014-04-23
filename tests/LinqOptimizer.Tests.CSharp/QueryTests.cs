@@ -830,5 +830,25 @@ namespace Nessos.LinqOptimizer.Tests
                 return Tuple.Equals(xs, ys);
             }).QuickCheckThrowOnFailure();
         }
+
+        [Test]
+        public void Detuple6()
+        {
+            Spec.ForAny<List<int>>(ms =>
+            {
+                var xs = ms.AsQueryExpr()
+                         .Select(x1 => Tuple.Create(x1 * x1, Tuple.Create(x1, -x1)))
+                         .Where(t1 => t1.Item2.Item1 == -t1.Item2.Item2)
+                         .Count()
+                         .Run();
+
+                var ys = ms
+                         .Select(x2 => Tuple.Create(x2 * x2, Tuple.Create(x2, -x2)))
+                         .Where(t2 => t2.Item2.Item1 == -t2.Item2.Item2)
+                         .Count();
+
+                return xs == ys;
+            }).QuickCheckThrowOnFailure();
+        }
     }
 }

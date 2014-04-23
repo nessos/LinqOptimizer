@@ -22,6 +22,12 @@ module Program =
 
         let max = 10
 
+        let xs = Query.ofSeq [1..10]
+                 |> Query.map(fun x -> (x * x,(-x,x)))
+                 |> Query.where(fun (a,(b,c)) -> a + b + c <> 0)
+                 |> Query.run
+
+
 //        let t = LinqOptimizer.Tests.``F# Query tests``()
 //        t.``detuple #1``()
 //        t.``detuple #2``()
