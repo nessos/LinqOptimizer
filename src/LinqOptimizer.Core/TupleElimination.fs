@@ -13,22 +13,27 @@
     // 2nd step : For tuples that do not escape modify construction site and .Item calls.
 
     type private Parameter = {
-        Expr            : ParameterExpression
-        mutable Alias   : Parameter option
-        mutable Source  : Parameter option
-        mutable Escapes : bool
-        MemberMappings  : List<Expression>            // mappings to tuple ctor arguments
-        MemberBindings  : List<ParameterExpression> } // mappings from ctor arguments to variables they're bound to.
+        Expr             : ParameterExpression
+        mutable Alias    : Parameter option
+        mutable Source   : Parameter option
+        mutable MemberOf : Parameter option            // used when a tuple is a member of another tuple
+        mutable Escapes  : bool
+        MemberMappings   : List<Expression>            // mappings to tuple ctor arguments
+        MemberBindings   : List<ParameterExpression> } // mappings from ctor arguments to variables they're bound to.
     with 
         static member create (expr : ParameterExpression) =
-            {Expr = expr; Alias = None; Escapes = false; Source = None; MemberMappings = new List<_>(); MemberBindings = new List<_>() }
+            {Expr = expr; Alias = None; Escapes = false; Source = None; MemberOf = None; MemberMappings = new List<_>(); MemberBindings = new List<_>() }
 
         static member escapes (parameter : Parameter) =
-            match parameter.Alias, parameter.Source with
-            | Some alias, Some source -> parameter.Escapes ||  alias  .Escapes
-            | None, Some source       -> parameter.Escapes ||  Parameter.escapes source
-            | Some alias, None        -> parameter.Escapes ||  alias  .Escapes
-            | None, None              -> parameter.Escapes
+            let escapes =
+                match parameter.Alias, parameter.Source with
+                | Some alias, Some source -> parameter.Escapes ||  alias.Escapes
+                | None, Some source       -> parameter.Escapes ||  Parameter.escapes source
+                | Some alias, None        -> parameter.Escapes ||  alias.Escapes
+                | None, None              -> parameter.Escapes
+            match parameter.MemberOf with
+            | None   -> escapes
+            | Some p -> true//escapes || Parameter.escapes p
 
     [<AutoOpen>]
     module private Helpers =
@@ -253,12 +258,17 @@
                     expr :> _
                 | _ ->
                     //Diagnostics.Debugger.Break()
+                    // $v = $tuple.Item$i
                     if expr.NodeType = ExpressionType.Assign && expr.Left.NodeType = ExpressionType.Parameter && isTupleAccess expr.Right then
                         let right = expr.Right :?> MemberExpression
                         match parameters.TryGetValue(right.Expression :?> ParameterExpression) with
                         | true, p ->
                             let idx = getItemPosition right
-                            p.MemberBindings.Add(expr.Left :?> ParameterExpression)
+                            let left = expr.Left :?> ParameterExpression
+                            p.MemberBindings.Add(left)
+                            if isTupleType left.Type then
+                                let lpar = parameters.[left]
+                                lpar.MemberOf <- Some p
                             expr :> _
                         | false, _ ->
                             expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> _    
@@ -294,20 +304,21 @@
 
             // Remove any assignments to those parameters
             override this.VisitBinary(expr : BinaryExpression) =
-                let pass () = expr.Update(this.Visit(expr.Left), null, this.Visit(expr.Right)) :> Expression
+                let pass () = 
+                    let lExpr = this.Visit(expr.Left)
+                    let rExpr = this.Visit(expr.Right)
+                    expr.Update(lExpr, null, rExpr ) :> Expression
                 match expr.NodeType with
                 | ExpressionType.Assign when (expr.Left :? ParameterExpression) ->
                     let left = expr.Left :?> ParameterExpression
                     if parameterExprs.Contains(left) then
-                        match expr.Right with
-                        | :? ParameterExpression as right when not(parameterExprs.Contains(right)) ->
-                            pass()
-                        | _ -> 
-//                            let tupleParam = getParameter(left).Value
-//                            // if there are no member bindings (usually in C#) then generate them
-//                            if tupleParam.MemberBindings.Count = 0 then 
-//                                let (TupleNewAssignment(_,args)) = expr
-//                            else
+                        if (getParameter left).Value.MemberOf.IsSome then 
+                            pass ()
+                        else
+                            match expr.Right with
+                            | :? ParameterExpression as right when not(parameterExprs.Contains(right)) ->
+                                pass()
+                            | _ ->
                                 Expression.Empty() :> _
                     else
                         pass()
@@ -321,8 +332,11 @@
                     | None when membersVisited.Contains(exprIdentity) ->
                         par.MemberBindings.[getItemPosition expr - 1] :> _
                     | None ->
+                        let pos = getItemPosition expr - 1
                         membersVisited.Add(exprIdentity)
-                        this.Visit(par.MemberMappings.[getItemPosition expr - 1])
+                        match par.MemberOf with 
+                        | None   -> this.Visit(par.MemberMappings.[pos])
+                        | Some p -> expr :> _
                     | Some src when parameters |> Seq.exists (fun p -> p.Expr = src.Expr) ->
                         src.MemberBindings.[getItemPosition expr - 1] :> _
                     | _ ->
@@ -332,11 +346,21 @@
 
     module TupleElimination =
         let apply(expr : Expression) =
-            let rsv = new ReshapeVisitor()
-            let expr = rsv.Visit(expr)
-            let eav = new EscapeAnalysisVisitor()
-            let expr = eav.Visit(expr)
-            let ps = eav.GetNotEscapingParameters()
-            let tev = new TupleEliminationVisitor(ps)
-            let expr = tev.Visit(expr)
-            expr
+            let rec fix (expr : Expression) =
+                let rsv = new ReshapeVisitor()
+                let expr = rsv.Visit(expr)
+                let eav = new EscapeAnalysisVisitor()
+                let expr = eav.Visit(expr)
+                let ps = eav.GetNotEscapingParameters()
+                let newExpr =
+                    if ps.Length > 0 then
+                        let tev = new TupleEliminationVisitor(ps)
+                        let expr = tev.Visit(expr)
+                        expr
+                    else 
+                        expr
+                if newExpr = expr then 
+                    expr
+                else
+                    fix newExpr
+            fix expr

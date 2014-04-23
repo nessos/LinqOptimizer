@@ -22,10 +22,11 @@ module Program =
 
         let max = 10
 
-        let xs = Query.ofSeq [1..10]
-                 |> Query.map(fun x -> (x * x,(-x,x)))
-                 |> Query.where(fun (a,(b,c)) -> a + b + c <> 0)
-                 |> Query.run
+        let x = Query.ofSeq [1..10]
+                |> Query.map (fun x -> x*x, (x, -x))
+                |> Query.where(fun (a,(b,c)) -> a = b * b && b = -c)
+                |> Query.length
+                |> Query.run
 
 
 //        let t = LinqOptimizer.Tests.``F# Query tests``()

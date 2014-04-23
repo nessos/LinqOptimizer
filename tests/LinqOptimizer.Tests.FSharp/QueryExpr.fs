@@ -453,3 +453,18 @@
                            |> Seq.where(fun (a,(b,c)) -> a = b * b && b = -c)
                 equal x y
             Check.QuickThrowOnFailure (TestInput.RunTest test)        
+
+        [<Test>]
+        member __.``detuple #11 (nested tuples)`` () =
+            let test (xs : seq<int>) =
+                let x = xs |> Query.ofSeq
+                           |> Query.map (fun x -> x*x, (x, -x))
+                           |> Query.where(fun (a,(b,c)) -> a = b * b && b = -c)
+                           |> Query.length
+                           |> Query.run
+
+                let y = xs |> Seq.map(fun x -> x*x, (x, -x))
+                           |> Seq.where(fun (a,(b,c)) -> a = b * b && b = -c)
+                           |> Seq.length
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest test)     
