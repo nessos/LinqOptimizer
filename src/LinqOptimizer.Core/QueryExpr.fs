@@ -22,7 +22,7 @@
     // Main Query representation
     type QueryExprType = Sequential | Parallel | Gpu
     type Order = Ascending | Descending
-    type ReductionType = Map | Filter | Count | Sum | Aggregate | ToList | ToArray | Iter
+    type ReductionType = Map | Filter | Count | Sum | Aggregate | ToList | ToArray | Iter | NestedQueryTransform 
     /// The type representing an query expression.
     and QueryExpr = 
         | Source of Expression * Type * QueryExprType

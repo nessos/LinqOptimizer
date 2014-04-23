@@ -10,6 +10,16 @@
     type ParallelismHelpers =
         static member TotalWorkers = int (2.0 ** float (int (Math.Log(float Environment.ProcessorCount, 2.0))))
 
+        static member GetPartitions (s : int, e : int) = 
+            let toSeq (enum : IEnumerator<_>)= 
+                seq {
+                    while enum.MoveNext() do
+                        yield enum.Current
+                }
+            let partitioner = Partitioner.Create(s, e)
+            let partitions = partitioner.GetPartitions(ParallelismHelpers.TotalWorkers) |> Seq.collect toSeq |> Seq.toArray 
+            partitions
+
         static member ReduceCombine<'T, 'Acc, 'R>( array : 'T[],
                                                     init : Func<'Acc>, 
                                                     reducer : Func<'T[], int, int, 'Acc, 'Acc>,
@@ -18,8 +28,7 @@
             if array.Length = 0 then
                 selector.Invoke(init.Invoke())
             else
-                let partitioner = Partitioner.Create(0, array.Length)
-                let partitions = partitioner.GetDynamicPartitions().ToArray()
+                let partitions = ParallelismHelpers.GetPartitions(0, array.Length)
                 let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
                 let tasks = partitions |> Array.mapi (fun index (s, e) -> 
                                                         Task.Factory.StartNew(fun () -> 
@@ -46,8 +55,7 @@
             if length = 0 then
                 selector.Invoke(init.Invoke())
             else
-                let partitioner = Partitioner.Create(0, length)
-                let partitions = partitioner.GetDynamicPartitions().ToArray()
+                let partitions = ParallelismHelpers.GetPartitions(0, length)
                 let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
                 let tasks = partitions |> Array.mapi (fun index (s, e) -> 
                                                         Task.Factory.StartNew(fun () -> 
