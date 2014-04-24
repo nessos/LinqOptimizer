@@ -4,7 +4,7 @@
         <id>LinqOptimizer.CSharp</id>
         <version>0.6.2</version>
         <title>LinqOptimizer.CSharp</title>
-        <authors>Kostas Rontogiannis,Nick Palladinos</authors>
+        <authors>Kostas Rontogiannis,Nick Palladinos,Nessos Information Technologies</authors>
         <owners>krontogiannis; Nick.Palladinos</owners>
         <licenseUrl>https://github.com/palladin/LinqOptimizer/blob/master/LICENSE.md</licenseUrl>
         <projectUrl>https://github.com/palladin/LinqOptimizer</projectUrl>
