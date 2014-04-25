@@ -43,10 +43,10 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="QueryBuilder.fs" />
     <Compile Include="FSharpQuery.fs" />
     <Compile Include="FSharpParallelQuery.fs" />
-    <Compile Include="AssemblyInfo.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LinqOptimizer.Base\LinqOptimizer.Base.csproj">

@@ -7,13 +7,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9C33CACA-C69
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{EC71519F-9DEA-49C1-9A29-8D97093C6BBF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmark", "benchmark", "{EC71519F-9DEA-49C1-9A29-8D97093C6BBF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{77C030E6-8643-4966-BDEA-9CE1E8A96D42}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
+		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Tests.CSharp", "tests\LinqOptimizer.Tests.CSharp\LinqOptimizer.Tests.CSharp.csproj", "{1E812A89-C8F1-463E-8E1E-765389A0A4BC}"
@@ -31,6 +32,20 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinqOptimizer.Benchmarks.CSharp", "benchmarks\LinqOptimizer.Benchmarks.CSharp\LinqOptimizer.Benchmarks.CSharp.csproj", "{2BB3E227-CB90-4FFD-9763-4DCD00B61D79}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LinqOptimizer.Benchmarks.FSharp", "benchmarks\LinqOptimizer.Benchmarks.FSharp\LinqOptimizer.Benchmarks.FSharp.fsproj", "{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{3C6ADEC7-0540-4614-8454-3D8C7FD44C42}"
+	ProjectSection(SolutionItems) = preProject
+		.travis.yml = .travis.yml
+		appveyor.yml = appveyor.yml
+		build.cmd = build.cmd
+		build.fsx = build.fsx
+		build.sh = build.sh
+		LICENSE.md = LICENSE.md
+		nuget\LinqOptimizer.CSharp.nuspec = nuget\LinqOptimizer.CSharp.nuspec
+		nuget\LinqOptimizer.FSharp.nuspec = nuget\LinqOptimizer.FSharp.nuspec
+		README.md = README.md
+		RELEASE_NOTES.md = RELEASE_NOTES.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
