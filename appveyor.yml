@@ -1,4 +1,4 @@
 test:
   assemblies:
-    - LinqOptimizer.CSharp.Tests.exe
-    - LinqOptimizer.FSharp.Tests.exe
+    - LinqOptimizer.Tests.CSharp.exe
+    - LinqOptimizer.Tests.FSharp.exe
