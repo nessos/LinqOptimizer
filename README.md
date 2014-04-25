@@ -2,14 +2,14 @@
 
 An automatic query optimizer-compiler for Sequential and Parallel LINQ.
 
-## Build Status
+### Build Status
 
 Head (branch `master`), Build & Unit tests
 
 * Windows/.NET [![Build status](https://ci.appveyor.com/api/projects/status/w1avtn54cl6f4eo8)](https://ci.appveyor.com/project/nessos/linqoptimizer)
 * Mac OS X/Mono 3.2.x [![Build Status](https://travis-ci.org/nessos/LinqOptimizer.png?branch=master)](https://travis-ci.org/nessos/LinqOptimizer/branches)
 
-## Introduction
+### Introduction
 
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
 The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the [Performance] (https://github.com/nessos/LinqOptimizer/wiki/Performance) page).
@@ -36,15 +36,15 @@ let query = nums
 printfn "Result: %d" <| Query.run query // compile and execute
 ```
 
-Install via NuGet
------------------
+### Install via NuGet
+
 ```
 Install-Package LinqOptimizer.CSharp
 Install-Package LinqOptimizer.FSharp
 ```
 
-Optimizations
------------------------
+### Optimizations
+
 * Lambda inlining
 * Loop fusion
 * Nested loop generation
@@ -84,15 +84,15 @@ Parallel.ReduceCombine(nums, 0,
                           }, (left, right) => left + right);
 ```
 
-Future work
------------
+### Future work
+
 * Many missing operators
 * New specialized operators 
 * Even more optimizations
 
 
-References
-----------
+### References
+
 LinqOptimizer draws heavy inspiration from 
 * [Steno](http://research.microsoft.com/pubs/173946/paper-pldi.pdf)
 * [Clojure - reducers](http://clojure.org/reducers)
