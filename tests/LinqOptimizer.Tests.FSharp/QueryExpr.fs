@@ -266,18 +266,18 @@
                 x = y
             Check.QuickThrowOnFailure (TestInput.RunTest test)
             
-        [<Test>]
-        member __.``precompile action``() =
-            let test (xs : seq<int>) =
-                let a = ResizeArray<int>()
-                let b = ResizeArray<int>()
-
-                let t = Query.compile(fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x))
-                t(xs)
-
-                xs |> Seq.iter b.Add
-                equal a b
-            Check.QuickThrowOnFailure (TestInput.RunTest test)
+//        [<Test>]
+//        member __.``precompile action``() =
+//            let test (xs : seq<int>) =
+//                let a = ResizeArray<int>()
+//                let b = ResizeArray<int>()
+//
+//                let t = Query.compile(fun x -> Query.iter (fun m -> a.Add(m)) (Query.ofSeq x))
+//                t(xs)
+//
+//                xs |> Seq.iter b.Add
+//                equal a b
+//            Check.QuickThrowOnFailure (TestInput.RunTest test)
 
         [<Test>]
         member __.``range``() =

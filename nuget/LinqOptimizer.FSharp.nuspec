@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+      <id>@project@</id>
+      <version>@build.number@</version>
+      <authors>@authors@</authors>
+      <owners>@authors@</owners>
+      <licenseUrl>https://github.com/palladin/LinqOptimizer/blob/master/LICENSE.md</licenseUrl>
+      <projectUrl>https://github.com/palladin/LinqOptimizer</projectUrl>
+      <iconUrl>https://avatars1.githubusercontent.com/u/5538081</iconUrl>
+      <requireLicenseAcceptance>false</requireLicenseAcceptance>
+      <summary>@summary@</summary>
+      <description>@description@</description>
+      <releaseNotes>@releaseNotes@</releaseNotes>
+      <copyright>Copyright 2014</copyright>
+      <tags>@tags@</tags>
+      @dependencies@
+      <references>
+        <reference file="LinqOptimizer.Base.dll" />
+			  <reference file="LinqOptimizer.Core.dll" />
+        <reference file="LinqOptimizer.FSharp.dll" />
+      </references>
+    </metadata>
+    <files>
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\FSharp.Core.dll" target="lib\FSharp.Core.dll" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\FSharp.Core.xml" target="lib\FSharp.Core.xml" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Base.dll" target="lib\LinqOptimizer.Base.dll" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Base.xml" target="lib\LinqOptimizer.Base.xml" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Core.dll" target="lib\LinqOptimizer.Core.dll" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Core.xml" target="lib\LinqOptimizer.Core.xml" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.FSharp.dll" target="lib\LinqOptimizer.FSharp.dll" />
+        <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.FSharp.XML" target="lib\LinqOptimizer.FSharp.XML" />
+    </files>
+</package>

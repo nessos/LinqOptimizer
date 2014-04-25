@@ -395,10 +395,14 @@ namespace Nessos.LinqOptimizer.Tests
         {
             Spec.ForAny<int[]>(xs =>
             {
+#if MONO_BUILD
+                var x = xs.AsQueryExpr().GroupBy(num => num.ToString()).Select(g => g.Sum()).Run();
+#else
                 var x = (from num in xs.AsQueryExpr()
                          group num by num.ToString() into g
                          select g.Sum())
                         .Run();
+#endif
 
                 var y = (from num in xs
                          group num by num.ToString() into g
