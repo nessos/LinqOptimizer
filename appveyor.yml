@@ -1,3 +1,4 @@
 test:
   assemblies:
-    - FsPickler.Tests.exe
+    - LinqOptimizer.CSharp.Tests.exe
+    - LinqOptimizer.FSharp.Tests.exe
