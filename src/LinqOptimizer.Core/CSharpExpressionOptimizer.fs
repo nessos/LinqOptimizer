@@ -19,7 +19,7 @@
                 elif expr.Type.IsGenericType then
                     Source (expr, expr.Type.GetInterface("IEnumerable`1").GetGenericArguments().[0], sourceType)
                 else
-                    failwithf "Not supported source %A" expr.Type
+                    failwithf "Not supported source %A" expr
         
         let rec toQueryExpr (expr : Expression) : QueryExpr =
             match expr with 
