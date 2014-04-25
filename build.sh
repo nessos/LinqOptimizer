@@ -11,7 +11,7 @@ run_fake() {
     configuration=$1
 
     if [ $configuration = "--publish-nuget" ]; then
-        configuration=Release
+        configuration=Release-Mono
         publish_nuget=true
     else
         publish_nuget=false
@@ -22,7 +22,7 @@ run_fake() {
 }
 
 if [ $# -eq 0 ]; then
-    run_fake "Release"
+    run_fake "Release-Mono"
 elif [ $# -eq 1 ]; then
     run_fake $1
 else
