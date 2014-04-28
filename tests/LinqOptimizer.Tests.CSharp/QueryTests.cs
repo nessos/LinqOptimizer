@@ -13,6 +13,9 @@ namespace Nessos.LinqOptimizer.Tests
     [TestFixture]
     public class QueryTests
     {
+
+		bool RunsOnMono = Type.GetType("Mono.Runtime", false) != null;
+
         [Test]
         public void Select()
         {
@@ -684,8 +687,13 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void UserDefinedAnonymousType()
         {
-            Assert.Catch(typeof(MemberAccessException), () => UserDefinedAnonymousTypeTest(false));
-            Assert.AreEqual(42, UserDefinedAnonymousTypeTest(true));
+			if(RunsOnMono)
+				Assert.AreEqual(42, UserDefinedAnonymousTypeTest(false));
+			else
+				Assert.Catch(typeof(MemberAccessException), () => UserDefinedAnonymousTypeTest(false));
+
+
+			Assert.AreEqual(42, UserDefinedAnonymousTypeTest(true));
         } 
 
 
