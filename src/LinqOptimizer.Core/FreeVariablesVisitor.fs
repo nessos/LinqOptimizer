@@ -33,6 +33,26 @@
                 addLocals expr.Variables 
                 expr.Update(expr.Variables, this.Visit(expr.Expressions)) :> _
 
+//            override this.VisitMember(expr : MemberExpression) =
+//                if expr.Expression :? ConstantExpression then
+//                    let obj = (expr.Expression :?> ConstantExpression).Value
+//                    
+//                    let (value, p) = 
+//                        match expr.Member.MemberType with
+//                        | MemberTypes.Field ->
+//                            let fi = expr.Member :?> FieldInfo
+//                            fi.GetValue(obj), Expression.Parameter(expr.Type, sprintf "%s" fi.Name) 
+//                        | MemberTypes.Property ->
+//                            let pi = expr.Member :?> PropertyInfo
+//                            let indexed = pi.GetIndexParameters() |> Seq.cast<obj> |> Seq.toArray
+//                            pi.GetValue(obj, indexed), Expression.Parameter(expr.Type, sprintf "%s" pi.Name) 
+//                        | _ -> 
+//                            failwithf "Internal error : Accessing non Field or Property from MemberExpression %A" expr
+//                    freeVars.Add(p) |> ignore
+//                    p :> _
+//                else
+//                    expr.Update(this.Visit expr.Expression) :> _
+
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module FreeVariablesVisitor =
