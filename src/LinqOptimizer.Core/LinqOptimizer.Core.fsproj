@@ -59,9 +59,9 @@
     <Compile Include="ExpressionHelpers.fs" />
     <Compile Include="ReflectionHelpers.fs" />
     <Compile Include="ExpressionTransformer.fs" />
-    <Compile Include="FreeVariablesVisitor.fs" />
     <Compile Include="ConstantLiftingTransformer.fs" />
     <Compile Include="AnonymousTypeEraser.fs" />
+    <Compile Include="FreeVariablesVisitor.fs" />
     <Compile Include="TupleElimination.fs" />
     <Compile Include="AccessChecker.fs" />
     <Compile Include="Compiler.fs" />

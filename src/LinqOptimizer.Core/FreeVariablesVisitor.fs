@@ -33,6 +33,14 @@
                 addLocals expr.Variables 
                 expr.Update(expr.Variables, this.Visit(expr.Expressions)) :> _
 
+            override this.VisitMember(expr : MemberExpression) =
+                // TransparentIdentifier's free variable
+                if expr.Member.MemberType = MemberTypes.Property then
+                    let pi = expr.Member :?> PropertyInfo
+                    if isTransparentIdentifier expr.Expression then
+                        freeVars.Add(Expression.Parameter(expr.Type, pi.Name)) |> ignore
+                expr :> _
+
 //            override this.VisitMember(expr : MemberExpression) =
 //                if expr.Expression :? ConstantExpression then
 //                    let obj = (expr.Expression :?> ConstantExpression).Value
