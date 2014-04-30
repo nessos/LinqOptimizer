@@ -303,12 +303,14 @@ namespace Nessos.LinqOptimizer.Tests
                          .OrderBy(d => d.Year)
                          .ThenBy(d => d.Month)
                          .ThenBy(d => d.Day)
+                         .ThenBy(d => d)
                          .Run();
 
                 var y = ds.AsParallel().AsOrdered()
                           .OrderBy(d => d.Year)
                           .ThenBy(d => d.Month)
-                          .ThenBy(d => d.Day);
+                          .ThenBy(d => d.Day)
+                          .ThenBy(d => d);
 
                 return x.SequenceEqual(y);
             }).QuickCheckThrowOnFailure();
