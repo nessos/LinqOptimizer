@@ -38,8 +38,13 @@
                 if expr.Member.MemberType = MemberTypes.Property then
                     let pi = expr.Member :?> PropertyInfo
                     if isTransparentIdentifier expr.Expression then
-                        freeVars.Add(Expression.Parameter(expr.Type, pi.Name)) |> ignore
-                expr :> _
+                        let p = Expression.Parameter(expr.Type, pi.Name)
+                        freeVars.Add(p) |> ignore
+                        p :> _
+                    else
+                        expr :> _
+                else
+                    expr :> _
 
 //            override this.VisitMember(expr : MemberExpression) =
 //                if expr.Expression :? ConstantExpression then
@@ -68,3 +73,8 @@
             let fvv = new FreeVariablesVisitor()
             let expr = fvv.Visit(expr)
             fvv.Environment
+
+        let getWithExpr(expr : Expression) =
+            let fvv = new FreeVariablesVisitor()
+            let expr = fvv.Visit(expr)
+            expr, fvv.Environment
