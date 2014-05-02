@@ -127,6 +127,12 @@ namespace Nessos.LinqOptimizer.Core
                 when assignExpr.NodeType = ExpressionType.Assign -> Some (assignExpr.Left, assignExpr.Right)
             | _ -> None
 
+        let (|AddAssign|_|) (expr : Expression) = 
+            match expr with
+            | :? BinaryExpression as assignExpr 
+                when assignExpr.NodeType = ExpressionType.AddAssign -> Some (assignExpr.Left, assignExpr.Right)
+            | _ -> None
+
         let (|Plus|_|) (expr : Expression) = 
             match expr with
             | :? BinaryExpression as plusExpr 
@@ -301,6 +307,11 @@ namespace Nessos.LinqOptimizer.Core
         let (|ValueTypeMemberInit|_|) (expr : Expression) =
             match expr with
             | :? MemberInitExpression as expr when expr.Type.IsValueType -> Some (expr.NewExpression, expr.Bindings |> Seq.map (fun binding -> binding :?> MemberAssignment))
+            | _ -> None
+
+        let (|Loop|_|) (expr : Expression) =
+            match expr with
+            | :? LoopExpression as expr -> Some (expr.Body, expr.BreakLabel, expr.ContinueLabel)
             | _ -> None
 
         type internal Expression with
