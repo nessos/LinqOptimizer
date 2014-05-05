@@ -43,7 +43,9 @@
                 expr.Update(this.Visit expr.Operand) :> _
 
     module TypeCollector =
-        let getTypes(expr : Expression) : seq<_>  =
-            let tg = new TypeCollectorVisitor()
-            tg.Visit(expr) |> ignore
-            tg.Types :> _
+        let getTypes(exprs : seq<Expression>) : seq<Type>  =
+            exprs 
+            |> Seq.collect (fun expr -> 
+                let tg = new TypeCollectorVisitor()
+                tg.Visit(expr) |> ignore
+                tg.Types)
