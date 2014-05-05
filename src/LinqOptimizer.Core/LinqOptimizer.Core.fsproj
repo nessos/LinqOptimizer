@@ -63,7 +63,7 @@
     <Compile Include="AnonymousTypeEraser.fs" />
     <Compile Include="FreeVariablesVisitor.fs" />
     <Compile Include="TupleElimination.fs" />
-    <Compile Include="TypeGatheringVisitor.fs" />
+    <Compile Include="TypeCollectorVisitor.fs" />
     <Compile Include="AccessChecker.fs" />
     <Compile Include="Compiler.fs" />
     <Compile Include="CSharpExpressionOptimizer.fs" />

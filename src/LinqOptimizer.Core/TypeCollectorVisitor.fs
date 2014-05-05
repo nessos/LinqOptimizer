@@ -8,7 +8,7 @@
     open System.Reflection
     open System.Collections.Concurrent
 
-    type private TypeGatheringVisitor () =
+    type private TypeCollectorVisitor () =
         inherit ExpressionVisitor() with
 
             let types = List<Type>()
@@ -42,8 +42,8 @@
                 types.Add(expr.Type)
                 expr.Update(this.Visit expr.Operand) :> _
 
-    module TypeGathering =
+    module TypeCollector =
         let getTypes(expr : Expression) : seq<_>  =
-            let tg = new TypeGatheringVisitor()
+            let tg = new TypeCollectorVisitor()
             tg.Visit(expr) |> ignore
             tg.Types :> _
