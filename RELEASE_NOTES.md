@@ -1,2 +1,3 @@
 #### 0.6.3
-* Upcoming release
+* Bug fixes.
+* Minor code updates.
