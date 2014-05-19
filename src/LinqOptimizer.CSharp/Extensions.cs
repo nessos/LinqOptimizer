@@ -377,6 +377,16 @@ namespace Nessos.LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Creates a new query that computes the sum of a sequence of Long values.
+        /// </summary>
+        /// <param name="query">A query whose sequence of Long values to calculate the sum of.</param>
+        /// <returns>A query that returns the sum of the values in the sequence.</returns>
+        public static IQueryExpr<long> Sum(this IQueryExpr<IEnumerable<long>> query)
+        {
+            return new QueryExpr<long>(QExpr.NewSum(query.Expr));
+        }
+
+        /// <summary>
         /// Creates a new query that computes the sum of a sequence of int values.
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>

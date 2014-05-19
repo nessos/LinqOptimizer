@@ -93,6 +93,20 @@ namespace Nessos.LinqOptimizer.Tests
         }
 
         [Test]
+        public void SumLong()
+        {
+            Spec.ForAny<long[]>(xs =>
+            {
+                var x = (from n in xs.AsParallelQueryExpr()
+                         select n * 2).Sum().Run();
+                var y = (from n in xs.AsParallel()
+                         select n * 2).Sum();
+
+                return x == y;
+            }).QuickCheckThrowOnFailure();
+        }
+
+        [Test]
         public void SelectMany()
         {
             Spec.ForAny<int[]>(xs =>

@@ -106,6 +106,16 @@ namespace Nessos.LinqOptimizer.CSharp
         }
 
         /// <summary>
+        /// Creates a new query that computes the sum of a sequence of Long values in parallel.
+        /// </summary>
+        /// <param name="query">A query whose sequence of Long values to calculate the sum of.</param>
+        /// <returns>A parallel query that returns the sum of the values in the sequence.</returns>
+        public static IParallelQueryExpr<long> Sum(this IParallelQueryExpr<IEnumerable<long>> query)
+        {
+            return new ParallelQueryExpr<long>(QExpr.NewSum(query.Expr));
+        }
+
+        /// <summary>
         /// Creates a new query that computes the sum of a sequence of int values in parallel.
         /// </summary>
         /// <param name="query">A query whose sequence of int values to calculate the sum of.</param>

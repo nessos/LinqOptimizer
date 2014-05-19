@@ -60,6 +60,14 @@
             Check.QuickThrowOnFailure (TestInput.RunTest<float> test)
 
         [<Test>]
+        member __.``sum int64`` () =
+            let test (xs : seq<int64>) =
+                let x = xs |> PQuery.ofSeq |> PQuery.map (fun x -> x * x) |> PQuery.sum |> PQuery.run
+                let y = xs |> Seq.map (fun x -> x * x) |> Seq.sum
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest<int64> test)
+
+        [<Test>]
         member __.``collect`` () =
             let test (xs : seq<'T>) =
                 let x = xs |> PQuery.ofSeq 
