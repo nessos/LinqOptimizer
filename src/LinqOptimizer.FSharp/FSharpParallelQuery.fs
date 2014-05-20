@@ -80,6 +80,12 @@
         ///<summary>Constructs a parallel query that returns the sum of the elements in the sequence.</summary>
         ///<param name="query">The query whose elements are used as input.</param>
         ///<returns>A query that contains the result of the computation.</returns>
+        static member sum(query : IParallelQueryExpr<seq<int64>>) =
+            new ParallelQueryExpr<int64>(QueryExpr.Sum(query.Expr)) :> IParallelQueryExpr<_>
+
+        ///<summary>Constructs a parallel query that returns the sum of the elements in the sequence.</summary>
+        ///<param name="query">The query whose elements are used as input.</param>
+        ///<returns>A query that contains the result of the computation.</returns>
         static member sum(query : IParallelQueryExpr<seq<float>>) =
             new ParallelQueryExpr<float>(QueryExpr.Sum(query.Expr)) :> IParallelQueryExpr<_>
 

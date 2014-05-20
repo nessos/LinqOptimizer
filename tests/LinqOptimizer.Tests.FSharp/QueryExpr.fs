@@ -98,6 +98,14 @@
             Check.QuickThrowOnFailure (TestInput.RunTest<float> test)
 
         [<Test>]
+        member __.``sum int64`` () =
+            let test (xs : seq<int64>) =
+                let x = xs |> Query.ofSeq |> Query.map (fun x -> x * x) |> Query.sum |> Query.run
+                let y = xs |> Seq.map (fun x -> x * x) |> Seq.sum
+                x = y
+            Check.QuickThrowOnFailure (TestInput.RunTest<int64> test)
+
+        [<Test>]
         member __.``fold`` () =
             let test (xs : seq<int>) =
                 let x = xs |> Query.ofSeq 

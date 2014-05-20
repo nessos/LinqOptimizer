@@ -125,6 +125,12 @@
         ///<summary>Constructs a query that returns the sum of the elements in the sequence.</summary>
         ///<param name="query">The query whose elements are used as input.</param>
         ///<returns>A query that contains the result of the computation.</returns>
+        static member sum (source : IQueryExpr<seq<int64>>) =
+            QueryExpr<int64>(Sum(source.Expr)) :> IQueryExpr<int64> 
+
+        ///<summary>Constructs a query that returns the sum of the elements in the sequence.</summary>
+        ///<param name="query">The query whose elements are used as input.</param>
+        ///<returns>A query that contains the result of the computation.</returns>
         static member sum (source : IQueryExpr<seq<int>>) =
             QueryExpr<int>(Sum(source.Expr)) :> IQueryExpr<int> 
 
