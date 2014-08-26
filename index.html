@@ -1,144 +1,182 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>LinqOptimizer by nessos</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta charset="utf-8"/>
+    <title>LinqOptimizer
+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="SUMMARY"/>
+    <meta name="author" content="Nick Palladinos, Kostas Rontogiannis"/>
 
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/LinqOptimizer/content/style.css" />
+    <script type="text/javascript" src="/LinqOptimizer/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/nessos/LinqOptimizer">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/nessos/LinqOptimizer/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/nessos/LinqOptimizer/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
-
-    <div class="wrapper">
-
-      <section>
-        <div id="title">
-          <h1>LinqOptimizer</h1>
-          <p>An automatic query optimizer for LINQ to Objects and PLINQ.</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/nessos">nessos</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
-
-        <h1>
-<a name="linqoptimizer" class="anchor" href="#linqoptimizer"><span class="octicon octicon-link"></span></a>LinqOptimizer</h1>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="http://github.com/nessos/LinqOptimizer">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/LinqOptimizer/index.html">LinqOptimizer</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h1>LinqOptimizer</h1>
 
 <p>An automatic query optimizer-compiler for Sequential and Parallel LINQ. 
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
-The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the <a href="https://github.com/nessos/LinqOptimizer/wiki/Performance">Performance</a> page).</p>
+The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the [Performance] (<a href="https://github.com/nessos/LinqOptimizer/wiki/Performance)">https://github.com/nessos/LinqOptimizer/wiki/Performance)</a> page).</p>
 
 <p>The main idea is that we lift query sources into the world of Expression trees and
 after various transformations-optimizations we compile them into IL for efficient execution.</p>
 
-<div class="highlight highlight-csharp"><pre><span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">num</span> <span class="k">in</span> <span class="n">nums</span><span class="p">.</span><span class="n">AsQueryExpr</span><span class="p">()</span> <span class="c1">// lift</span>
-             <span class="k">where</span> <span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span>
-             <span class="k">select</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">).</span><span class="n">Sum</span><span class="p">();</span>
+<table class="pre"><tr><td><pre lang="csharp"><span class="k">var</span> query = (<span class="k">from</span> num <span class="k">in</span> nums.AsQueryExpr() <span class="c">// lift</span>
+             <span class="k">where</span> num % 2 == 0
+             <span class="k">select</span> num * num).Sum();
 
-<span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">"Result: {0}"</span><span class="p">,</span> <span class="n">query</span><span class="p">.</span><span class="n">Run</span><span class="p">());</span> <span class="c1">// compile and execute</span>
-</pre></div>
+Console.WriteLine(<span class="s">"Result: {0}"</span>, query.Run()); // compile and execute</pre></td></tr></table>
 
 <p>For F# we support functional pipelines and support for F# style LINQ queries is in development.</p>
 
-<div class="highlight highlight-fsharp"><pre><span class="k">let</span> <span class="nv">query</span> <span class="o">=</span> <span class="n">nums</span>
-            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">ofSeq</span>
-            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">filter</span> <span class="o">(</span><span class="k">fun</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="n">num</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">=</span> <span class="mi">0</span><span class="o">)</span>
-            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">map</span> <span class="o">(</span><span class="k">fun</span> <span class="n">num</span> <span class="o">-&gt;</span> <span class="n">num</span> <span class="o">*</span> <span class="n">num</span><span class="o">)</span>
-            <span class="o">|&gt;</span> <span class="nn">Query</span><span class="p">.</span><span class="n">sum</span>
+<table class="pre"><tr><td class="lines"><pre class="fssnip">
+<span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre>
+</td>
+<td class="snippet"><pre class="fssnip">
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="i">query</span> <span class="o">=</span> <span class="i">nums</span>
+            <span class="o">|&gt;</span> <span class="i">Query</span><span class="o">.</span><span class="i">ofSeq</span>
+            <span class="o">|&gt;</span> <span class="i">Query</span><span class="o">.</span><span class="i">filter</span> (<span class="k">fun</span> <span class="i">num</span> <span class="k">-&gt;</span> <span class="i">num</span> <span class="o">%</span> <span class="n">2</span> <span class="o">=</span> <span class="n">0</span>)
+            <span class="o">|&gt;</span> <span class="i">Query</span><span class="o">.</span><span class="i">map</span> (<span class="k">fun</span> <span class="i">num</span> <span class="k">-&gt;</span> <span class="i">num</span> <span class="o">*</span> <span class="i">num</span>)
+            <span class="o">|&gt;</span> <span class="i">Query</span><span class="o">.</span><span class="i">sum</span>
 
-<span class="n">printfn</span> <span class="s">"Result: %d"</span> <span class="o">&lt;|</span> <span class="nn">Query</span><span class="p">.</span><span class="n">run</span> <span class="n">query</span> <span class="c1">// compile and execute</span>
-</pre></div>
+<span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="i">printfn</span> <span class="s">&quot;</span><span class="s">Result</span><span class="s">:</span><span class="s"> </span><span class="s">%</span><span class="s">d</span><span class="s">&quot;</span> <span class="o">&lt;|</span> <span class="i">Query</span><span class="o">.</span><span class="i">run</span> <span onmouseout="hideTip(event, 'fs1', 3)" onmouseover="showTip(event, 'fs1', 3)" class="i">query</span> <span class="c">// compile and execute</span></pre>
+</td>
+</tr>
+</table>
 
-<h2>
-<a name="install-via-nuget" class="anchor" href="#install-via-nuget"><span class="octicon octicon-link"></span></a>Install via NuGet</h2>
+<h2>Get LinqOptimizer via NuGet</h2>
 
-<pre><code>Install-Package LinqOptimizer.CSharp
-Install-Package LinqOptimizer.FSharp
-</code></pre>
+<div class="row">
+  <div class="span1"></div>
+  <div class="span6">
+    <div class="well well-small" id="nuget">
+      LinqOptimizer can be installed from NuGet:
+      <pre>PM> Install-Package LinqOptimizer.CSharp</pre>
+      <pre>PM> Install-Package LinqOptimizer.FSharp</pre>
+    </div>
+  </div>
+  <div class="span1"></div>
+</div>
 
-<h2>
-<a name="optimizations" class="anchor" href="#optimizations"><span class="octicon octicon-link"></span></a>Optimizations</h2>
+<h2>Optimizations</h2>
 
 <ul>
 <li>Lambda inlining</li>
 <li>Loop fusion</li>
 <li>Nested loop generation</li>
 <li>Specialized strategies and algorithms</li>
-</ul><p>The expression</p>
+</ul>
 
-<div class="highlight highlight-csharp"><pre><span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">num</span> <span class="k">in</span> <span class="n">nums</span><span class="p">.</span><span class="n">AsQueryExpr</span><span class="p">()</span>
-             <span class="k">where</span> <span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span>
-             <span class="k">select</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">).</span><span class="n">Sum</span><span class="p">();</span>
-</pre></div>
+<p>The expression</p>
+
+<table class="pre"><tr><td><pre lang="csharp"><span class="k">var</span> query = (<span class="k">from</span> num <span class="k">in</span> nums.AsQueryExpr()
+             <span class="k">where</span> num % 2 == 0
+             <span class="k">select</span> num * num).Sum();</pre></td></tr></table>
 
 <p>will compile to</p>
 
-<div class="highlight highlight-csharp"><pre><span class="kt">int</span> <span class="n">sum</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">index</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">index</span> <span class="p">&lt;</span> <span class="n">nums</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span> <span class="n">index</span><span class="p">++)</span>
-<span class="p">{</span>
-   <span class="kt">int</span> <span class="n">num</span> <span class="p">=</span> <span class="n">nums</span><span class="p">[</span><span class="n">index</span><span class="p">];</span>
-   <span class="k">if</span> <span class="p">(</span><span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
-      <span class="n">sum</span> <span class="p">+=</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
+<table class="pre"><tr><td><pre lang="csharp"><span class="k">int</span> sum = 0;
+<span class="k">for</span> (<span class="k">int</span> index = 0; index &lt; nums.Length; index++)
+{
+   <span class="k">int</span> num = nums[index];
+   <span class="k">if</span> (num % 2 == 0)
+      sum += num * num;
+}</pre></td></tr></table>
 
 <p>and for the parallel case</p>
 
-<div class="highlight highlight-csharp"><pre><span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">num</span> <span class="k">in</span> <span class="n">nums</span><span class="p">.</span><span class="n">AsParallelQueryExpr</span><span class="p">()</span>
-             <span class="k">where</span> <span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span>
-             <span class="k">select</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">).</span><span class="n">Sum</span><span class="p">();</span>
-</pre></div>
+<table class="pre"><tr><td><pre lang="csharp"><span class="k">var</span> query = (<span class="k">from</span> num <span class="k">in</span> nums.AsParallelQueryExpr()
+             <span class="k">where</span> num % 2 == 0
+             <span class="k">select</span> num * num).Sum();</pre></td></tr></table>
 
-<p>will compile to a reduce-combine style straregy</p>
+<p>will compile to a reduce-combine style strategy</p>
 
-<div class="highlight highlight-csharp"><pre><span class="n">Parallel</span><span class="p">.</span><span class="n">ReduceCombine</span><span class="p">(</span><span class="n">nums</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> 
-                          <span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span> 
-                                       <span class="k">if</span> <span class="p">(</span><span class="n">num</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>  
-                                         <span class="k">return</span> <span class="n">acc</span> <span class="p">+</span> <span class="n">num</span> <span class="p">*</span> <span class="n">num</span><span class="p">;</span> 
+<table class="pre"><tr><td><pre lang="csharp">Parallel.ReduceCombine(nums, 0, 
+                          (acc, num) =&gt; { 
+                                       <span class="k">if</span> (num % 2 == 0)  
+                                         <span class="k">return</span> acc + num * num; 
                                        <span class="k">else</span>
-                                         <span class="k">return</span> <span class="n">acc</span><span class="p">;</span> 
-                          <span class="p">},</span> <span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">left</span> <span class="p">+</span> <span class="n">right</span><span class="p">);</span>
-</pre></div>
+                                         <span class="k">return</span> acc; 
+                          }, (left, right) =&gt; left + right);</pre></td></tr></table>
 
-<h2>
-<a name="future-work" class="anchor" href="#future-work"><span class="octicon octicon-link"></span></a>Future work</h2>
+<h2>Future work</h2>
 
 <ul>
 <li>Many missing operators</li>
-<li>New specialized operators </li>
+<li>New specialized operators</li>
 <li>Even more optimizations</li>
 <li>GPU backend</li>
-<li>DistributedLinq (Combining LinqOptimizer with <a href="http://www.m-brace.net">MBrace</a>)</li>
-</ul><h2>
-<a name="references" class="anchor" href="#references"><span class="octicon octicon-link"></span></a>References</h2>
-
-<p>LinqOptimizer draws heavy inspiration from </p>
-
-<ul>
-<li><a href="http://research.microsoft.com/pubs/173946/paper-pldi.pdf">Steno</a></li>
-<li><a href="http://clojure.org/reducers">Clojure - reducers</a></li>
+<li>CloudLinq (Combining LinqOptimizer with <a href="http://www.m-brace.net">MBrace</a>)</li>
 </ul>
-      </section>
 
+<h2>References</h2>
+
+<p>LinqOptimizer draws heavy inspiration from 
+<em> <a href="http://research.microsoft.com/pubs/173946/paper-pldi.pdf">Steno</a>
+</em> <a href="http://clojure.org/reducers">Clojure - reducers</a></p>
+
+<h2>Contributing and copyright</h2>
+
+<p>The project is hosted on <a href="https://github.com/nessos/LinqOptimizer">GitHub</a> where you can <a href="https://github.com/nessos/LinqOptimizer/issues">report issues</a>, fork 
+the project and submit pull requests.</p>
+
+<p>The library is available under the Apache License. 
+For more information see the <a href="https://github.com/nessos/MBrace/blob/master/License.md">License file</a> in the GitHub repository.</p>
+
+<div class="tip" id="fs1">val query : obj<br /><br />Full name: index.query</div>
+<div class="tip" id="fs2">val printfn : format:Printf.TextWriterFormat&lt;&#39;T&gt; -&gt; &#39;T<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn</div>
+
+        </div>
+        <div class="span3">
+		      <a target="_blank" href="http://www.m-brace.net/">
+            <img src="/LinqOptimizer/img/nessos.png" alt="F# Project" style="width:150px;margin:10px" />
+		      </a>
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">LinqOptimizer</li>
+            <li><a href="/LinqOptimizer/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://www.nuget.org/packages/LinqOptimizer.CSharp">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/nessos/LinqOptimizer">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/nessos/LinqOptimizer/blob/master/LICENSE.md">License</a></li>
+            <li><a href="http://github.com/nessos/LinqOptimizer/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+            
+            <li class="nav-header">Getting started</li>
+            <li><a href="/LinqOptimizer/programming-model.html">Programming model</a></li>
+
+            <li class="nav-header">Documentation</li>
+            <li><a href="/LinqOptimizer/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
+    <a href="http://github.com/nessos/LinqOptimizer"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
   </body>
-</html>
+  </html>
