@@ -37,7 +37,7 @@
 
 <p>An automatic query optimizer-compiler for Sequential and Parallel LINQ. 
 LinqOptimizer compiles declarative LINQ queries into fast loop-based imperative code.
-The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the [Performance] (<a href="https://github.com/nessos/LinqOptimizer/wiki/Performance)">https://github.com/nessos/LinqOptimizer/wiki/Performance)</a> page).</p>
+The compiled code has fewer virtual calls and heap allocations, better data locality and speedups of up to 15x (Check the <a href="https://github.com/nessos/LinqOptimizer/wiki/Performance">Performance</a> page).</p>
 
 <p>The main idea is that we lift query sources into the world of Expression trees and
 after various transformations-optimizations we compile them into IL for efficient execution.</p>
@@ -79,8 +79,8 @@ Console.WriteLine(<span class="s">"Result: {0}"</span>, query.Run()); // compile
   <div class="span6">
     <div class="well well-small" id="nuget">
       LinqOptimizer can be installed from NuGet:
-      <pre>PM> Install-Package LinqOptimizer.CSharp</pre>
-      <pre>PM> Install-Package LinqOptimizer.FSharp</pre>
+      <pre>PM> Install-Package LinqOptimizer.CSharp
+PM> Install-Package LinqOptimizer.FSharp</pre>
     </div>
   </div>
   <div class="span1"></div>
@@ -149,14 +149,14 @@ Console.WriteLine(<span class="s">"Result: {0}"</span>, query.Run()); // compile
 the project and submit pull requests.</p>
 
 <p>The library is available under the Apache License. 
-For more information see the <a href="https://github.com/nessos/MBrace/blob/master/License.md">License file</a> in the GitHub repository.</p>
+For more information see the [License file][license] in the GitHub repository.</p>
 
 <div class="tip" id="fs1">val query : obj<br /><br />Full name: index.query</div>
 <div class="tip" id="fs2">val printfn : format:Printf.TextWriterFormat&lt;&#39;T&gt; -&gt; &#39;T<br /><br />Full name: Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn</div>
 
         </div>
         <div class="span3">
-		      <a target="_blank" href="http://www.m-brace.net/">
+		      <a target="_blank" href="http://nessos.github.io/">
             <img src="/LinqOptimizer/img/nessos.png" alt="F# Project" style="width:150px;margin:10px" />
 		      </a>
           <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
@@ -168,11 +168,9 @@ For more information see the <a href="https://github.com/nessos/MBrace/blob/mast
             <li><a href="http://github.com/nessos/LinqOptimizer/blob/master/LICENSE.md">License</a></li>
             <li><a href="http://github.com/nessos/LinqOptimizer/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
             
-            <li class="nav-header">Getting started</li>
-            <li><a href="/LinqOptimizer/programming-model.html">Programming model</a></li>
+            
 
-            <li class="nav-header">Documentation</li>
-            <li><a href="/LinqOptimizer/reference/index.html">API Reference</a></li>
+            
           </ul>
         </div>
       </div>
