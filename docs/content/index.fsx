@@ -116,5 +116,5 @@ For more information see the [License file][license] in the GitHub repository.
 
   [gh]: https://github.com/nessos/LinqOptimizer
   [issues]: https://github.com/nessos/LinqOptimizer/issues
-  [license]: https://github.com/nessos/LinqOptimizer/blob/master/License.md
+  [license]: https://github.com/nessos/LinqOptimizer/blob/master/LICENSE.md
 *)
