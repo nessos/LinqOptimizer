@@ -29,7 +29,7 @@ let info =
     "project-author", "Nick Palladinos, Kostas Rontogiannis"
     "project-summary", "SUMMARY"
     "project-github", githubLink
-    "project-nuget", "http://www.nuget.org/packages/LinqOptimizer.CSharp" ]
+    "project-nuget", "https://www.nuget.org/packages?q=LinqOptimizer" ]
 
 // --------------------------------------------------------------------------------------
 // For typical project, no changes are needed below

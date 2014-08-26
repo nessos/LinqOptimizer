@@ -53,7 +53,9 @@ PM> Install-Package LinqOptimizer.FSharp</pre>
 * Lambda inlining
 * Loop fusion
 * Nested loop generation
+* Anonymous Types-Tuples elimination
 * Specialized strategies and algorithms
+
 
 The expression
 
@@ -95,13 +97,13 @@ will compile to a reduce-combine style strategy
 * Many missing operators
 * New specialized operators 
 * Even more optimizations
-* GPU backend
-* CloudLinq (Combining LinqOptimizer with [MBrace](http://www.m-brace.net))
 
 ## References
+
 LinqOptimizer draws heavy inspiration from 
+
 * [Steno](http://research.microsoft.com/pubs/173946/paper-pldi.pdf)
-* [Clojure - reducers](http://clojure.org/reducers)
+* [Clojure reducers](http://clojure.org/reducers)
 
 
 ## Contributing and copyright
@@ -114,4 +116,5 @@ For more information see the [License file][license] in the GitHub repository.
 
   [gh]: https://github.com/nessos/LinqOptimizer
   [issues]: https://github.com/nessos/LinqOptimizer/issues
+  [license]: https://github.com/nessos/LinqOptimizer/blob/master/License.md
 *)
