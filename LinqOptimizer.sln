@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}"
@@ -43,6 +45,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{3C6A
 		nuget\LinqOptimizer.FSharp.nuspec = nuget\LinqOptimizer.FSharp.nuspec
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{E179B23F-B1E2-4B8D-AAEB-D8BC434A7239}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{B4405479-92BF-4AD2-9275-44B5DC8383F2}"
+	ProjectSection(SolutionItems) = preProject
+		docs\content\index.fsx = docs\content\index.fsx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "files", "files", "{E85B2337-E639-4CE7-9FDA-C3EBEEC05C51}"
+	ProjectSection(SolutionItems) = preProject
+		docs\files\img\fsharp.png = docs\files\img\fsharp.png
+		docs\files\img\nessos.png = docs\files\img\nessos.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{86B0A7ED-17B3-4494-A454-B414D3A10B92}"
+	ProjectSection(SolutionItems) = preProject
+		docs\tools\generate.fsx = docs\tools\generate.fsx
+		docs\tools\packages.config = docs\tools\packages.config
+		docs\tools\templates\template.cshtml = docs\tools\templates\template.cshtml
 	EndProjectSection
 EndProject
 Global
@@ -105,13 +127,16 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{1E812A89-C8F1-463E-8E1E-765389A0A4BC} = {8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}
+		{38A228D2-764C-4103-9AC2-58452630CBA2} = {8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}
 		{F21F83A3-BDBD-4965-87D6-94E65A069A7B} = {9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}
 		{6FEA9D47-1291-40CE-9716-619BCC2F485A} = {9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}
 		{E606C2C2-C219-4E51-B928-5B192E283A54} = {9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}
 		{5C5FE9F9-91DF-44E2-A68D-B9A49828E0BB} = {9C33CACA-C699-4C93-BA82-9AE99C9A0D3C}
-		{1E812A89-C8F1-463E-8E1E-765389A0A4BC} = {8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}
-		{38A228D2-764C-4103-9AC2-58452630CBA2} = {8D1A3558-9D76-4744-BDFE-AD25F8A1EE30}
 		{2BB3E227-CB90-4FFD-9763-4DCD00B61D79} = {EC71519F-9DEA-49C1-9A29-8D97093C6BBF}
 		{99EC4E0D-C8F6-40DC-97D1-1E30A261E67F} = {EC71519F-9DEA-49C1-9A29-8D97093C6BBF}
+		{B4405479-92BF-4AD2-9275-44B5DC8383F2} = {E179B23F-B1E2-4B8D-AAEB-D8BC434A7239}
+		{E85B2337-E639-4CE7-9FDA-C3EBEEC05C51} = {E179B23F-B1E2-4B8D-AAEB-D8BC434A7239}
+		{86B0A7ED-17B3-4494-A454-B414D3A10B92} = {E179B23F-B1E2-4B8D-AAEB-D8BC434A7239}
 	EndGlobalSection
 EndGlobal

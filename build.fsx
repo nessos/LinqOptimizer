@@ -150,14 +150,35 @@ Target "NuGet" (fun _ ->
 )
 
 
-Target "Release" DoNothing
+// --------------------------------------------------------------------------------------
+// Documentation
+
+Target "GenerateDocs" (fun _ ->
+    executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"] [] |> ignore
+)
+
+Target "ReleaseDocs" (fun _ ->
+    let tempDocsDir = "temp/gh-pages"
+    CleanDir tempDocsDir
+    Repository.cloneSingleBranch "" (gitHome + "/" + gitName + ".git") "gh-pages" tempDocsDir
+
+    fullclean tempDocsDir
+    CopyRecursive "docs/output" tempDocsDir true |> tracefn "%A"
+    StageAll tempDocsDir
+    Commit tempDocsDir (sprintf "Update generated documentation for version %s" release.NugetVersion)
+    Branches.push tempDocsDir
+)
+
 
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
+Target "Release" DoNothing
+Target "Docs" DoNothing
 Target "Prepare" DoNothing
 Target "PrepareRelease" DoNothing
 Target "All" DoNothing
+Target "Help" (fun _ -> PrintTargets() )
 
 "Clean"
   ==> "RestorePackages"
@@ -171,6 +192,12 @@ Target "All" DoNothing
   ==> "PrepareRelease" 
   ==> "NuGet"
   ==> "Release"
+
+"Clean"
+  ==> "Build"
+  ==> "GenerateDocs"
+  ==> "ReleaseDocs"
+  ==> "Docs"
 
 //RunTargetOrDefault "Release"
 RunTargetOrDefault "All"
