@@ -8,17 +8,14 @@
     open System.Threading.Tasks
 
     type ParallelismHelpers =
-        static member TotalWorkers = int (2.0 ** float (int (Math.Log(float Environment.ProcessorCount, 2.0))))
+        static member TotalWorkers = Environment.ProcessorCount
 
-        static member GetPartitions (s : int, e : int) = 
-            let toSeq (enum : IEnumerator<_>)= 
-                seq {
-                    while enum.MoveNext() do
-                        yield enum.Current
-                }
-            let partitioner = Partitioner.Create(s, e)
-            let partitions = partitioner.GetPartitions(ParallelismHelpers.TotalWorkers) |> Seq.collect toSeq |> Seq.toArray 
-            partitions
+        static member GetPartitions length = 
+            let n = ParallelismHelpers.TotalWorkers
+            [| 
+                for i in 0 .. n - 1 ->
+                    let i, j = length * i / n, length * (i + 1) / n in (i, j) 
+            |]
 
         static member ReduceCombine<'T, 'Acc, 'R>( array : 'T[],
                                                     init : Func<'Acc>, 
@@ -28,7 +25,7 @@
             if array.Length = 0 then
                 selector.Invoke(init.Invoke())
             else
-                let partitions = ParallelismHelpers.GetPartitions(0, array.Length)
+                let partitions = ParallelismHelpers.GetPartitions array.Length
                 let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
                 let tasks = partitions |> Array.mapi (fun index (s, e) -> 
                                                         Task.Factory.StartNew(fun () -> 
@@ -55,7 +52,7 @@
             if length = 0 then
                 selector.Invoke(init.Invoke())
             else
-                let partitions = ParallelismHelpers.GetPartitions(0, length)
+                let partitions = ParallelismHelpers.GetPartitions length
                 let cells = partitions |> Array.map (fun _ -> ref Unchecked.defaultof<'Acc>)
                 let tasks = partitions |> Array.mapi (fun index (s, e) -> 
                                                         Task.Factory.StartNew(fun () -> 
