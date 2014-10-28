@@ -2,6 +2,8 @@
 
 An automatic query optimizer-compiler for Sequential and Parallel LINQ.
 
+More information [here](http://nessos.github.io/LinqOptimizer/).
+
 ### Build Status
 
 Head (branch `master`), Build & Unit tests
