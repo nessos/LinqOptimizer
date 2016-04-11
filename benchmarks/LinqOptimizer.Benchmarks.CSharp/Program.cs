@@ -1,8 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Columns;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Loggers;
+using BenchmarkDotNet.Running;
 using Nessos.LinqOptimizer.CSharp;
 
 namespace LinqOptimizer.Benchmarks.CSharp
@@ -11,227 +15,283 @@ namespace LinqOptimizer.Benchmarks.CSharp
     {
         static void Main(string[] args)
         {
-            var rnd = new Random();
-            var v = Enumerable.Range(1, 200000000).Select(x => rnd.NextDouble()).ToArray();
-            Func<double,double,bool> cmp = (x1, x2) => Math.Abs(x1 - x2) < 1E-07;
-            
-            Measure("Sum Linq", () => SumLinq(v),
-                    "Sum Opt", () => SumLinqOpt(v),
-                    cmp);
+            typeof(SequentialBenchmarks)
+                .GetNestedTypes()
+                .Concat(typeof(ParallelBenchmarks).GetNestedTypes())
+                .ToList()
+                .ForEach(type => BenchmarkRunner.Run(type, new CustomConfig()));
+        }
+    }
 
-            Measure("Sum of Squares Linq", () => SumSqLinq(v),
-                    "Sum of Squares Opt", () => SumSqLinqOpt(v),
-                    cmp);
+    internal class CustomConfig : ManualConfig
+    {
+        public CustomConfig()
+        {
+            Add(Job.Default.WithLaunchCount(1));
+            Add(PropertyColumn.Method);
+            Add(StatisticColumn.Median, StatisticColumn.StdDev);
+            Add(BaselineDiffColumn.Scaled);
+            Add(MarkdownExporter.GitHub);
+            Add(new ConsoleLogger());
+        }
+    }
 
-            var v1 = v.Take(v.Length / 10).ToArray();
-            var v2 = v.Take(20).ToArray();
-            Measure("Cartesian Linq", () => CartLinq(v1, v2),
-                    "Cartesian Opt", () => CartLinqOpt(v1, v2),
-                    cmp);
+    public class BenchmarkBase
+    {
+        // the size used to be 200000000 but currently BenchmarkDotNet does not support gcAllowVeryLargeObjects (https://github.com/PerfDotNet/BenchmarkDotNet/issues/76)
+        [Params(0, 10, 100, 10000, 1000000)]
+        public int Count;
 
-            var g = Enumerable.Range(1, 20000000).Select(x => 100000000 * rnd.NextDouble() - 50000000).ToArray();
-            Measure("GroupBy Linq", () => GroupLinq(g),
-                    "GroupBy Opt", () => GroupLinqOpt(g),
-                    (x1, x2) => Enumerable.SequenceEqual(x1, x2));
+        const int useSameSeedEveryTimeToHaveSameData = 08041988;
+        protected Random rnd = new Random(useSameSeedEveryTimeToHaveSameData);
 
-            var n = 1000;
-            Measure("Pythagorean Triples Linq", () => PythagoreanTriplesLinq(n),
-                    "Pythagorean Triples Opt", () => PythagoreanTriplesLinqOpt(n),
-                    cmp);
+        protected double[] values;
 
+        [Setup]
+        public virtual void SetUp()
+        {
+            values = Enumerable.Range(1, Count).Select(x => rnd.NextDouble()).ToArray();
+        }
+    }
 
-            /////////////////////
-            //var pv = Enumerable.Range(1, 400000000).Select(x => rnd.NextDouble()).ToArray();
-            //var pv1 = pv.Take(pv.Length / 10).ToArray();
-            //var pv2 = pv.Take(20).ToArray();
+    public class SequentialBenchmarks
+    {
+        public class SumBechmarks : BenchmarkBase
+        {
+            [Benchmark(Description = "Sum Linq", Baseline = true)]
+            public double SumLinq()
+            {
+                return values.Sum();
+            }
 
-            var pv = v;
-            var pv1 = v1;
-            var pv2 = v2;
-
-            Measure("Parallel Sum Linq", () => ParallelSumLinq(pv),
-                    "Parallel Sum Opt", () => ParallelSumLinqOpt(pv),
-                    cmp);
-
-            Measure("Parallel Sum of Squares Linq", () => ParallelSumSqLinq(pv),
-                    "Parallel Sum of Squares Opt", () => ParallelSumSqLinqOpt(pv),
-                    cmp);
-
-            Measure("Parallel Cartesian Linq", () => ParallelCartLinq(pv1, pv2),
-                    "Parallel Cartesian Opt", () => ParallelCartLinqOpt(pv1, pv2),
-                    cmp);
-
-            Measure("Parallel GroupBy Linq", () => ParallelGroupLinq(g),
-                    "Parallel GroupBy Opt", () => ParallelGroupLinqOpt(g),
-                    (x1, x2) => Enumerable.SequenceEqual(x1, x2));
-
-            Measure("Parallel Pythagorean Triples Linq", () => ParallelPythagoreanTriplesLinq(n),
-                    "Parallel Pythagorean Triples Opt", () => ParallelPythagoreanTriplesLinqOpt(n),
-                    cmp);
-
+            [Benchmark(Description = "Sum Opt")]
+            public double SumLinqOpt()
+            {
+                return values.AsQueryExpr().Sum().Run();
+            }
         }
 
-        static void Measure<T>(string title1, Func<T> action1, string title2, Func<T> action2, Func<T,T,bool> validate)
+        public class SumOfSquaresBechmarks : BenchmarkBase
         {
-            var sw = new Stopwatch();
-            sw.Start();
-            var t1 = action1();
-            sw.Stop();
-            Console.WriteLine("\"{0}\":\t{1}",title1, sw.Elapsed);
-            sw.Restart();
-            var t2 = action2();
-            sw.Stop();
-            Console.WriteLine("\"{0}\":\t{1}", title2, sw.Elapsed);
-            var equal = validate(t1, t2);
-            Console.WriteLine("Validate : {0}", equal);
-            if(!equal)
-                Console.WriteLine("Values {0}, {1}", t1, t2);
-            Console.WriteLine();
+            [Benchmark(Description = "Sum of Squares Linq", Baseline = true)]
+            public double SumSqLinq()
+            {
+                return values.Select(x => x * x).Sum();
+            }
+
+            [Benchmark(Description = "Sum of Squares Opt")]
+            public double SumSqLinqOpt()
+            {
+                return values.AsQueryExpr().Select(x => x * x).Sum().Run();
+            }
         }
 
-        static double SumLinq(double[] values)
+        public class CartesianBenchmarks : BenchmarkBase
         {
-            return values.Sum();
+            private double[] dim1, dim2;
+
+            [Setup]
+            public override void SetUp()
+            {
+                base.SetUp();
+
+                dim1 = values.Take(values.Length / 10).ToArray();
+                dim2 = values.Take(20).ToArray();
+            }
+
+            [Benchmark(Description = "Cartesian Linq", Baseline = true)]
+            public double CartLinq()
+            {
+                return (from x in dim1
+                        from y in dim2
+                        select x * y).Sum();
+            }
+
+            [Benchmark(Description = "Cartesian Opt")]
+            public double CartLinqOpt()
+            {
+                return (from x in dim1.AsQueryExpr()
+                        from y in dim2
+                        select x * y).Sum().Run();
+            }
         }
 
-        static double SumLinqOpt(double[] values)
+        public class GroupByBenchmarks : BenchmarkBase
         {
-            return values.AsQueryExpr().Sum().Run();
+            [Setup]
+            public override void SetUp()
+            {
+                base.SetUp();
+
+                values =
+                    Enumerable.Range(1, Count).Select(x => 100000000 * rnd.NextDouble() - 50000000).ToArray();
+            }
+
+            [Benchmark(Description = "Group By Linq", Baseline = true)]
+            public int[] GroupLinq()
+            {
+                return values
+                    .GroupBy(x => (int)x / 100)
+                    .OrderBy(x => x.Key)
+                    .Select(k => k.Count())
+                    .ToArray();
+            }
+
+            [Benchmark(Description = "Group By Opt")]
+            public int[] GroupByOpt()
+            {
+                return values.AsQueryExpr()
+                             .GroupBy(x => (int)x / 100)
+                             .OrderBy(x => x.Key)
+                             .Select(k => k.Count())
+                             .ToArray()
+                             .Run();
+            }
         }
 
-        static double SumSqLinq(double[] values)
+        public class PythagoreanTriplesBenchmarks
         {
-            return values.Select(x => x * x).Sum();
+            [Params(0, 10, 100, 1000)]
+            public int max = 1000;
+
+            [Benchmark(Description = "Pythagorean Triples Linq", Baseline = true)]
+            public int PythagoreanTriplesLinq()
+            {
+                return (from a in Enumerable.Range(1, max + 1)
+                        from b in Enumerable.Range(a, max + 1 - a)
+                        from c in Enumerable.Range(b, max + 1 - b)
+                        where a * a + b * b == c * c
+                        select true).Count();
+            }
+
+            [Benchmark(Description = "Pythagorean Triples Opt")]
+            public int PythagoreanTriplesLinqOpt()
+            {
+                return (from a in QueryExpr.Range(1, max + 1)
+                        from b in Enumerable.Range(a, max + 1 - a)
+                        from c in Enumerable.Range(b, max + 1 - b)
+                        where a * a + b * b == c * c
+                        select true).Count().Run();
+            }
+        }
+    }
+
+    public class ParallelBenchmarks
+    {
+        public class ParallelSumBenchmarks : BenchmarkBase
+        {
+            [Benchmark(Description = "Parallel Sum Linq", Baseline = true)]
+            public double ParallelSumLinq()
+            {
+                return values.AsParallel().Sum();
+            }
+
+            [Benchmark(Description = "Parallel Sum Opt")]
+            public double ParallelSumOpt()
+            {
+                return values.AsParallelQueryExpr().Sum().Run();
+            }
         }
 
-        static double SumSqLinqOpt(double[] values)
+        public class ParallelSumOfSquaresBenchmark : BenchmarkBase
         {
-            return values.AsQueryExpr().Select(x => x * x).Sum().Run();
+            [Benchmark(Description = "Parallel Sum of Squares Linq", Baseline = true)]
+            public double ParallelSumSqLinq()
+            {
+                return values.AsParallel().Select(x => x * x).Sum();
+            }
+
+            [Benchmark(Description = "Parallel Sum of Squares Opt")]
+            public double ParallelSumSqLinqOpt()
+            {
+                return values.AsParallelQueryExpr().Select(x => x * x).Sum().Run();
+            }
         }
 
-        static double CartLinq(double[] dim1, double[] dim2)
+        public class ParallelCartesianBenchmarks : BenchmarkBase
         {
-            return (from x in dim1
-                    from y in dim2
-                    select x * y).Sum();
+            private double[] dim1, dim2;
+
+            [Setup]
+            public override void SetUp()
+            {
+                base.SetUp();
+
+                dim1 = values.Take(values.Length / 10).ToArray();
+                dim2 = values.Take(20).ToArray();
+            }
+
+            [Benchmark(Description = "Parallel Cartesian Linq", Baseline = true)]
+            public double ParallelCartLinq()
+            {
+                return (from x in dim1.AsParallel()
+                        from y in dim2
+                        select x * y).Sum();
+            }
+
+            [Benchmark(Description = "Parallel Cartesian Opt")]
+            public double ParallelCartLinqOpt()
+            {
+                return (from x in dim1.AsParallelQueryExpr()
+                        from y in dim2
+                        select x * y).Sum().Run();
+            }
         }
 
-        static double CartLinqOpt(double[] dim1, double[] dim2)
+        public class ParallelGroupByBenchmarks : BenchmarkBase
         {
-            return (from x in dim1.AsQueryExpr()
-                    from y in dim2
-                    select x * y).Sum().Run();
+            [Setup]
+            public override void SetUp()
+            {
+                values = Enumerable.Range(1, Count).Select(x => 100000000 * rnd.NextDouble() - 50000000).ToArray();
+            }
+
+            [Benchmark(Description = "Parallel Group By Linq", Baseline = true)]
+            public int[] ParallelGroupLinq()
+            {
+                return values.AsParallel()
+                             .GroupBy(x => (int)x / 100)
+                             .OrderBy(x => x.Key)
+                             .Select(k => k.Count())
+                             .ToArray();
+            }
+
+            [Benchmark(Description = "Parallel Group By Opt")]
+            public int[] ParallelGroupLinqOpt()
+            {
+                return values.AsParallelQueryExpr()
+                             .GroupBy(x => (int)x / 100)
+                             .OrderBy(x => x.Key)
+                             .Select(k => k.Count())
+                             .ToArray()
+                             .Run();
+            }
         }
 
-        static int[] GroupLinq(double[] values)
+        public class ParallelPythagoreanTriplesBenchmarks
         {
-            return values
-                   .GroupBy(x => (int)x / 100)
-                   .OrderBy(x => x.Key)
-                   .Select(k => k.Count())
-                   .ToArray();
-        }
+            [Params(0, 10, 100, 1000)]
+            public int max = 1000;
 
-        static int[] GroupLinqOpt(double[] values)
-        {
-            return values.AsQueryExpr()
-                   .GroupBy(x => (int)x / 100)
-                   .OrderBy(x => x.Key)
-                   .Select(k => k.Count())
-                   .ToArray()
-                   .Run();
-        }
+            [Benchmark(Description = "Parallel Pythagorean Triples Linq", Baseline = true)]
+            public int ParallelPythagoreanTriplesLinq()
+            {
+                return (from a in Enumerable.Range(1, max + 1).AsParallel()
+                        from b in Enumerable.Range(a, max + 1 - a)
+                        from c in Enumerable.Range(b, max + 1 - b)
+                        where a * a + b * b == c * c
+                        select true).Count();
+            }
 
-        static int PythagoreanTriplesLinq(int max)
-        {
-            return (from a in Enumerable.Range(1, max + 1)
-                    from b in Enumerable.Range(a, max + 1 - a)
-                    from c in Enumerable.Range(b, max + 1 - b)
-                    where a * a + b * b == c * c
-                    select true).Count();
-        }
-
-        static int PythagoreanTriplesLinqOpt(int max)
-        {
-            return (from a in QueryExpr.Range(1, max + 1)
-                    from b in Enumerable.Range(a, max + 1 - a)
-                    from c in Enumerable.Range(b, max + 1 - b)
-                    where a * a + b * b == c * c
-                    select true).Count().Run();
-        }
-
-
-        ///////////////////////////////////////////////////////////////////
-
-        static double ParallelSumLinq(double[] values)
-        {
-            return values.AsParallel().Sum();
-        }
-
-        static double ParallelSumLinqOpt(double[] values)
-        {
-            return values.AsParallelQueryExpr().Sum().Run();
-        }
-
-        static double ParallelSumSqLinq(double[] values)
-        {
-            return values.AsParallel().Select(x => x * x).Sum();
-        }
-
-        static double ParallelSumSqLinqOpt(double[] values)
-        {
-            return values.AsParallelQueryExpr().Select(x => x * x).Sum().Run();
-        }
-
-        static double ParallelCartLinq(double[] dim1, double[] dim2)
-        {
-            return (from x in dim1.AsParallel()
-                    from y in dim2
-                    select x * y).Sum();
-        }
-
-        static double ParallelCartLinqOpt(double[] dim1, double[] dim2)
-        {
-            return (from x in dim1.AsParallelQueryExpr()
-                    from y in dim2
-                    select x * y).Sum().Run();
-        }
-
-        static int[] ParallelGroupLinq(double[] values)
-        {
-            return values.AsParallel()
-                   .GroupBy(x => (int)x / 100)
-                   .OrderBy(x => x.Key)
-                   .Select(k => k.Count())
-                   .ToArray();
-        }
-
-        static int[] ParallelGroupLinqOpt(double[] values)
-        {
-            return values.AsParallelQueryExpr()
-                   .GroupBy(x => (int)x / 100)
-                   .OrderBy(x => x.Key)
-                   .Select(k => k.Count())
-                   .ToArray()
-                   .Run();
-        }
-
-        static int ParallelPythagoreanTriplesLinq(int max)
-        {
-            return (from a in Enumerable.Range(1, max + 1).AsParallel()
-                    from b in Enumerable.Range(a, max + 1 - a)
-                    from c in Enumerable.Range(b, max + 1 - b)
-                    where a * a + b * b == c * c
-                    select true).Count();
-        }
-
-        static int ParallelPythagoreanTriplesLinqOpt(int max)
-        {
-            return (from a in Enumerable.Range(1, max + 1).AsParallelQueryExpr()
-                    from b in Enumerable.Range(a, max + 1 - a)
-                    from c in Enumerable.Range(b, max + 1 - b)
-                    where a * a + b * b == c * c
-                    select true).Count().Run();
+            [Benchmark(Description = "Parallel Pythagorean Triples Opt")]
+            public int ParallelPythagoreanTriplesLinqOpt()
+            {
+                return (from a in Enumerable.Range(1, max + 1).AsParallelQueryExpr()
+                        from b in Enumerable.Range(a, max + 1 - a)
+                        from c in Enumerable.Range(b, max + 1 - b)
+                        where a * a + b * b == c * c
+                        select true).Count().Run();
+            }
         }
     }
 }
