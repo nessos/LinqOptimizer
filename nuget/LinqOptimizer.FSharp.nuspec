@@ -22,8 +22,6 @@
       </references>
     </metadata>
     <files>
-        <file src="..\src\LinqOptimizer.FSharp\bin\Release\FSharp.Core.dll" target="lib\FSharp.Core.dll" />
-        <file src="..\src\LinqOptimizer.FSharp\bin\Release\FSharp.Core.xml" target="lib\FSharp.Core.xml" />
         <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Base.dll" target="lib\LinqOptimizer.Base.dll" />
         <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Base.xml" target="lib\LinqOptimizer.Base.xml" />
         <file src="..\src\LinqOptimizer.FSharp\bin\Release\LinqOptimizer.Core.dll" target="lib\LinqOptimizer.Core.dll" />
