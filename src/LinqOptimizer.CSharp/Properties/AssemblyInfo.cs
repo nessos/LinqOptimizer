@@ -4,10 +4,14 @@ using System.Reflection;
 [assembly: AssemblyTitleAttribute("LinqOptimizer")]
 [assembly: AssemblyProductAttribute("LinqOptimizer")]
 [assembly: AssemblyCompanyAttribute("Nessos Information Technologies")]
-[assembly: AssemblyVersionAttribute("0.6.3")]
-[assembly: AssemblyFileVersionAttribute("0.6.3")]
+[assembly: AssemblyVersionAttribute("0.7.0")]
+[assembly: AssemblyFileVersionAttribute("0.7.0")]
 namespace System {
     internal static class AssemblyVersionInformation {
-        internal const string Version = "0.6.3";
+        internal const System.String AssemblyTitle = "LinqOptimizer";
+        internal const System.String AssemblyProduct = "LinqOptimizer";
+        internal const System.String AssemblyCompany = "Nessos Information Technologies";
+        internal const System.String AssemblyVersion = "0.7.0";
+        internal const System.String AssemblyFileVersion = "0.7.0";
     }
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using FsCheck.Fluent;
+using FsCheck;
 using NUnit.Framework;
 using System.Linq.Expressions;
 using Nessos.LinqOptimizer.CSharp;
@@ -20,12 +20,12 @@ namespace Nessos.LinqOptimizer.Tests
         public void Select()
         {
             Func<IEnumerable<object>, bool> f = xs => {
-                var x = xs.AsQueryExpr().Select(n => n.ToString()).Run();
-                var y = xs.Select(n => n.ToString());
+                var x = xs.AsQueryExpr().Where(n => n != null).Select(n => n.ToString()).Run();
+                var y = xs.Where(n => n != null).Select(n => n.ToString());
                 return Enumerable.SequenceEqual(x, y);
             };
 
-            Spec.ForAny<TestInput<object>>(xs =>
+            Prop.ForAll<TestInput<object>>(xs =>
                     TestInput<object>.RunTestFunc<object>(f, xs))
                 .QuickCheckThrowOnFailure();
         }
@@ -40,7 +40,7 @@ namespace Nessos.LinqOptimizer.Tests
                 return Enumerable.SequenceEqual(x, y);
             };
 
-            Spec.ForAny<TestInput<int>>(xs =>
+            Prop.ForAll<TestInput<int>>(xs =>
                     TestInput<int>.RunTestFunc<int>(f, xs))
                 .QuickCheckThrowOnFailure();
         }
@@ -55,7 +55,7 @@ namespace Nessos.LinqOptimizer.Tests
                 return Enumerable.SequenceEqual(x, y);
             };
 
-            Spec.ForAny<TestInput<int>>(xs =>
+            Prop.ForAll<TestInput<int>>(xs =>
                     TestInput<int>.RunTestFunc<int>(f, xs))
                 .QuickCheckThrowOnFailure();
         }
@@ -63,7 +63,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectIndexed()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr().Select((n, index) => index).Run();
                 var y = xs.Select((n, index) => index);
@@ -74,7 +74,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Where()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from n in xs.AsQueryExpr()
                          where n % 2 == 0
@@ -90,7 +90,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void WhereIndexed()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr().Where((n, index) => index % 2 == 0).Run();
                 var y = xs.Where((n, index) => index % 2 == 0);
@@ -102,7 +102,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Pipelined()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .Where(n => n % 2 == 0)
@@ -124,7 +124,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SumInt()
         {
-            Spec.ForAny<int []>(xs =>
+            Prop.ForAll<int []>(xs =>
             {
                 var x = (from n in xs.AsQueryExpr()
                          select n * 2).Sum().Run();
@@ -138,21 +138,26 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SumDouble()
         {
-            Spec.ForAny<double[]>(xs =>
+            // fscheck inserts value 1.797693135e+308 which creates issues in net4x LINQ
+            const double upper = 1.797e308;
+
+            Prop.ForAll<double[]>(xs =>
             {
                 var x = (from n in xs.AsQueryExpr()
+                         where Math.Abs(n) < upper
                          select n * 2).Sum().Run();
                 var y = (from n in xs
+                         where Math.Abs(n) < upper
                          select n * 2).Sum();
 
-                return (Double.IsNaN(x) && Double.IsNaN(y)) || x == y;
+                return x == y;
             }).QuickCheckThrowOnFailure();
         }
 
         [Test]
         public void SumLong()
         {
-            Spec.ForAny<long[]>(xs =>
+            Prop.ForAll<long[]>(xs =>
             {
                 var x = (from n in xs.AsQueryExpr()
                          select n * 2).Sum().Run();
@@ -166,7 +171,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Aggregate()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from n in xs.AsQueryExpr()
                           select n * 2).Aggregate(0, (acc, value) => acc + value).Run();
@@ -180,7 +185,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectMany()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .SelectMany(n => xs.Where(_n => _n % 2 == 0).Select(_n => n * _n))
@@ -195,7 +200,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyCompehension()
         {
-            Spec.ForAny<string[]>(xs =>
+            Prop.ForAll<string[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()
                           from _num in xs
@@ -211,7 +216,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyNested()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .SelectMany(num => xs.SelectMany(_num => new[] { num * _num }))
@@ -227,7 +232,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyPipeline()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .Where(num => num % 2 == 0)
@@ -249,7 +254,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyComprehensionNestedTest()
         {
-            Spec.ForAny<int>(max =>
+            Prop.ForAll<int>(max =>
             {
                 if (max < 0) return true;
 
@@ -272,7 +277,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyComprehensionNestedTestTypeEraser()
         {
-            Spec.ForAny<int>(max =>
+            Prop.ForAll<int>(max =>
             {
                 if (max < 0) return true;
 
@@ -293,7 +298,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void EnumerableSource()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var ys = xs.Select(i => i);
 
@@ -311,7 +316,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ListSource()
         {
-            Spec.ForAny<List<int>>(xs =>
+            Prop.ForAll<List<int>>(xs =>
             {
                 var x = (from n in xs.AsQueryExpr()
                          select n * 2)
@@ -327,7 +332,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void TakeN()
         {
-            Spec.ForAny<int[], int>((xs, n) =>
+            Prop.ForAll<int[], int>((xs, n) =>
             {
                 var x = xs.AsQueryExpr()
                         .Take(n)
@@ -343,7 +348,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SkipN()
         {
-            Spec.ForAny<int[], int>((xs, n) =>
+            Prop.ForAll<int[], int>((xs, n) =>
             {
                 var x = xs.AsQueryExpr()
                         .Skip(n)
@@ -359,7 +364,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void TakeSkipN()
         {
-            Spec.ForAny<int[],int>((xs, n) =>
+            Prop.ForAll<int[],int>((xs, n) =>
             {
                 var x = xs.AsQueryExpr()
                         .Take(n)
@@ -377,7 +382,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void NestedTakeAndSkipN()
         {
-            Spec.ForAny<int[], int>((xs, n) =>
+            Prop.ForAll<int[], int>((xs, n) =>
             {
                 var x = xs.AsQueryExpr()
                         .Take(n)
@@ -395,7 +400,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ForEach()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = new List<int>();
                 xs.AsQueryExpr().ForEach(num => x.Add(num)).Run();
@@ -410,7 +415,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void GroupBy()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
 #if MONO_BUILD
                 var x = xs.AsQueryExpr().GroupBy(num => num.ToString()).Select(g => g.Sum()).Run();
@@ -432,7 +437,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void OrderBy()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()
                          orderby num
@@ -450,7 +455,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void OrderByDescending()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from num in xs.AsQueryExpr()
                          orderby num descending
@@ -468,7 +473,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ThenBy()
         {
-            Spec.ForAny<DateTime[]>(ds =>
+            Prop.ForAll<DateTime[]>(ds =>
             {
                 var x = ds.AsQueryExpr()
                          .OrderBy(d => d.Year)
@@ -489,7 +494,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ThenByDescending()
         {
-            Spec.ForAny<DateTime[]>(ds =>
+            Prop.ForAll<DateTime[]>(ds =>
             {
                 var x = (ds.AsQueryExpr()
                          .OrderByDescending(d => d.Year)
@@ -509,7 +514,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Count()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .Select(i => i)
@@ -527,7 +532,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ToList()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .ToList()
@@ -543,7 +548,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ToArray()
         {
-            Spec.ForAny<List<int>>(xs =>
+            Prop.ForAll<List<int>>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .ToArray()
@@ -559,7 +564,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void NestedSelectTest()
         {
-            Spec.ForAny<List<int>>(xs =>
+            Prop.ForAll<List<int>>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .Select(m => Enumerable.Repeat(m, 10).Select(i => i * i).Sum())
@@ -575,7 +580,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void NestedSelectManyTest()
         {
-            Spec.ForAny<List<int>>(xs =>
+            Prop.ForAll<List<int>>(xs =>
             {
                 var x = xs.AsQueryExpr()
                         .SelectMany(m => Enumerable.Repeat(m, Enumerable.Range(1,10).Sum()).Select(i => i * i))
@@ -592,7 +597,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void LinqLetTest()
         {
-            Spec.ForAny<List<int>>(nums =>
+            Prop.ForAll<List<int>>(nums =>
             {
                 var x = 
                     (from num in nums.AsQueryExpr()
@@ -701,12 +706,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void UserDefinedAnonymousType()
         {
-			if(RunsOnMono)
-				Assert.AreEqual(42, UserDefinedAnonymousTypeTest(false));
-			else
-				Assert.Catch(typeof(MemberAccessException), () => UserDefinedAnonymousTypeTest(false));
-
-
+			Assert.AreEqual(42, UserDefinedAnonymousTypeTest(false));
 			Assert.AreEqual(42, UserDefinedAnonymousTypeTest(true));
         } 
 
@@ -714,7 +714,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void PreCompileFunc()
         {
-            Spec.ForAny<int>(i =>
+            Prop.ForAll<int>(i =>
             {
                 if (i < 1) return true;
 
@@ -732,7 +732,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void PreCompileAction()
         {
-            Spec.ForAny<int>(i =>
+            Prop.ForAll<int>(i =>
             {
                 if (i < 1) return true;
 
@@ -752,7 +752,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Zip()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = QueryExpr.Zip(ms, ms, (a, b) => a * b).Run();
                 var ys = Enumerable.Zip(ms, ms, (a, b) => a * b);
@@ -768,7 +768,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple1()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Select(i => new Tuple<int, int>(i, i + 1))
@@ -788,7 +788,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple2()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Select(i => new Tuple<int, int>(i, i + 1))
@@ -808,7 +808,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple3()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Select(i => new Tuple<int, int>(i, i + 1))
@@ -826,7 +826,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple4()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Select(i => new Tuple<int, int>(i, i * 42))
@@ -844,7 +844,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple5()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Aggregate(Tuple.Create(0, 1), (t, _) => Tuple.Create(t.Item2, t.Item1 + t.Item2))
@@ -860,7 +860,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple6()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Select(x1 => Tuple.Create(x1 * x1, Tuple.Create(x1, -x1)))
@@ -878,7 +878,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Detuple7()
         {
-            Spec.ForAny<List<int>>(ms =>
+            Prop.ForAll<List<int>>(ms =>
             {
                 var xs = ms.AsQueryExpr()
                          .Select(x1 => Tuple.Create(x1 * x1, Tuple.Create(x1, -x1)))

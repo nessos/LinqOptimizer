@@ -1,32 +1,22 @@
 #!/bin/bash
 
-if [ ! -f packages/FAKE/tools/Fake.exe ]; then
-  mono .nuget/NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion
-fi
-if [ ! -f packages/SourceLink.Fake/tools/SourceLink.fsx ]; then
-  mono .nuget/NuGet.exe install SourceLink.Fake -OutputDirectory packages -ExcludeVersion
-fi
+if [ "X$OS" = "XWindows_NT" ] ; then
+  # use .Net
 
-run_fake() {
-    configuration=$1
+  .nuget/NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion -Version 4.64.17
+  exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+        exit $exit_code
+  fi
 
-    if [ $configuration = "--publish-nuget" ]; then
-        configuration=Release-Mono
-        publish_nuget=true
-    else
-        publish_nuget=false
-    fi
-
-    echo "Building $configuration..."
-    mono packages/FAKE/tools/FAKE.exe build.fsx -d:MONO Configuration="$configuration" PublishNuget=$publish_nuget
-}
-
-if [ $# -eq 0 ]; then
-    run_fake "Release-Mono"
-elif [ $# -eq 1 ]; then
-    run_fake $1
+  packages/FAKE/tools/FAKE.exe $@ --fsiargs build.fsx
 else
-    for config in $* ; do
-        run_fake "$config"
-    done
+
+  mono .nuget/NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion -Version 4.64.17
+  exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+        exit $exit_code
+  fi
+
+  mono packages/FAKE/tools/FAKE.exe $@ --fsiargs -d:MONO build.fsx
 fi

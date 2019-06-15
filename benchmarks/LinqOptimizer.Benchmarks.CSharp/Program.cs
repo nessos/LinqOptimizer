@@ -28,9 +28,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
         public CustomConfig()
         {
             Add(Job.Default.WithLaunchCount(1));
-            Add(PropertyColumn.Method);
             Add(StatisticColumn.Median, StatisticColumn.StdDev);
-            Add(BaselineDiffColumn.Scaled);
             Add(MarkdownExporter.GitHub);
             Add(new ConsoleLogger());
         }
@@ -47,7 +45,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
 
         protected double[] values;
 
-        [Setup]
+        [GlobalSetup]
         public virtual void SetUp()
         {
             values = Enumerable.Range(1, Count).Select(x => rnd.NextDouble()).ToArray();
@@ -90,7 +88,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
         {
             private double[] dim1, dim2;
 
-            [Setup]
+            [GlobalSetup]
             public override void SetUp()
             {
                 base.SetUp();
@@ -118,7 +116,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
 
         public class GroupByBenchmarks : BenchmarkBase
         {
-            [Setup]
+            [GlobalSetup]
             public override void SetUp()
             {
                 base.SetUp();
@@ -212,7 +210,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
         {
             private double[] dim1, dim2;
 
-            [Setup]
+            [GlobalSetup]
             public override void SetUp()
             {
                 base.SetUp();
@@ -240,7 +238,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
 
         public class ParallelGroupByBenchmarks : BenchmarkBase
         {
-            [Setup]
+            [GlobalSetup]
             public override void SetUp()
             {
                 values = Enumerable.Range(1, Count).Select(x => 100000000 * rnd.NextDouble() - 50000000).ToArray();

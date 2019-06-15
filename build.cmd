@@ -1,8 +1,7 @@
 @echo off
+
 if not exist packages\FAKE\tools\Fake.exe ( 
-  .nuget\NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion
+  .nuget\NuGet.exe install FAKE -OutputDirectory packages -ExcludeVersion -Version 4.64.17
 )
-if not exist packages\SourceLink.Fake\tools\SourceLink.fsx ( 
-  .nuget\NuGet.exe install SourceLink.Fake -OutputDirectory packages -ExcludeVersion
-)
-packages\FAKE\tools\FAKE.exe build.fsx Configuration=Release %*
+
+packages\FAKE\tools\FAKE.exe build.fsx %*

@@ -4,13 +4,12 @@
 
 #I "packages/FAKE/tools"
 #r "packages/FAKE/tools/FakeLib.dll"
-//#load "packages/SourceLink.Fake/tools/SourceLink.fsx"
+
 open System
 open Fake 
 open Fake.Git
 open Fake.ReleaseNotesHelper
 open Fake.AssemblyInfoFile
-//open SourceLink
 
 // --------------------------------------------------------------------------------------
 // Information about the project to be used at NuGet and in AssemblyInfo files
@@ -31,20 +30,21 @@ let tags = "C# F# linq optimization"
 let gitHome = "https://github.com/nessos"
 let gitName = "LinqOptimizer"
 let gitRaw = environVarOrDefault "gitRaw" "https://raw.github.com/nessos"
+let nugetSource = "https://api.nuget.org/v3/index.json"
+let nugetApiKey = environVarOrDefault "NUGET_KEY" ""
 
-
-let testAssemblies = 
+let testProjects = 
     [
-        "tests/LinqOptimizer.Tests.CSharp/bin/Release/LinqOptimizer.Tests.CSharp.exe"
-        "tests/LinqOptimizer.Tests.FSharp/bin/Release/LinqOptimizer.Tests.FSharp.exe"
+        "tests/LinqOptimizer.Tests.CSharp"
+        "tests/LinqOptimizer.Tests.FSharp"
     ]
 
-//
-//// --------------------------------------------------------------------------------------
-//// The rest of the code is standard F# build script 
-//// --------------------------------------------------------------------------------------
 
-//// Read release notes & version info from RELEASE_NOTES.md
+// --------------------------------------------------------------------------------------
+// The rest of the code is standard F# build script 
+// --------------------------------------------------------------------------------------
+
+// Read release notes & version info from RELEASE_NOTES.md
 Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
 let nugetVersion = release.NugetVersion
@@ -90,36 +90,23 @@ Target "Clean" (fun _ ->
 let configuration = environVarOrDefault "Configuration" "Release"
 
 Target "Build" (fun _ ->
-    // Build the rest of the project
-    { BaseDirectory = __SOURCE_DIRECTORY__
-      Includes = [ project + ".sln" ]
-      Excludes = [] } 
-    |> MSBuild "" "Build" ["Configuration", configuration]
-    |> Log "AppBuild-Output: "
+    DotNetCli.Build (fun c ->
+        { c with
+            Project = project + ".sln" 
+            Configuration = configuration })
 )
-
 
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner & kill test runner when complete
 
 Target "RunTests" (fun _ ->
-    let nunitVersion = GetPackageVersion "packages" "NUnit.Runners"
-    let nunitPath = sprintf "packages/NUnit.Runners.%s/tools" nunitVersion
-    ActivateFinalTarget "CloseTestRunner"
-
-    testAssemblies
-    |> NUnit (fun p ->
-        { p with
-            Framework = "v4.0.30319"
-            ToolPath = nunitPath
-            DisableShadowCopy = true
-            TimeOut = TimeSpan.FromMinutes 20.
-            OutputFile = "TestResults.xml" })
+    for proj in testProjects do
+        DotNetCli.Test (fun c ->
+            { c with
+                Project = proj
+                Configuration = configuration })
 )
 
-FinalTarget "CloseTestRunner" (fun _ ->  
-    ProcessHelper.killProcess "nunit-agent.exe"
-)
 //
 //// --------------------------------------------------------------------------------------
 //// Build a NuGet package
@@ -149,6 +136,19 @@ Target "NuGet" (fun _ ->
     mkNuGetPackage "LinqOptimizer.FSharp"
 )
 
+Target "PublishNuGet" (fun _ ->
+    if String.IsNullOrEmpty nugetApiKey then failwith "build did not specify a nuget API key"
+
+    let pushPkg nupkg =
+        // omg dotnet pack doesn't work wih absolute paths
+        let relativePath = ProduceRelativePath __SOURCE_DIRECTORY__ nupkg
+        DotNetCli.RunCommand
+            (fun c -> { c with WorkingDir = __SOURCE_DIRECTORY__ })
+            (sprintf "nuget push %s -s %s -k %s" relativePath nugetSource nugetApiKey)
+
+    !! "NuGet/*.nupkg" |> Seq.toArray |> Array.Parallel.iter pushPkg
+)
+
 
 Target "Release" DoNothing
 
@@ -170,7 +170,7 @@ Target "All" DoNothing
 "All"
   ==> "PrepareRelease" 
   ==> "NuGet"
+  ==> "PublishNuGet"
   ==> "Release"
 
-//RunTargetOrDefault "Release"
-RunTargetOrDefault "All"
+RunTargetOrDefault "NuGet"

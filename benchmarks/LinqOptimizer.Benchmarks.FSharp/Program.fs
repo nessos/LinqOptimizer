@@ -1,4 +1,6 @@
-﻿open System
+﻿module Program 
+
+open System
 open System.Linq
 open System.Collections
 open System.Collections.Generic

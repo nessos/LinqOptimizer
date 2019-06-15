@@ -1,93 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>99ec4e0d-c8f6-40dc-97d1-1e30a261e67f</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>LinqOptimizer.Benchmarks.FSharp</RootNamespace>
-    <AssemblyName>LinqOptimizer.Benchmarks.FSharp</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <Name>LinqOptimizer.Benchmarks.FSharp</Name>
-    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
+    <TargetFrameworks>netcoreapp2.2;net461</TargetFrameworks>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Debug\LinqOptimizer.Benchmarks.FSharp.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>bin\Release\LinqOptimizer.Benchmarks.FSharp.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup>
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
     <Compile Include="Program.fs" />
-    <None Include="App.config" />
     <Content Include="results-fsharp.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\..\src\LinqOptimizer.FSharp\LinqOptimizer.FSharp.fsproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\LinqOptimizer.Base\LinqOptimizer.Base.csproj">
-      <Name>LinqOptimizer.Base</Name>
-      <Project>{f21f83a3-bdbd-4965-87d6-94e65a069a7b}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\LinqOptimizer.Core\LinqOptimizer.Core.fsproj">
-      <Name>LinqOptimizer.Core</Name>
-      <Project>{6fea9d47-1291-40ce-9716-619bcc2f485a}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\LinqOptimizer.FSharp\LinqOptimizer.FSharp.fsproj">
-      <Name>LinqOptimizer.FSharp</Name>
-      <Project>{5c5fe9f9-91df-44e2-a68d-b9a49828e0bb}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

@@ -14,21 +14,34 @@
       <releaseNotes>@releaseNotes@</releaseNotes>
       <copyright>Copyright 2014</copyright>
       <tags>@tags@</tags>
-      @dependencies@
+      <dependencies>
+        <group targetFramework=".NETFramework4.5">
+          <dependency id="FSharp.Core" version="3.1.2" exclude="Build,Analyzers" />
+        </group>
+        <group targetFramework=".NETStandard2.0">
+          <dependency id="FSharp.Core" version="4.3.2" exclude="Build,Analyzers" />
+          <dependency id="System.Reflection.Emit" version="4.3.0" exclude="Build,Analyzers" />
+        </group>
+      </dependencies>
       <references>
-            <reference file="LinqOptimizer.Base.dll" />
-			      <reference file="LinqOptimizer.Core.dll" />
-            <reference file="LinqOptimizer.CSharp.dll" />
-        </references>
+          <reference file="LinqOptimizer.Base.dll" />
+			    <reference file="LinqOptimizer.Core.dll" />
+          <reference file="LinqOptimizer.CSharp.dll" />
+      </references>
     </metadata>
     <files>
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\FSharp.Core.dll" target="lib\FSharp.Core.dll" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\FSharp.Core.xml" target="lib\FSharp.Core.xml" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Base.dll" target="lib\LinqOptimizer.Base.dll" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Base.xml" target="lib\LinqOptimizer.Base.xml" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Core.dll" target="lib\LinqOptimizer.Core.dll" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.Core.xml" target="lib\LinqOptimizer.Core.xml" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.CSharp.dll" target="lib\LinqOptimizer.CSharp.dll" />
-        <file src="..\src\LinqOptimizer.CSharp\bin\Release\LinqOptimizer.CSharp.XML" target="lib\LinqOptimizer.CSharp.XML" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\net45\LinqOptimizer.Base.dll"   target="lib\net45\LinqOptimizer.Base.dll" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\net45\LinqOptimizer.Base.xml"   target="lib\net45\LinqOptimizer.Base.xml" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\net45\LinqOptimizer.Core.dll"   target="lib\net45\LinqOptimizer.Core.dll" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\net45\LinqOptimizer.Core.xml"   target="lib\net45\LinqOptimizer.Core.xml" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\net45\LinqOptimizer.CSharp.dll" target="lib\net45\LinqOptimizer.CSharp.dll" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\net45\LinqOptimizer.CSharp.XML" target="lib\net45\LinqOptimizer.CSharp.XML" />
+      
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\netstandard2.0\LinqOptimizer.Base.dll"   target="lib\netstandard2.0\LinqOptimizer.Base.dll" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\netstandard2.0\LinqOptimizer.Base.xml"   target="lib\netstandard2.0\LinqOptimizer.Base.xml" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\netstandard2.0\LinqOptimizer.Core.dll"   target="lib\netstandard2.0\LinqOptimizer.Core.dll" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\netstandard2.0\LinqOptimizer.Core.xml"   target="lib\netstandard2.0\LinqOptimizer.Core.xml" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\netstandard2.0\LinqOptimizer.CSharp.dll" target="lib\netstandard2.0\LinqOptimizer.CSharp.dll" />
+      <file src="..\src\LinqOptimizer.CSharp\bin\Release\netstandard2.0\LinqOptimizer.CSharp.XML" target="lib\netstandard2.0\LinqOptimizer.CSharp.XML" />
     </files>
 </package>

@@ -29,11 +29,11 @@
         static member ParallelSort<'Key, 'Value when 'Key :> IComparable<'Key>>(keys : 'Key[], array : 'Value[], orders : Order[]) = 
             // Taken from Carl Nolan's parallel inplace merge
             // The merge of the two array
-            let merge (toArray: 'Value [], toKeys : 'Key[]) (fromArray: 'Value [], fromKeys : 'Key[]) (low1: int) (low2: int) (high1: int) (high2: int) =
+            let merge (toArray: 'Value []) (toKeys : 'Key[]) (fromArray: 'Value []) (fromKeys : 'Key[]) (low1: int) (low2: int) (high1: int) (high2: int) =
                 let mutable ptr1 = low1
                 let mutable ptr2 = high1
  
-                for ptr in low1..high2 do
+                for ptr = low1 to high2 do
                     if (ptr1 > low2) then
                         toArray.[ptr] <- fromArray.[ptr2]
                         toKeys.[ptr] <- fromKeys.[ptr2]
@@ -101,7 +101,9 @@
                                 barrier.RemoveParticipant()
                             else
                                 let newHigh = loopHigh + !partitionSize / 2
-                                merge (getMergeArray FromArrayType) (getMergeArray ToArrayType) low loopHigh (loopHigh + 1) newHigh
+                                let toArray, toKeys = getMergeArray FromArrayType
+                                let fromArray, fromKeys = getMergeArray ToArrayType
+                                merge toArray toKeys fromArray fromKeys low loopHigh (loopHigh + 1) newHigh
                                 barrier.SignalAndWait()
                                 loopArray (loopIdx + 1) (actionIdx >>> 1) newHigh
                     loopArray 0 index high

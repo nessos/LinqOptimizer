@@ -45,9 +45,9 @@ namespace Nessos.LinqOptimizer.Core
                 Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
             else
                 let lambda = Expression.Lambda(expr, pms)
-                let methodInfo = Session.Compile(lambda)
+                let dele = Session.Compile(lambda)
                 let iaccs = AccessChecker.check lambda
-                let func = CoreHelpers.WrapInvocation(methodInfo, iaccs) 
+                let func = CoreHelpers.WrapInvocation(dele, iaccs) 
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
                 Func<'T>(fun () -> func.Invoke(objs) :?> 'T)
 
@@ -67,12 +67,13 @@ namespace Nessos.LinqOptimizer.Core
                 CompiledThunks.cache.TryAdd(source, func) |> ignore
                 Func<'T>(fun () -> func.DynamicInvoke(objs) :?> 'T)
 
-        static member private WrapInvocation<'T>(mi : MethodInfo, iaccs : seq<Expression * (string option)> option) : Func<obj [], obj> =
+        static member private WrapInvocation<'T>(dele : Delegate, iaccs : seq<Expression * (string option)> option) : Func<obj [], obj> =
             Func<obj[], obj>(
                 fun (args : obj[]) -> 
-                    try mi.Invoke(null, args) 
+                    try dele.DynamicInvoke(args) 
                     with :? TargetInvocationException as ex -> 
-                        if ex.InnerException :? MemberAccessException then 
+                        match ex.InnerException with
+                        | :? MemberAccessException as innerEx ->
                             let msg =
                                 "Attempting to access non public member or type from dynamic assembly. Consider making your type/member public or use the appropriate Run method.\n" +
                                 match iaccs with
@@ -84,8 +85,9 @@ namespace Nessos.LinqOptimizer.Core
                                                 let msg = match msg with None -> String.Empty | Some msg -> msg
                                                 sprintf "At expression : %A, %s" expr msg)
                                         |> String.concat "\n")
-                            raise <| Exception(msg, ex.InnerException)
-                        else raise ex.InnerException )
+                            raise <| Exception(msg, innerEx)
+                        | e when e <> null -> raise e
+                        | _ -> reraise())
 
         static member Compile<'T>(queryExpr : QueryExpr, optimize : Func<Expression,Expression>) : Func<'T> =
             CoreHelpers.Compile<'T>(queryExpr, optimize, false)

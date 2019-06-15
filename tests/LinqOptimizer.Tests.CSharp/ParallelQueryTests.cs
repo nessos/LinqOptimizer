@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Nessos.LinqOptimizer.CSharp;
-using FsCheck.Fluent;
+using FsCheck;
 
 namespace Nessos.LinqOptimizer.Tests
 {
@@ -14,7 +14,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Select()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr().Select(n => n * 2).Sum().Run();
                 var y = xs.AsParallel().Select(n => n * 2).Sum();
@@ -25,7 +25,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Where()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from n in xs.AsParallelQueryExpr()
                          where n % 2 == 0
@@ -44,7 +44,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Pipelined()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .Where(n => n % 2 == 0)
@@ -67,7 +67,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SumInt()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from n in xs.AsParallelQueryExpr()
                          select n * 2).Sum().Run();
@@ -81,7 +81,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SumDouble()
         {
-            Spec.ForAny<double[]>(xs =>
+            Prop.ForAll<double[]>(xs =>
             {
                 var x = (from n in xs.AsParallelQueryExpr()
                          select n * 2).Sum().Run();
@@ -95,7 +95,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SumLong()
         {
-            Spec.ForAny<long[]>(xs =>
+            Prop.ForAll<long[]>(xs =>
             {
                 var x = (from n in xs.AsParallelQueryExpr()
                          select n * 2).Sum().Run();
@@ -109,7 +109,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectMany()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .SelectMany(n => xs.Select(_n => n * _n))
@@ -125,7 +125,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyNested()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .SelectMany(num => xs.SelectMany(_num => new[] { num * _num }))
@@ -142,7 +142,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyPipeline()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .Where(num => num % 2 == 0)
@@ -165,7 +165,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void SelectManyCompehension()
         {
-            Spec.ForAny<string[]>(xs =>
+            Prop.ForAll<string[]>(xs =>
             {
                 var x = (from num in xs.AsParallelQueryExpr()
                          from _num in xs
@@ -181,7 +181,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void GroupBy()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
 #if MONO_BUILD
                 var x = xs.AsParallelQueryExpr().GroupBy(num => num.ToString()).Select(g => g.Count()).Sum().Run();
@@ -203,7 +203,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void OrderBy()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from num in xs.AsParallelQueryExpr()
                          orderby num
@@ -221,7 +221,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void OrderByDescending()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = (from num in xs.AsParallelQueryExpr()
                          orderby num descending 
@@ -240,7 +240,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void Count()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .Select(i => i)
@@ -258,7 +258,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ToList()
         {
-            Spec.ForAny<int[]>(xs =>
+            Prop.ForAll<int[]>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .ToList()
@@ -274,7 +274,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ToArray()
         {
-            Spec.ForAny<List<int>>(xs =>
+            Prop.ForAll<List<int>>(xs =>
             {
                 var x = xs.AsParallelQueryExpr()
                         .ToArray()
@@ -290,7 +290,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void LinqLetTest()
         {
-            Spec.ForAny<List<int>>(nums =>
+            Prop.ForAll<List<int>>(nums =>
             {
                 var x =
                     (from num in nums.AsParallelQueryExpr()
@@ -311,7 +311,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ThenBy()
         {
-            Spec.ForAny<DateTime[]>(ds =>
+            Prop.ForAll<DateTime[]>(ds =>
             {
                 var x = ds.AsParallelQueryExpr()
                          .OrderBy(d => d.Year)
@@ -333,7 +333,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void ThenByDescending()
         {
-            Spec.ForAny<DateTime[]>(ds =>
+            Prop.ForAll<DateTime[]>(ds =>
             {
                 var x = (ds.AsParallelQueryExpr()
                          .OrderByDescending(d => d.Year)
@@ -354,7 +354,7 @@ namespace Nessos.LinqOptimizer.Tests
         [Test]
         public void PreCompileFunc()
         {
-            Spec.ForAny<int>(i =>
+            Prop.ForAll<int>(i =>
             {
                 if (i < 1) return true;
 
