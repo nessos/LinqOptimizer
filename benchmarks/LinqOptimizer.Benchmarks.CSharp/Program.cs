@@ -15,11 +15,15 @@ namespace LinqOptimizer.Benchmarks.CSharp
     {
         static void Main(string[] args)
         {
+#if fales
             typeof(SequentialBenchmarks)
                 .GetNestedTypes()
                 .Concat(typeof(ParallelBenchmarks).GetNestedTypes())
                 .ToList()
                 .ForEach(type => BenchmarkRunner.Run(type, new CustomConfig()));
+#else
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+#endif
         }
     }
 
@@ -46,15 +50,20 @@ namespace LinqOptimizer.Benchmarks.CSharp
         protected double[] values;
 
         [GlobalSetup]
-        public virtual void SetUp()
+        public void SetUp()
         {
             values = Enumerable.Range(1, Count).Select(x => rnd.NextDouble()).ToArray();
+
+            AdditionalSetUp();
         }
+
+        virtual protected void AdditionalSetUp() { }
     }
 
-    public class SequentialBenchmarks
+    public partial class SequentialBenchmarks
     {
-        public class SumBechmarks : BenchmarkBase
+        [CoreJob, MemoryDiagnoser]
+        public partial class SumBechmarks : BenchmarkBase
         {
             [Benchmark(Description = "Sum Linq", Baseline = true)]
             public double SumLinq()
@@ -69,7 +78,8 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
-        public class SumOfSquaresBechmarks : BenchmarkBase
+        [CoreJob, MemoryDiagnoser]
+        public partial class SumOfSquaresBechmarks : BenchmarkBase
         {
             [Benchmark(Description = "Sum of Squares Linq", Baseline = true)]
             public double SumSqLinq()
@@ -84,15 +94,13 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
-        public class CartesianBenchmarks : BenchmarkBase
+        [CoreJob, MemoryDiagnoser]
+        public partial class CartesianBenchmarks : BenchmarkBase
         {
             private double[] dim1, dim2;
 
-            [GlobalSetup]
-            public override void SetUp()
+            protected override void AdditionalSetUp()
             {
-                base.SetUp();
-
                 dim1 = values.Take(values.Length / 10).ToArray();
                 dim2 = values.Take(20).ToArray();
             }
@@ -114,13 +122,11 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
-        public class GroupByBenchmarks : BenchmarkBase
+        [CoreJob, MemoryDiagnoser]
+        public partial class GroupByBenchmarks : BenchmarkBase
         {
-            [GlobalSetup]
-            public override void SetUp()
+            protected override void AdditionalSetUp()
             {
-                base.SetUp();
-
                 values =
                     Enumerable.Range(1, Count).Select(x => 100000000 * rnd.NextDouble() - 50000000).ToArray();
             }
@@ -147,7 +153,8 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
-        public class PythagoreanTriplesBenchmarks
+        [CoreJob, MemoryDiagnoser]
+        public partial class PythagoreanTriplesBenchmarks
         {
             [Params(0, 10, 100, 1000)]
             public int max = 1000;
@@ -176,6 +183,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
 
     public class ParallelBenchmarks
     {
+        [CoreJob, MemoryDiagnoser]
         public class ParallelSumBenchmarks : BenchmarkBase
         {
             [Benchmark(Description = "Parallel Sum Linq", Baseline = true)]
@@ -191,6 +199,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
+        [CoreJob, MemoryDiagnoser]
         public class ParallelSumOfSquaresBenchmark : BenchmarkBase
         {
             [Benchmark(Description = "Parallel Sum of Squares Linq", Baseline = true)]
@@ -206,15 +215,13 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
+        [CoreJob, MemoryDiagnoser]
         public class ParallelCartesianBenchmarks : BenchmarkBase
         {
             private double[] dim1, dim2;
 
-            [GlobalSetup]
-            public override void SetUp()
+            protected override void AdditionalSetUp()
             {
-                base.SetUp();
-
                 dim1 = values.Take(values.Length / 10).ToArray();
                 dim2 = values.Take(20).ToArray();
             }
@@ -236,10 +243,10 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
+        [CoreJob, MemoryDiagnoser]
         public class ParallelGroupByBenchmarks : BenchmarkBase
         {
-            [GlobalSetup]
-            public override void SetUp()
+            protected override void AdditionalSetUp()
             {
                 values = Enumerable.Range(1, Count).Select(x => 100000000 * rnd.NextDouble() - 50000000).ToArray();
             }
@@ -266,6 +273,7 @@ namespace LinqOptimizer.Benchmarks.CSharp
             }
         }
 
+        [CoreJob, MemoryDiagnoser]
         public class ParallelPythagoreanTriplesBenchmarks
         {
             [Params(0, 10, 100, 1000)]

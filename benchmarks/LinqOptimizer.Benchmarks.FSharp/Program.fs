@@ -7,6 +7,31 @@ open System.Collections.Generic
 open System.Diagnostics
 open Nessos.LinqOptimizer.FSharp
 open Nessos.LinqOptimizer.Base
+open Cistern.Linq.FSharp
+
+let measuref3<'T>(title1, action1 : unit -> 'T, title2, action2 : unit -> 'T, title3, action3 : unit -> 'T, validate : 'T * 'T -> bool) =
+    let sw = new Stopwatch();
+    sw.Start();
+    let t1 = action1();
+    sw.Stop();
+    Console.WriteLine("\"{0}\":\t{1}",title1, sw.Elapsed);
+    sw.Restart();
+    let t2 = action2();
+    sw.Stop();
+    Console.WriteLine("\"{0}\":\t{1}", title2, sw.Elapsed);
+    sw.Restart();
+    let t3 = action3();
+    sw.Stop();
+    Console.WriteLine("\"{0}\":\t{1}", title3, sw.Elapsed);
+    let v = validate(t1, t2)
+    if not v then
+        Console.WriteLine("Values {0}, {1}", t1, t2)
+    Console.WriteLine("Validate 1v2 : {0}", v);
+    let v = validate(t1, t3)
+    if not v then
+        Console.WriteLine("Values {0}, {1}", t1, t2)
+    Console.WriteLine("Validate 1v3: {0}", v);
+    Console.WriteLine();
 
 let measuref<'T>(title1, action1 : unit -> 'T, title2, action2 : unit -> 'T, validate : 'T * 'T -> bool) =
     let sw = new Stopwatch();
@@ -27,17 +52,26 @@ let measuref<'T>(title1, action1 : unit -> 'T, title2, action2 : unit -> 'T, val
 let SumLinq(values : double []) = 
     Seq.sum values
 
+let SumCistern(values : double []) = 
+    Linq.sum values
+
 let SumLinqOpt(values : double[]) = 
     values |> Query.ofSeq |> Query.sum |> Query.run
 
 let SumSqLinq(values : double[]) =
     values |> Seq.map (fun x -> x * x) |> Seq.sum
 
+let SumSqCistern(values : double[]) =
+    values |> Linq.map (fun x -> x * x) |> Linq.sum
+
 let SumSqLinqOpt(values : double[]) =
     values |> Query.ofSeq |> Query.map(fun x -> x * x) |> Query.sum |> Query.run
 
 let CartLinq (dim1 : double[], dim2 : double[]) =
     dim1 |> Seq.collect (fun x -> Seq.map (fun y -> x * y) dim2) |> Seq.sum
+
+let CartCistern (dim1 : double[], dim2 : double[]) =
+    dim1 |> Linq.collect (fun x -> Linq.map (fun y -> x * y) dim2) |> Linq.sum
 
 let CartLinqOpt(dim1 : double[], dim2 : double[]) =
     dim1 |> Query.ofSeq |> Query.collect (fun x -> Seq.map (fun y -> x * y) dim2) |> Query.sum |> Query.run
@@ -49,6 +83,13 @@ let GroupLinq(values : double[]) =
     |> Seq.sortBy (fun (key, vs) -> key)
     |> Seq.map(fun (key, vs) -> Seq.length vs)
     |> Seq.toArray
+
+let GroupCistern(values : double[]) =
+    values
+    |> Linq.groupBy(fun x -> int x / 100)
+    |> Linq.sortBy (fun (key, vs) -> key)
+    |> Linq.map(fun (key, vs) -> Seq.length vs)
+    |> Linq.toArray
 
 let GroupLinqOpt(values : double[]) =
     values
@@ -69,7 +110,16 @@ let PythagoreanTriplesLinq(max) =
             |> Seq.map (fun c -> a, b, c)))
     |> Seq.filter (fun (a,b,c) -> a * a + b * b = c * c)
     |> Seq.length
-                
+
+let PythagoreanTriplesCistern(max) =
+    Cistern.Linq.Enumerable.Range(1, max + 1)
+    |> Linq.collect(fun a ->
+        Cistern.Linq.Enumerable.Range(a, max + 1 - a)
+        |> Linq.collect(fun b ->
+            Cistern.Linq.Enumerable.Range(b, max + 1 - b)
+            |> Linq.map (fun c -> a, b, c)))
+    |> Linq.filter (fun (a,b,c) -> a * a + b * b = c * c)
+    |> Linq.length
 
 let PythagoreanTriplesLinqOpt(max) =
     Query.range(1, max + 1)
@@ -150,29 +200,34 @@ let main argv =
     let v = Enumerable.Range(1, 200000000).Select(fun x -> rnd.NextDouble()).ToArray()
     let cmp (x1, x2 : double) = Math.Abs(x1 - x2) < 1E-07
 
-    measuref("Sum Seq", (fun () -> SumLinq v), 
-             "Sum Opt", (fun () -> SumLinqOpt v), 
-             cmp)
+    measuref3("Sum Seq", (fun () -> SumLinq v), 
+              "Sum Cistern", (fun () -> SumCistern v), 
+              "Sum Opt", (fun () -> SumLinqOpt v), 
+              cmp)
     
-    measuref("Sum Squares Seq", (fun () -> SumSqLinq v), 
-             "Sum Squares Opt", (fun () -> SumSqLinqOpt v), 
-             cmp)
+    measuref3("Sum Squares Seq", (fun () -> SumSqLinq v), 
+              "Sum Squares Cistern", (fun () -> SumSqCistern v), 
+              "Sum Squares Opt", (fun () -> SumSqLinqOpt v), 
+              cmp)
     
     let v1 = v.Take(v.Length / 10).ToArray()
     let v2 = v.Take(20).ToArray()
-    measuref("Cartesian Seq", (fun () -> CartLinq(v1, v2)), 
-             "Cartesian Linq Opt", (fun () -> CartLinqOpt(v1, v2)), 
-             cmp)
+    measuref3("Cartesian Seq", (fun () -> CartLinq(v1, v2)), 
+              "Cartesian Cistern", (fun () -> CartCistern(v1, v2)), 
+              "Cartesian Linq Opt", (fun () -> CartLinqOpt(v1, v2)), 
+              cmp)
 
     let g = Enumerable.Range(1, 20000000).Select(fun x -> 100000000. * rnd.NextDouble() - 50000000.).ToArray()
-    measuref("Group Seq", (fun () -> GroupLinq g), 
-             "Group Opt", (fun () -> GroupLinqOpt g), 
-             fun (x, y) -> Enumerable.SequenceEqual(x, y))
+    measuref3("Group Seq", (fun () -> GroupLinq g), 
+              "Group Cistern", (fun () -> GroupCistern g), 
+              "Group Opt", (fun () -> GroupLinqOpt g), 
+              fun (x, y) -> Enumerable.SequenceEqual(x, y))
     
     let n = 1000
-    measuref("Pythagorean Seq", (fun () -> PythagoreanTriplesLinq n), 
-             "Pythagorean Opt", (fun () -> PythagoreanTriplesLinqOpt n ), 
-             fun (x, y) -> x = y)
+    measuref3("Pythagorean Seq", (fun () -> PythagoreanTriplesLinq n), 
+              "Pythagorean Cistern", (fun () -> PythagoreanTriplesCistern n), 
+              "Pythagorean Opt", (fun () -> PythagoreanTriplesLinqOpt n ), 
+              fun (x, y) -> x = y)
 
     ////////////////////////////////////////////////////////////////////////////
 
